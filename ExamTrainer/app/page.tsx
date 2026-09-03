@@ -1,159 +1,84 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import questionBankData from './question-bank.json';
 
-type Question = {
+type Chapter = {
   id: string;
-  topic: string;
-  prompt: string;
-  source: string;
-  answer: string;
-  cell: number;
+  number: string;
+  title: string;
+  file: string;
+  questionCount: number;
 };
 
+type Cell = {
+  source: string;
+  cell: number;
+  answerSource: string;
+};
+
+type QuestionRecord = {
+  id: string;
+  chapterId: string;
+  chapterNumber: string;
+  chapterTitle: string;
+  file: string;
+  topic: string;
+  prompt: string;
+  answer: string;
+  occurrence: number;
+  sourceId: string;
+};
+
+type Question = QuestionRecord & Cell;
+type Screen = 'home' | 'chapters' | 'quiz' | 'wrong';
 type ResultState = 'idle' | 'correct' | 'wrong';
 
-const INSTALL_CELL = `%pip install gensim`;
+const bank = questionBankData as {
+  chapters: Chapter[];
+  cells: Record<string, Cell>;
+  questions: QuestionRecord[];
+};
 
-const VECTOR_SPACE_CELL = `import gensim.downloader as api
+const questions: Question[] = bank.questions.map((question) => ({
+  ...question,
+  ...bank.cells[question.sourceId],
+}));
 
-def run_gensim_tutorial():
-    # 1. 사전 학습된 가벼운 모델 다운로드 및 로드 (약 65MB)
-    # 강의 중 첫 실행 시 다운로드 시간이 약간 소요될 수 있습니다.
-    print("모델을 로딩 중입니다... (glove-wiki-gigaword-50)\\n")
-    model = api.load("glove-wiki-gigaword-50")
-
-    # ----------------------------------------------------
-    # [기능 1] 단어의 의미(유사도) 계산하기
-    # 두 단어 벡터 간의 코사인 유사도(Cosine Similarity)를 계산합니다.
-    # ----------------------------------------------------
-    print("1. 단어 간 유사도 계산하기")
-    word1, word2, word3 = 'cat', 'dog', 'car'
-
-    sim_cat_dog = model.similarity(word1, word2)
-    sim_cat_car = model.similarity(word1, word3)
-
-    print(f" - '{word1}'와 '{word2}'의 유사도: {sim_cat_dog:.4f}")
-    print(f" - '{word1}'와 '{word3}'의 유사도: {sim_cat_car:.4f}\\n")
-
-    # ----------------------------------------------------
-    # [기능 2] 유사한 단어 가져오기
-    # 특정 단어와 벡터 공간상에서 가장 가까운 단어들을 추출합니다.
-    # ----------------------------------------------------
-    print("2. 'computer'와 가장 유사한 단어 5개 가져오기")
-    target_word = 'computer'
-    similar_words = model.most_similar(target_word, topn=5)
-
-    for word, score in similar_words:
-        print(f" - {word} (유사도 점수: {score:.4f})")
-    print()
-
-    # ----------------------------------------------------
-    # [기능 3] 주어진 단어들을 그룹으로 분류 (이질적인 단어 찾기)
-    # 단어들의 의미적 군집을 파악하여, 그룹에 어울리지 않는 단어를 찾아냅니다.
-    # ----------------------------------------------------
-    print("3. 단어 그룹 중 성격이 다른 단어(Outlier) 분류하기")
-    word_group = ['apple', 'banana', 'orange', 'car']
-
-    outlier = model.doesnt_match(word_group)
-    print(f" - 단어 그룹: {word_group}")
-    print(f" - 과일 그룹에 어울리지 않는 단어: '{outlier}'\\n")
-
-# 실행
-if __name__ == "__main__":
-    run_gensim_tutorial()`;
-
-const questions: Question[] = [
-  {
-    id: 'llm-vector-01',
-    topic: '환경 준비',
-    prompt: 'Gensim 라이브러리를 설치하는 코드를 완성하세요.',
-    source: INSTALL_CELL,
-    answer: '%pip install gensim',
-    cell: 1,
-  },
-  {
-    id: 'llm-vector-02',
-    topic: '모델 불러오기',
-    prompt: '사전 학습 모델을 내려받기 위해 사용하는 모듈을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'gensim.downloader as api',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-03',
-    topic: '모델 불러오기',
-    prompt: 'GloVe 사전 학습 모델을 불러오는 부분을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'api.load("glove-wiki-gigaword-50")',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-04',
-    topic: '코사인 유사도',
-    prompt: 'cat과 dog의 벡터 유사도를 계산하는 부분을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'model.similarity(word1, word2)',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-05',
-    topic: '코사인 유사도',
-    prompt: 'cat과 car의 벡터 유사도를 계산하는 부분을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'model.similarity(word1, word3)',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-06',
-    topic: '유사 단어 검색',
-    prompt: '가장 유사한 단어 5개를 가져오는 부분을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'model.most_similar(target_word, topn=5)',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-07',
-    topic: '결과 순회',
-    prompt: '유사 단어와 점수를 하나씩 꺼내는 반복문을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'for word, score in similar_words:',
-    cell: 2,
-  },
-  {
-    id: 'llm-vector-08',
-    topic: '이상 단어 찾기',
-    prompt: '그룹에 어울리지 않는 단어를 찾는 부분을 완성하세요.',
-    source: VECTOR_SPACE_CELL,
-    answer: 'model.doesnt_match(word_group)',
-    cell: 2,
-  },
-];
+const STORAGE_KEY = 'ai-exam-trainer-progress-v2';
 
 const subjects = [
-  { name: 'LLM', detail: 'Vector Space', count: questions.length, active: true },
+  { name: 'LLM', detail: '10개 노트북', count: questions.length, active: true },
   { name: 'RAG', detail: '준비 중', count: 0, active: false },
   { name: 'Data', detail: 'TIME', count: 0, active: false },
   { name: 'Vision', detail: '준비 중', count: 0, active: false },
   { name: 'On-device', detail: '준비 중', count: 0, active: false },
 ];
 
-const STORAGE_KEY = 'ai-exam-trainer-progress-v1';
-
 function normalized(value: string) {
-  return value.replace(/\r\n/g, '\n').trimEnd();
+  return value.replace(/\r\n/g, '\n').trim();
 }
 
 function maskedSource(question: Question) {
-  const index = question.source.indexOf(question.answer);
+  let index = -1;
+  let fromIndex = 0;
+  for (let count = 0; count <= question.occurrence; count += 1) {
+    index = question.source.indexOf(question.answer, fromIndex);
+    if (index === -1) break;
+    fromIndex = index + question.answer.length;
+  }
   if (index === -1) return question.source;
-  return `${question.source.slice(0, index)}▰ 빈칸 ${'━'.repeat(
+  const marker = `▰ 빈칸 ${'━'.repeat(
     Math.min(24, Math.max(8, question.answer.length)),
-  )}▰${question.source.slice(index + question.answer.length)}`;
+  )}▰`;
+  return `${question.source.slice(0, index)}${marker}${question.source.slice(
+    index + question.answer.length,
+  )}`;
 }
 
 export default function Home() {
-  const [screen, setScreen] = useState<'home' | 'quiz' | 'wrong'>('home');
+  const [screen, setScreen] = useState<Screen>('home');
+  const [chapterId, setChapterId] = useState(bank.chapters[0].id);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<ResultState>('idle');
@@ -189,18 +114,30 @@ export default function Home() {
   }, [wrongIds, solvedIds, hydrated]);
 
   const activeQuestions = useMemo(() => {
-    if (screen !== 'wrong') return questions;
-    return questions.filter((question) => wrongIds.includes(question.id));
-  }, [screen, wrongIds]);
+    if (screen === 'wrong') {
+      return questions.filter((question) => wrongIds.includes(question.id));
+    }
+    return questions.filter((question) => question.chapterId === chapterId);
+  }, [chapterId, screen, wrongIds]);
 
   const current = activeQuestions[currentIndex] ?? questions[0];
   const completion = Math.round((solvedIds.length / questions.length) * 100);
 
-  function openSession(mode: 'quiz' | 'wrong') {
-    setScreen(mode);
+  function resetQuestion() {
     setCurrentIndex(0);
     setAnswer('');
     setResult('idle');
+  }
+
+  function openChapter(nextChapterId: string) {
+    setChapterId(nextChapterId);
+    setScreen('quiz');
+    resetQuestion();
+  }
+
+  function openWrongNotes() {
+    setScreen('wrong');
+    resetQuestion();
   }
 
   function grade() {
@@ -220,8 +157,9 @@ export default function Home() {
   }
 
   function nextQuestion() {
-    const next = currentIndex + 1;
-    setCurrentIndex(next >= activeQuestions.length ? 0 : next);
+    setCurrentIndex((index) =>
+      index + 1 >= activeQuestions.length ? 0 : index + 1,
+    );
     setAnswer('');
     setResult('idle');
   }
@@ -234,17 +172,53 @@ export default function Home() {
     nextQuestion();
   }
 
-  if (screen !== 'home') {
+  if (screen === 'chapters') {
+    return (
+      <main className="app-shell">
+        <Header onHome={() => setScreen('home')} onWrong={openWrongNotes} wrongCount={wrongIds.length} />
+        <section className="chapter-page">
+          <div className="chapter-page-heading">
+            <span className="eyebrow">LLM · 10 Notebooks</span>
+            <h1>학습할 챕터를 선택하세요.</h1>
+            <p>강의 노트북의 TODO와 답안 코드를 기준으로 만든 {questions.length}개 문제입니다.</p>
+          </div>
+          <div className="chapter-grid">
+            {bank.chapters.map((chapter) => {
+              const chapterQuestions = questions.filter((q) => q.chapterId === chapter.id);
+              const solved = chapterQuestions.filter((q) => solvedIds.includes(q.id)).length;
+              const wrong = chapterQuestions.filter((q) => wrongIds.includes(q.id)).length;
+              const percent = Math.round((solved / chapter.questionCount) * 100);
+
+              return (
+                <button key={chapter.id} className="chapter-card" onClick={() => openChapter(chapter.id)}>
+                  <div className="chapter-card-top">
+                    <span>CH. {chapter.number}</span>
+                    <strong>{chapter.questionCount}문제</strong>
+                  </div>
+                  <h2>{chapter.title}</h2>
+                  <p>{chapter.file}</p>
+                  <div className="chapter-card-footer">
+                    <div className="progress-track small-card"><span style={{ width: `${percent}%` }} /></div>
+                    <span>{solved} 완료 · {wrong} 오답</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'quiz' || screen === 'wrong') {
     if (screen === 'wrong' && activeQuestions.length === 0) {
       return (
         <main className="empty-state">
           <div className="empty-card">
             <span className="eyebrow">오답노트</span>
             <h1>남은 오답이 없습니다</h1>
-            <p>틀린 문제는 여기에 모이고, 일반 학습에도 계속 등장합니다.</p>
-            <button className="primary-button" onClick={() => setScreen('home')}>
-              학습 홈으로
-            </button>
+            <p>틀린 문제는 이곳에 모이고, 일반 학습에도 계속 등장합니다.</p>
+            <button className="primary-button" onClick={() => setScreen('home')}>학습 홈으로</button>
           </div>
         </main>
       );
@@ -252,38 +226,19 @@ export default function Home() {
 
     return (
       <main className="app-shell quiz-shell">
-        <header className="topbar">
-          <button className="brand-button" onClick={() => setScreen('home')}>
-            <span className="brand-mark">A</span>
-            <span>AI Coding Recall</span>
-          </button>
-          <div className="session-progress" aria-label="현재 문제 진행률">
-            <span>
-              {screen === 'wrong' ? '오답 복습' : 'LLM 학습'} · {currentIndex + 1}/
-              {activeQuestions.length}
-            </span>
-            <div className="progress-track small">
-              <span
-                style={{
-                  width: `${((currentIndex + 1) / activeQuestions.length) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        </header>
-
+        <Header onHome={() => setScreen('home')} compact />
         <section className="quiz-layout">
           <aside className="question-rail">
-            <span className="eyebrow">Chapter 01</span>
-            <h2>Vector Space</h2>
+            <span className="eyebrow">Chapter {current.chapterNumber}</span>
+            <h2>{screen === 'wrong' ? '오답 복습' : current.chapterTitle}</h2>
             <p>강의자료의 원문 코드에서 중요한 한 부분을 가렸습니다.</p>
             <div className="source-meta">
-              <span>원본 파일</span>
-              <strong>Chapter_1_Exercise_Vector Space.ipynb</strong>
-              <span>코드 셀 {current.cell}</span>
+              <span>출제 노트북</span>
+              <strong>{current.file}</strong>
+              <span>정답 코드 셀 {current.cell}</span>
             </div>
-            <button className="text-button" onClick={() => setScreen('home')}>
-              ← 학습 종료
+            <button className="text-button" onClick={() => setScreen(screen === 'wrong' ? 'home' : 'chapters')}>
+              ← {screen === 'wrong' ? '학습 홈' : '챕터 선택'}
             </button>
           </aside>
 
@@ -293,9 +248,14 @@ export default function Home() {
                 <span className="topic-pill">{current.topic}</span>
                 <h1>{current.prompt}</h1>
               </div>
-              <span className="question-number">
-                {String(currentIndex + 1).padStart(2, '0')}
-              </span>
+              <span className="question-number">{String(currentIndex + 1).padStart(2, '0')}</span>
+            </div>
+
+            <div className="question-progress-row">
+              <span>{currentIndex + 1} / {activeQuestions.length}</span>
+              <div className="progress-track question-track">
+                <span style={{ width: `${((currentIndex + 1) / activeQuestions.length) * 100}%` }} />
+              </div>
             </div>
 
             <div className="code-window">
@@ -303,14 +263,12 @@ export default function Home() {
                 <span className="code-dot coral" />
                 <span className="code-dot amber" />
                 <span className="code-dot mint" />
-                <span className="code-label">Python · Code Cell {current.cell}</span>
+                <span className="code-label">Python · Code Cell</span>
               </div>
               <pre><code>{maskedSource(current)}</code></pre>
             </div>
 
-            <label className="answer-label" htmlFor="answer">
-              빈칸에 들어갈 코드를 입력하세요
-            </label>
+            <label className="answer-label" htmlFor="answer">빈칸에 들어갈 코드를 입력하세요</label>
             <textarea
               id="answer"
               className="answer-input"
@@ -322,7 +280,7 @@ export default function Home() {
               onKeyDown={(event) => {
                 if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') grade();
               }}
-              placeholder="정답 코드를 그대로 입력"
+              placeholder="답안지의 코드를 떠올려 입력"
               spellCheck={false}
               autoFocus
             />
@@ -334,14 +292,10 @@ export default function Home() {
                     {result === 'correct' ? '정답입니다' : '오답노트에 저장했습니다'}
                   </span>
                   <p className="answer-code">{current.answer}</p>
-                  {result === 'wrong' && (
-                    <p className="result-note">답안지의 정확한 코드를 확인하고 다시 외워보세요.</p>
-                  )}
+                  {result === 'wrong' && <p className="result-note">답안지의 정확한 코드를 확인하고 다시 외워보세요.</p>}
                 </div>
                 {screen === 'wrong' && result === 'correct' && (
-                  <button className="resolve-button" onClick={resolveWrong}>
-                    오답 해결
-                  </button>
+                  <button className="resolve-button" onClick={resolveWrong}>오답 해결</button>
                 )}
               </section>
             )}
@@ -349,17 +303,9 @@ export default function Home() {
             <div className="quiz-actions">
               <span>Ctrl + Enter로 채점</span>
               {result === 'idle' ? (
-                <button
-                  className="primary-button"
-                  onClick={grade}
-                  disabled={!answer.trim()}
-                >
-                  정답 확인
-                </button>
+                <button className="primary-button" onClick={grade} disabled={!answer.trim()}>정답 확인</button>
               ) : (
-                <button className="primary-button" onClick={nextQuestion}>
-                  다음 문제 →
-                </button>
+                <button className="primary-button" onClick={nextQuestion}>다음 문제 →</button>
               )}
             </div>
           </article>
@@ -370,38 +316,22 @@ export default function Home() {
 
   return (
     <main className="app-shell">
-      <header className="topbar home-topbar">
-        <div className="brand">
-          <span className="brand-mark">A</span>
-          <span>AI Coding Recall</span>
-        </div>
-        <button className="wrong-note-button" onClick={() => openSession('wrong')}>
-          <span>오답노트</span>
-          <strong>{wrongIds.length}</strong>
-        </button>
-      </header>
-
+      <Header onHome={() => setScreen('home')} onWrong={openWrongNotes} wrongCount={wrongIds.length} />
       <section className="hero">
         <div className="hero-copy">
           <span className="eyebrow">AI 인증시험 · 코드 암기</span>
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
-          <p>
-            Jupyter Notebook의 실제 코드 셀에서 핵심 구문을 가렸습니다.
-            답안지와 비교하고, 틀린 코드는 다시 만납니다.
-          </p>
+          <p>LLM 강의 노트북 10개의 핵심 코드를 빈칸으로 만들었습니다. 답안지와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
-            <button className="primary-button large" onClick={() => openSession('quiz')}>
-              LLM 학습 시작 <span>→</span>
+            <button className="primary-button large" onClick={() => setScreen('chapters')}>
+              LLM 챕터 선택 <span>→</span>
             </button>
-            <span className="hero-caption">Chapter 1 · 8문제</span>
+            <span className="hero-caption">10개 노트북 · {questions.length}문제</span>
           </div>
         </div>
 
         <div className="progress-card">
-          <div className="progress-card-top">
-            <span>나의 암기 현황</span>
-            <strong>{completion}%</strong>
-          </div>
+          <div className="progress-card-top"><span>나의 암기 현황</span><strong>{completion}%</strong></div>
           <div className="progress-track"><span style={{ width: `${completion}%` }} /></div>
           <div className="stat-grid">
             <div><strong>{questions.length}</strong><span>전체 문제</span></div>
@@ -410,42 +340,58 @@ export default function Home() {
           </div>
           <div className="today-note">
             <span className="today-dot" />
-            <p><strong>오늘의 목표</strong>Vector Space 코드를 끝까지 복습하세요.</p>
+            <p><strong>오늘의 목표</strong>한 챕터를 골라 끝까지 복습하세요.</p>
           </div>
         </div>
       </section>
 
       <section className="subject-section">
         <div className="section-heading">
-          <div>
-            <span className="eyebrow">Study Map</span>
-            <h2>과목별 문제은행</h2>
-          </div>
-          <p>현재 자료 41개 노트북을 과목별로 확장합니다.</p>
+          <div><span className="eyebrow">Study Map</span><h2>과목별 문제은행</h2></div>
+          <p>출제포인트에 맞춰 과목별로 확장합니다.</p>
         </div>
-
         <div className="subject-grid">
           {subjects.map((subject, index) => (
             <button
               key={subject.name}
               className={`subject-card ${subject.active ? 'active' : ''}`}
-              onClick={() => subject.active && openSession('quiz')}
+              onClick={() => subject.active && setScreen('chapters')}
               disabled={!subject.active}
             >
               <span className="subject-index">0{index + 1}</span>
               <div><h3>{subject.name}</h3><p>{subject.detail}</p></div>
-              <span className="subject-count">
-                {subject.active ? `${subject.count}문제` : '다음 단계'}
-              </span>
+              <span className="subject-count">{subject.active ? `${subject.count}문제` : '다음 단계'}</span>
             </button>
           ))}
         </div>
       </section>
 
-      <footer>
-        <span>Source locked</span>
-        <p>강의자료와 답안지의 코드만 사용합니다.</p>
-      </footer>
+      <footer><span>Source locked</span><p>강의자료와 답안지의 코드만 사용합니다.</p></footer>
     </main>
+  );
+}
+
+function Header({
+  onHome,
+  onWrong,
+  wrongCount = 0,
+  compact = false,
+}: {
+  onHome: () => void;
+  onWrong?: () => void;
+  wrongCount?: number;
+  compact?: boolean;
+}) {
+  return (
+    <header className="topbar">
+      <button className="brand-button" onClick={onHome}>
+        <span className="brand-mark">A</span><span>AI Coding Recall</span>
+      </button>
+      {!compact && onWrong && (
+        <button className="wrong-note-button" onClick={onWrong}>
+          <span>오답노트</span><strong>{wrongCount}</strong>
+        </button>
+      )}
+    </header>
   );
 }
