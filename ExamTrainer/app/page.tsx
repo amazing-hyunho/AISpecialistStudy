@@ -47,7 +47,8 @@ const questions: Question[] = bank.questions.map((question) => ({
   ...bank.cells[question.sourceId],
 }));
 
-const STORAGE_KEY = 'ai-exam-trainer-progress-v2';
+const STORAGE_KEY = 'ai-exam-trainer-progress-v3';
+const LEGACY_STORAGE_KEY = 'ai-exam-trainer-progress-v2';
 
 const subjects = [
   {
@@ -101,15 +102,19 @@ export default function Home() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
+    const legacyStored = stored ? null : window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    const progress = stored ?? legacyStored;
     queueMicrotask(() => {
-      if (stored) {
+      if (progress) {
         try {
-          const parsed = JSON.parse(stored) as {
+          const parsed = JSON.parse(progress) as {
             wrongIds?: string[];
             solvedIds?: string[];
           };
-          setWrongIds(parsed.wrongIds ?? []);
-          setSolvedIds(parsed.solvedIds ?? []);
+          const keepCompatibleIds = (ids: string[] = []) =>
+            legacyStored ? ids.filter((id) => id.startsWith('llm-')) : ids;
+          setWrongIds(keepCompatibleIds(parsed.wrongIds));
+          setSolvedIds(keepCompatibleIds(parsed.solvedIds));
         } catch {
           window.localStorage.removeItem(STORAGE_KEY);
         }
@@ -345,12 +350,12 @@ export default function Home() {
         <div className="hero-copy">
           <span className="eyebrow">AI 인증시험 · 코드 암기</span>
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
-          <p>LLM과 RAG 강의 노트북 16개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
+          <p>LLM과 RAG 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
             <button className="primary-button large" onClick={() => openSubject('RAG')}>
               RAG 챕터 선택 <span>→</span>
             </button>
-            <span className="hero-caption">16개 노트북 · {questions.length}문제</span>
+            <span className="hero-caption">{bank.chapters.length}개 노트북 · {questions.length}문제</span>
           </div>
         </div>
 

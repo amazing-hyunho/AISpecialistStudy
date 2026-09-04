@@ -86,23 +86,7 @@
       "number": "D1-01",
       "title": "LlamaIndex Basics",
       "file": "1. Llama_index.ipynb",
-      "questionCount": 15
-    },
-    {
-      "id": "rag-d1-02",
-      "subject": "RAG",
-      "number": "D1-02",
-      "title": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "questionCount": 14
-    },
-    {
-      "id": "rag-d2-01",
-      "subject": "RAG",
-      "number": "D2-01",
-      "title": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "questionCount": 10
+      "questionCount": 3
     },
     {
       "id": "rag-d2-02",
@@ -110,7 +94,7 @@
       "number": "D2-02",
       "title": "Search Retrieval",
       "file": "2. Task_1.ipynb",
-      "questionCount": 12
+      "questionCount": 6
     },
     {
       "id": "rag-d2-03",
@@ -118,15 +102,15 @@
       "number": "D2-03",
       "title": "Knowledge Graph RAG",
       "file": "3. Task_2.ipynb",
-      "questionCount": 12
+      "questionCount": 4
     },
     {
       "id": "rag-d2-04",
       "subject": "RAG",
       "number": "D2-04",
-      "title": "RAG Evaluation & MCP",
+      "title": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "questionCount": 15
+      "questionCount": 5
     }
   ],
   "cells": {
@@ -290,145 +274,15 @@
       "cell": 0,
       "answerSource": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"
     },
-    "d1_llama-cell-12": {
-      "source": "documents = SimpleDirectoryReader(\"data\").load_data()",
-      "cell": 12,
-      "answerSource": "1. Llama_index.ipynb"
-    },
     "d1_llama-cell-15": {
       "source": "index = VectorStoreIndex.from_documents(documents)",
       "cell": 15,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-21": {
-      "source": "from llama_index.core.node_parser import SentenceSplitter\n\nparser = SentenceSplitter(chunk_size=1024, chunk_overlap=200)\n# you can change chunk_size, chunk_overlap\n\nnodes = parser.get_nodes_from_documents(documents)\n\nprint(len(nodes))",
-      "cell": 21,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-25": {
-      "source": "import tiktoken\ntokenizer = tiktoken.encoding_for_model(\"gpt-3.5-turbo\")\n\nencoded_text = tokenizer.encode(nodes[0].text)\nprint(f\"Encoded text: {encoded_text}\")\nprint(f\"Encoded text length: {len(encoded_text)}\")\n\ndecoded_text = tokenizer.decode(encoded_text)\nprint(f\"Decoded text: \\n\\n{decoded_text}\")",
-      "cell": 25,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-27": {
-      "source": "text_splitter = SentenceSplitter(chunk_size=200, chunk_overlap=50)\n\nindex = VectorStoreIndex.from_documents(documents=documents, transformations=[text_splitter])",
-      "cell": 27,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-32": {
-      "source": "query_engine = index.as_query_engine()",
-      "cell": 32,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-36": {
-      "source": "response = query_engine.query(\"What is the first programs the author tried writing?\")\n\nprint(response)",
-      "cell": 36,
       "answerSource": "1. Llama_index.ipynb"
     },
     "d1_llama-cell-49": {
       "source": "retriever = index.as_retriever()\n\nret_passages = retriever.retrieve(\"Who is the author?\")\n\nfor i in range(len(ret_passages)):\n  print(\"###Retrieved Passage\\n\", ret_passages[i].text)\n  print(\"\\n\\n\\n\")",
       "cell": 49,
       "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-59": {
-      "source": "docu = Document(text=data_text, id_=\"new_doc_id\")\n\nindex.insert(docu)\n\nnew_query_engine = index.as_query_engine()",
-      "cell": 59,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-70": {
-      "source": "index.delete_ref_doc(id, delete_from_docstore=True)\n\nquery_engine_delete = index.as_query_engine()\n\nres_delete = query_engine_delete.query(question)\n\nprint(res_delete)",
-      "cell": 70,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-77": {
-      "source": "retriever = index.as_retriever()\nsynthesizer = get_response_synthesizer(response_mode=\"compact\")\nquery_engine = StandardQueryEngine(\n    retriever=retriever, response_synthesizer=synthesizer\n)\n\nresponse = query_engine.query(\"What did the author do growing up?\")\nprint(str(response))",
-      "cell": 77,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_rag-cell-25": {
-      "source": "import wikipedia\nwikipedia.set_user_agent(\"my-rag-project (test@example.com)\")\nreader = WikipediaReader()\ndocuments = reader.load_data(city_names, auto_suggest=False)",
-      "cell": 25,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-28": {
-      "source": "index = VectorStoreIndex.from_documents(documents)",
-      "cell": 28,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-30": {
-      "source": "query_engine = index.as_query_engine()\nresponse = query_engine.query(\"What's the arts and culture scene in Berlin?\")\nprint(textwrap.fill(str(response), 100))",
-      "cell": 30,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-38": {
-      "source": "class RAG_from_scratch:\n    def retrieve(self, query: str) -> list:\n        \"\"\"\n        Retrieve relevant text from vector store.\n        \"\"\"\n        results = query_engine.query(query)\n        return results\n\n    def generate_response(self, query: str, context_str: list) -> str:\n        \"\"\"\n        Generate answer from context.\n        \"\"\"\n        completion = oai_client.chat.completions.create(\n        model=\"gpt-3.5-turbo\",\n        temperature=0,\n        messages=\n        [\n            {\"role\": \"user\",\n            \"content\":\n            f\"We have provided context information below. \\n\"\n            f\"---------------------\\n\"\n            f\"{context_str}\"\n            f\"\\n---------------------\\n\"\n            f\"Given this information, please answer the question: {query}\"\n            }\n        ]\n        ).choices[0].message.content\n        return completion\n\n    def query(self, query: str) -> str:\n        context_str = self.retrieve(query)\n        completion = self.generate_response(query, context_str)\n        return completion\n\nrag = RAG_from_scratch()",
-      "cell": 38,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-42": {
-      "source": "retriever = index.as_retriever()\n\nret = retriever.retrieve(city_question)\nfor i in range(len(ret)):\n  print(f\"Retrieved Paasge {i+1}\\n\", ret[i].text, '\\n\\n\\n')",
-      "cell": 42,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-45": {
-      "source": "text_splitter_short = SentenceSplitter(chunk_size=200, chunk_overlap=50)\n\nindex_short = VectorStoreIndex.from_documents(documents=documents, transformations=[text_splitter_short])\n\ntext_splitter_long = SentenceSplitter(chunk_size=1024, chunk_overlap=200)\n\nindex_long = VectorStoreIndex.from_documents(documents=documents, transformations=[text_splitter_long])",
-      "cell": 45,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-47": {
-      "source": "retriever_short = index_short.as_retriever(similarity_top_k=1)\nretriever_long = index_long.as_retriever(similarity_top_k=1)",
-      "cell": 47,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-53": {
-      "source": "retriever = index_short.as_retriever(similarity_top_k=2)\n# retriever = index_long.as_retriever(similarity_top_k=2)\n\nindex = index_short #If you want to use this, remove #\n# index = index_long #If you want to use this, remove #",
-      "cell": 53,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-56": {
-      "source": "class OurCustomQueryEngine(CustomQueryEngine):\n\n    retriever: BaseRetriever\n    response_synthesizer: BaseSynthesizer\n    llm: OpenAI\n    qa_prompt: PromptTemplate = simple_qa_prompt\n\n    def custom_query(self, query_str: str):\n        nodes = self.retriever.retrieve(query_str)\n\n        context_str = \"\\n\\n\".join([n.node.get_content() for n in nodes])\n        response = self.llm.complete(\n            self.qa_prompt.format(context_str=context_str, query_str=query_str)\n        )\n\n        return str(response)\n\nllm = OpenAI(model=\"gpt-3.5-turbo\")",
-      "cell": 56,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d1_rag-cell-58": {
-      "source": "retriever = index.as_retriever()\nsynthesizer = get_response_synthesizer(response_mode=\"compact\")\n\nquery_engine_answer = OurCustomQueryEngine(\n    retriever=retriever,\n    response_synthesizer=synthesizer,\n    llm=llm,\n    qa_prompt=simple_qa_prompt,\n)\n\nres_answer = query_engine_answer.query(\"What's the arts and culture scene in Berlin?\")",
-      "cell": 58,
-      "answerSource": "2. RAG.ipynb"
-    },
-    "d2_prep-cell-16": {
-      "source": "dataset = []\n\nwith bz2.open(file_path, 'rt') as file:\n    for line in file:\n        try:\n            data = json.loads(line.strip())\n            dataset.append(data)\n        except json.JSONDecodeError as e:\n            print(f\"Error decoding JSON: {e}\")",
-      "cell": 16,
-      "answerSource": "1. Data_preprocessing.ipynb"
-    },
-    "d2_prep-cell-21": {
-      "source": "unique_domains = {}\nfor item in dataset:\n    if 'domain' in item:\n        domain_value = item['domain']\n        if domain_value not in unique_domains:\n            unique_domains[domain_value] = item\n\nprint(\"Unique domains and their example items:\\n\")\nfor domain, example_item in unique_domains.items():\n    print(f\"Domain: {domain}\")\n    question = example_item['query']\n    answer = example_item['answer']\n    print(f\"Example question: {question}\")\n    print(f\"Example answer: {answer}\\n\")",
-      "cell": 21,
-      "answerSource": "1. Data_preprocessing.ipynb"
-    },
-    "d2_prep-cell-28": {
-      "source": "unique_question_types = {}\nfor item in dataset:\n    if 'question_type' in item:\n        question_type = item['question_type']\n        if question_type not in unique_question_types:\n            unique_question_types[question_type] = item\n\nprint(\"Unique question_type and their example items:\\n\")\nfor question_type, example_item in unique_question_types.items():\n    print(f\"Question type: {question_type}\")\n    question = example_item['query']\n    answer = example_item['answer']\n    print(f\"Example question: {question}\")\n    print(f\"Example answer: {answer}\\n\")",
-      "cell": 28,
-      "answerSource": "1. Data_preprocessing.ipynb"
-    },
-    "d2_prep-cell-31": {
-      "source": "question_type_counts = Counter([item['question_type'] for item in dataset])\n\nplt.figure(figsize=(10, 6))\nplt.bar(question_type_counts.keys(), question_type_counts.values())\nplt.xlabel('Question Type')\nplt.ylabel('Count')\nplt.title('Number of Data Items per Question Type')\nplt.xticks(rotation=45, ha='right')\nplt.tight_layout()\nplt.show()",
-      "cell": 31,
-      "answerSource": "1. Data_preprocessing.ipynb"
-    },
-    "d2_prep-cell-44": {
-      "source": "from bs4 import BeautifulSoup\nfrom blingfire import text_to_sentences_and_offsets\n\nall_chunks = []\n\nfor html_text in example_data['search_results']:\n    soup = BeautifulSoup(html_text[\"page_result\"], features=\"lxml\")\n    text = soup.get_text(\" \", strip=True)\n    if not text:\n        all_chunks.append(\"\")\n    else:\n        _, offsets = text_to_sentences_and_offsets(text)\n\n        chunks = []\n\n        for start, end in offsets:\n            chunk = text[start:end][:4000]\n            all_chunks.append(chunk)\n\nprint(all_chunks[:1])",
-      "cell": 44,
-      "answerSource": "1. Data_preprocessing.ipynb"
-    },
-    "d2_task1-cell-7": {
-      "source": "def parse_htmls(search_results):\n    all_documents = []\n\n    # Process each HTML text from the search results to extract text content.\n    for html_text in search_results:\n\n        # Parse the HTML content using BeautifulSoup\n        soup = BeautifulSoup(html_text[\"page_result\"], features=\"lxml\")\n        text = soup.get_text(\" \", strip=True)  # Use space as a separator, strip whitespaces\n        all_documents.append(text)\n\n    return all_documents\n\ndef extract_chunks(all_documents):\n    # Initialize a list to hold all extracted sentences from the search results.\n    all_chunks = []\n\n    for document in all_documents:\n\n        if not document:\n            # If no document is extracted, add an empty string as a placeholder.\n            all_chunks.append(\"\")\n        else:\n\n            # Extract offsets of sentences from the document\n            _, offsets = text_to_sentences_and_offsets(document)\n\n            # Initialize a list to store sentences\n            chunks = []\n\n            # Iterate through the list of offsets and extract sentences\n            for start, end in offsets:\n                # Extract the sentence and limit its length\n                chunk = document[start:end][:MAX_CONTEXT_SENTENCE_LENGTH]\n                all_chunks.append(chunk)\n\n    return all_chunks",
-      "cell": 7,
-      "answerSource": "2. Task_1.ipynb"
-    },
-    "d2_task1-cell-12": {
-      "source": "class BaseRetriever:\n    def __init__(self,):\n\n    def embed_text(self, texts):\n        \"\"\"Generate embeddings using OpenAI's embedding model.\"\"\"\n        if isinstance(texts, str):\n            texts = [texts]\n\n        response = self.client.embeddings.create(\n            model=\"text-embedding-3-small\",\n            input=texts\n        )\n\n        # Extract embeddings correctly from the response object\n        embeddings = [np.array(item.embedding) for item in response.data]  # Adjust based on actual attributes\n        return np.array(embeddings)\n\n    def retrieve(self, query, search_results, topk):\n        # Get documents\n        all_documents = parse_htmls(search_results)\n\n        # Get chunks\n        all_chunks = extract_chunks(all_documents)\n\n        # Generate embeddings for all chunks and the query.\n        all_embeddings = self.embed_text(all_chunks)\n        query_embedding = self.embed_text(query)[0]  # Single query embedding\n\n        # Calculate cosine similarity between query and sentence embeddings, and select the top sentences.\n        cosine_scores = np.dot(all_embeddings, query_embedding) / (\n            np.linalg.norm(all_embeddings, axis=1) * np.linalg.norm(query_embedding)\n        )\n        top_k_indices = (-cosine_scores).argsort()[:topk]\n        top_k_chunks = np.array(all_chunks)[top_k_indices]\n\n        return top_k_chunks",
-      "cell": 12,
-      "answerSource": "2. Task_1.ipynb"
     },
     "d2_task1-cell-16": {
       "source": "from llama_index.core.schema import Document\nfrom llama_index.core.node_parser import SentenceSplitter\nfrom llama_index.core import VectorStoreIndex, Settings\nfrom llama_index.embeddings.openai import OpenAIEmbedding\n\nSettings.embed_model = OpenAIEmbedding(model=\"text-embedding-3-small\")\n\nclass LlamaIndexRetriever:\n  def __init__(self):\n      self.parser = SentenceSplitter(chunk_size=512, chunk_overlap=0)\n\n  def retrieve(self, query, search_results, topk):\n      documents = []\n\n      for document in parse_htmls(search_results):\n        if not document:\n            # If no text is extracted, add an empty string as a placeholder.\n            documents.append(Document(text=\"\"))\n        else:\n            documents.append(Document(text=document))\n\n      # Split documents into chunks & Create vector index\n      base_index = VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])\n\n      # Execute query\n      base_retriever = base_index.as_retriever(similarity_top_k=topk)\n\n      retrieved_nodes = base_retriever.retrieve(query)\n\n      retrieved_results = [retrieved_node.node.get_content().strip() for retrieved_node in retrieved_nodes]\n\n      return retrieved_results",
@@ -440,35 +294,10 @@
       "cell": 23,
       "answerSource": "2. Task_1.ipynb"
     },
-    "d2_task1-cell-29": {
-      "source": "class RAG:\n    def __init__(self):\n        self.retriever = LlamaIndexRetriever()\n        self.reader = Reader()\n\n    def inference(self, query, search_results, topk):\n        # 1. retrieve relevant chunks\n        retrieved_results = self.retriever.retrieve(query, search_results, topk)\n\n        # 2. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, retrieved_results)\n\n        return answer, retrieved_results",
-      "cell": 29,
+    "d2_task1-cell-25": {
+      "source": "from openai import OpenAI\n\noai_client = OpenAI()\n\nclass Reader:\n  def __init__(self):\n\n    self.system_prompt = \"\"\"\n    You are provided with a question and various references.\n    Your task is to answer the question succinctly, using the fewest words possible.\n    If the references do not contain the necessary information to answer the question, respond with 'I don't know'.\n    There is no need to explain the reasoning behind your answers.\n    \"\"\"\n\n  def generate_response(self, query: str, top_k_chunks: list) -> str:\n      \"\"\"\n      Generate answer from context.\n      \"\"\"\n      llm_input = self.prompt_generator(query, top_k_chunks)\n      completion = oai_client.chat.completions.create(\n      model=\"gpt-3.5-turbo\",\n      temperature=0,\n      messages=\n      llm_input\n      ).choices[0].message.content\n      return completion\n\n  def prompt_generator(self, query, top_k_chunks):\n      user_message = \"\"\n      references = \"\"\n\n      if len(top_k_chunks) > 0:\n          references += \"# References \\n\"\n          # Format the top sentences as references in the model's prompt template.\n          for chunk_id, chunk in enumerate(top_k_chunks):\n              references += f\"- {chunk.strip()}\\n\"\n\n      references = references[:MAX_CONTEXT_REFERENCES_LENGTH]\n      # Limit the length of references to fit the model's input size.\n\n      user_message += f\"{references}\\n------\\n\\n\"\n      user_message\n      user_message += f\"Using only the references listed above, answer the following question: \\n\"\n      user_message += f\"Question: {query}\\n\"\n\n      llm_input = [\n        {\"role\": \"system\", \"content\": self.system_prompt},\n        {\"role\": \"user\", \"content\": user_message},\n      ]\n\n      return llm_input",
+      "cell": 25,
       "answerSource": "2. Task_1.ipynb"
-    },
-    "d2_task2-cell-8": {
-      "source": "class CRAG(object):\n    def __init__(self, server = None):\n\n    def finance_get_company_name(self, query:str):\n        url = self.server + '/finance/get_company_name'\n        headers={'accept': \"application/json\"}\n        data = {'query': query}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_ticker_by_name(self, query:str):\n        url = self.server + '/finance/get_ticker_by_name'\n        headers={'accept': \"application/json\"}\n        data = {'query': query}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_price_history(self, ticker_name:str):\n        url = self.server + '/finance/get_price_history'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_detailed_price_history(self, ticker_name:str):\n        url = self.server + '/finance/get_detailed_price_history'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_dividends_history(self, ticker_name:str):\n        url = self.server + '/finance/get_dividends_history'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_market_capitalization(self, ticker_name:str):\n        url = self.server + '/finance/get_market_capitalization'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_eps(self, ticker_name:str):\n        url = self.server + '/finance/get_eps'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_pe_ratio(self, ticker_name:str):\n        url = self.server + '/finance/get_pe_ratio'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)\n\n    def finance_get_info(self, ticker_name:str):\n        url = self.server + '/finance/get_info'\n        headers={'accept': \"application/json\"}\n        data = {'query': ticker_name}\n        result = requests.post(url, json=data, headers=headers)\n        return json.loads(result.text)",
-      "cell": 8,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-13": {
-      "source": "def prompt_generator(query):\n    user_message = \"\"\n    user_message += f\"Query: {query}\\n\"\n\n    llm_input = [\n      {\"role\": \"system\", \"content\": entity_extract_template},\n      {\"role\": \"user\", \"content\": user_message},\n    ]\n\n    return llm_input",
-      "cell": 13,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-15": {
-      "source": "import json\nfrom openai import OpenAI\nfrom json import JSONDecoder\n\noai_client = OpenAI()\n\ndef generate_query(query):\n    llm_input = prompt_generator(query)\n    completion = oai_client.chat.completions.create(\n    model=\"gpt-3.5-turbo\",\n    temperature=0,\n    messages=\n    llm_input\n    ).choices[0].message.content\n\n    try:\n        completion = json.loads(completion)\n    except:\n        completion = extract_json_objects(completion)\n\n    if \"domain\" in completion.keys():\n        domain = completion[\"domain\"]\n        is_finance = domain == \"finance\"\n    else:\n        is_finance = False\n\n    return completion, is_finance\n\ndef extract_json_objects(text, decoder=JSONDecoder()):\n    \"\"\"Find JSON objects in text, and yield the decoded JSON data\n    \"\"\"\n    pos = 0\n    results = []\n    while True:\n        match = text.find(\"{\", pos)\n        if match == -1:\n            break\n        try:\n            result, index = decoder.raw_decode(text[match:])\n            results.append(result)\n            pos = match + index\n        except ValueError:\n            pos = match + 1\n    return results",
-      "cell": 15,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-19": {
-      "source": "import datetime\nfrom datetime import timedelta\nfrom dateutil import parser\nimport pytz\nimport re\n\ndef normalize_key(key):\n    return re.sub(r'[^a-zA-Z0-9]', '', key).lower()\n\ndef get_metric_from_response(response, metric):\n    normalized_metric = normalize_key(metric)\n    if response != None:\n        for key, value in response.items():\n            if normalize_key(key) == normalized_metric:\n                return value\n    return None\n\n\ndef convert_to_standard_format(date_string):\n    try:\n        dt = parser.parse(date_string)\n\n        est = pytz.timezone('US/Eastern')\n\n        if dt.tzinfo is None:\n            dt = est.localize(dt)\n        else:\n            dt = dt.astimezone(est)\n        dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)\n\n        formatted_date = dt.strftime('%Y-%m-%d %H:%M:%S %Z')\n        return formatted_date\n    except (ValueError, OverflowError) as e:\n        return date_string\n\ndef add_one_day(date_string):\n    try:\n        dt = parser.parse(date_string)\n\n        est = pytz.timezone('US/Eastern')\n\n        if dt.tzinfo is None:\n            dt = est.localize(dt)\n        else:\n            dt = dt.astimezone(est)\n\n        dt_plus_one = dt + timedelta(days=1)\n        dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)\n        formatted_date = dt_plus_one.strftime('%Y-%m-%d %H:%M:%S %Z')\n        return formatted_date\n    except (ValueError, OverflowError) as e:\n        return f\"Invalid date string: {e}\"\n\ndef subtract_one_day(date_string):\n    try:\n        dt = parser.parse(date_string)\n\n        est = pytz.timezone('US/Eastern')\n\n        if dt.tzinfo is None:\n            dt = est.localize(dt)\n        else:\n            dt = dt.astimezone(est)\n\n        dt_minus_one = dt - timedelta(days=1)\n        dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)\n        formatted_date = dt_minus_one.strftime('%Y-%m-%d %H:%M:%S %Z')\n        return formatted_date\n    except (ValueError, OverflowError) as e:\n        return f\"Invalid date string: {e}\"",
-      "cell": 19,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-21": {
-      "source": "import copy\n\ndef get_finance_kg_results(generated_query):\n    formatted_time_list = []\n    if 'datetime' in generated_query:\n        datetime_list = generated_query['datetime'].split(' - ')\n        for datetime in datetime_list:\n            formatted_time_list.append(convert_to_standard_format(datetime.strip()))\n\n\n    kg_results = []\n    res = \"\"\n    if \"market_identifier\" in generated_query.keys() and generated_query[\"market_identifier\"] is not None:\n        if isinstance(generated_query[\"market_identifier\"], str):\n            company_names = generated_query[\"market_identifier\"].split(\",\")\n        else:\n            company_names = generated_query[\"market_identifier\"]\n\n        for company_name in company_names:\n            try:\n                res = api.finance_get_company_name(company_name)[\"result\"]\n\n                if res == []:\n                    ticker_name = company_name.upper()\n                else:\n                    ticker_name = api.finance_get_ticker_by_name(res[0])[\"result\"]\n\n                if generated_query['metric'].lower().strip() == 'price':\n                    response = api.finance_get_price_history(ticker_name)['result']\n                elif generated_query['metric'].lower().strip() == 'dividend':\n                    response = api.finance_get_dividends_history(ticker_name)['result']\n                elif generated_query['metric'].lower().strip() == 'p/e ratio':\n                    response = api.finance_get_pe_ratio(ticker_name)['result']\n                elif generated_query['metric'].lower().strip() == 'eps':\n                    response = api.finance_get_eps(ticker_name)[\"result\"]\n                elif generated_query['metric'].lower().strip() == 'marketcap' :\n                    response = api.finance_get_market_capitalization(ticker_name)['result']\n                else:\n                    response = api.finance_get_info(ticker_name)['result']\n                    metric_value = get_metric_from_response(response, generated_query['metric'])\n                    if metric_value is not None:\n                        response = metric_value\n\n                try:\n                    for formatted_time in formatted_time_list:\n                        if formatted_time in response:\n                            filtered_response = copy.deepcopy(response[formatted_time])\n                        elif add_one_day(formatted_time) in response:\n                            filtered_response = copy.deepcopy(response[add_one_day(formatted_time)])\n                        elif subtract_one_day(formatted_time) in response:\n                            filtered_response = copy.deepcopy(response[subtract_one_day(formatted_time)])\n                        else:\n                            filtered_response = copy.deepcopy(response)\n                        kg_results.append({company_name + \" \" + generated_query[\"metric\"]: filtered_response, 'time': formatted_time})\n                except:\n                    kg_results.append({company_name + \" \" + generated_query[\"metric\"]: response})\n\n            except Exception as e:\n                print(\"Fail to parse the generated query\")\n                pass\n\n    kg_results = \"<DOC>\\n\".join([str(res) for res in kg_results]) if len(kg_results) > 0 else \"\"\n    return  kg_results",
-      "cell": 21,
-      "answerSource": "3. Task_2.ipynb"
     },
     "d2_task2-cell-25": {
       "source": "class KGQueryEngine:\n    def query(self, query):\n        generated_query, is_finance = self.generate_query(query)\n\n        if is_finance:\n            kg_results = self.get_finance_kg_results(generated_query)\n        else:\n            kg_results = \"\"\n\n        return kg_results, is_finance\n\n    def generate_query(self, query):\n        llm_input = prompt_generator(query)\n        completion = oai_client.chat.completions.create(\n        model=\"gpt-3.5-turbo\",\n        temperature=0,\n        messages=\n        llm_input\n        ).choices[0].message.content\n\n        try:\n            completion = json.loads(completion)\n        except:\n            completion = extract_json_objects(completion)\n\n        if \"domain\" in completion.keys():\n            domain = completion[\"domain\"]\n            is_finance = domain == \"finance\"\n        else:\n            is_finance = False\n\n        return completion, is_finance\n\n    def get_finance_kg_results(self, generated_query):\n        formatted_time_list = []\n        if 'datetime' in generated_query:\n            datetime_list = generated_query['datetime'].split(' - ')\n            for datetime in datetime_list:\n                formatted_time_list.append(convert_to_standard_format(datetime.strip()))\n\n\n        kg_results = []\n        res = \"\"\n        if \"market_identifier\" in generated_query.keys() and generated_query[\"market_identifier\"] is not None:\n            if isinstance(generated_query[\"market_identifier\"], str):\n                company_names = generated_query[\"market_identifier\"].split(\",\")\n            else:\n                company_names = generated_query[\"market_identifier\"]\n\n            for company_name in company_names:\n                try:\n                    res = api.finance_get_company_name(company_name)[\"result\"]\n\n                    if res == []:\n                        ticker_name = company_name.upper()\n                    else:\n                        ticker_name = api.finance_get_ticker_by_name(res[0])[\"result\"]\n\n                    if generated_query['metric'].lower().strip() == 'price':\n                        response = api.finance_get_price_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'dividend':\n                        response = api.finance_get_dividends_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'p/e ratio':\n                        response = api.finance_get_pe_ratio(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'eps':\n                        response = api.finance_get_eps(ticker_name)[\"result\"]\n                    elif generated_query['metric'].lower().strip() == 'marketcap' :\n                        response = api.finance_get_market_capitalization(ticker_name)['result']\n                    else:\n                        response = api.finance_get_info(ticker_name)['result']\n                        metric_value = get_metric_from_response(response, generated_query['metric'])\n                        if metric_value is not None:\n                            response = metric_value\n\n                    try:\n                        for formatted_time in formatted_time_list:\n                            if formatted_time in response:\n                                filtered_response = copy.deepcopy(response[formatted_time])\n                            elif add_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[add_one_day(formatted_time)])\n                            elif subtract_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[subtract_one_day(formatted_time)])\n                            else:\n                                filtered_response = copy.deepcopy(response)\n                            kg_results.append({company_name + \" \" + generated_query[\"metric\"]: filtered_response, 'time': formatted_time})\n                    except:\n                        kg_results.append({company_name + \" \" + generated_query[\"metric\"]: response})\n\n                except Exception as e:\n                    print(\"Fail to parse the generated query\")\n                    pass\n\n        kg_results = \"<DOC>\\n\".join([str(res) for res in kg_results]) if len(kg_results) > 0 else \"\"\n        return  kg_results\n\n    def prompt_generator(self, query):\n        user_message = \"\"\n        user_message += f\"Query: {query}\\n\"\n\n        llm_input = [\n          {\"role\": \"system\", \"content\": entity_extract_template},\n          {\"role\": \"user\", \"content\": user_message},\n        ]\n\n        return llm_input",
@@ -485,26 +314,6 @@
       "cell": 36,
       "answerSource": "3. Task_2.ipynb"
     },
-    "d2_mcp-cell-17": {
-      "source": "def parse_response(response):\n    try:\n        response = response.lower()\n        model_resp = json.loads(response)\n        answer = -1\n        if \"accuracy\" in model_resp and (\n            (\n              model_resp[\"accuracy\"] is True\n            )\n            or\n            (\n                isinstance(model_resp[\"accuracy\"], str)\n                and model_resp[\"accuracy\"].lower() == \"true\"\n            )\n        ):\n            answer = 1\n        else:\n            raise ValueError(f\"Could not parse answer from response: {model_resp}\")\n\n        return answer\n    except:\n        return -1\n\ntest_text = \"\"\"{\n    \"Accuracy\": \"True\"\n}\"\"\"\n\nprint(parse_response(test_text))",
-      "cell": 17,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-19": {
-      "source": "def CRAG_evaluation(question, ground_truth, prediction):\n  context_template = f\"\"\"Question: {question}\n  List of Ground Truth answers: {ground_truth}\n  Model Prediction: {prediction}\n  \"\"\"\n\n  evaluation_result = generate_answer(user_prompt=context_template, system_prompt=INSTRUCTIONS)\n\n  eval_res = parse_response(evaluation_result)\n\n  return eval_res",
-      "cell": 19,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-22": {
-      "source": "class RAG:\n    def __init__(self, server=None):\n        self.retriever = LlamaIndexRetriever()\n        self.kg_query_engine = KGQueryEngine(server=server)\n        self.reader = Reader()\n\n    def retrieve(self, query, search_results, topk):\n        retrieved_results = self.retriever.retrieve(query, search_results, topk)\n\n        kg_results = self.kg_query_engine.query(query)\n\n        combined_results = [kg_results]\n        combined_results.extend(retrieved_results)\n\n        return combined_results\n\n    def generate_response(self, query, retrieved_results):\n        answer = self.reader.generate_response(query, retrieved_results)\n        return answer\n\n    def inference(self, query, search_results, topk):\n        retrieved_results = self.retrieve(query, search_results, topk)\n        answer = self.generate_response(query, retrieved_results)\n        return {\n            \"retrieved_results\": retrieved_results,\n            \"answer\": answer\n        }\n\nrag = RAG(server=external_kg_server)",
-      "cell": 22,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-25": {
-      "source": "n_miss, n_correct, n_correct_exact = 0, 0, 0\n\nfor data in tqdm(dataset):\n  if data['interaction_id'] not in finance_test_dataset_ids:\n    continue\n\n  question = data['query']\n  ground_truth_lowercase = str(data['answer']).strip().lower()\n  web_search_results = data['search_results']\n\n  prediction_lowercase = rag.inference(question, web_search_results, 5)['answer'].lower()\n\n  if prediction_lowercase == ground_truth_lowercase:\n      n_correct_exact += 1\n      continue\n  elif \"i don't know\" in prediction_lowercase:\n      n_miss += 1\n      continue\n\n  acceptable = CRAG_evaluation(question, ground_truth_lowercase, prediction_lowercase)\n\n  if acceptable == 1:\n    n_correct += 1\n\nn_hallucinate = (len(finance_test_dataset_ids) - n_correct_exact - n_correct - n_miss)\n\nCRAG_score = n_correct_exact + 0.5*n_correct - n_hallucinate\n\nprint(\"\\n\\n\")\nprint(\"Number of correct answers:\", n_correct)\nprint(\"Number of exact correct answers:\", n_correct_exact)\nprint(\"Number of missed answers:\", n_miss)\nprint(\"Number of hallucinated answers:\", n_hallucinate)\nprint(\"CRAG score:\", CRAG_score)",
-      "cell": 25,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
     "d2_mcp-cell-37": {
       "source": "from llama_index.tools.mcp import BasicMCPClient, McpToolSpec\nfrom llama_index.core.agent.workflow import FunctionAgent, ToolCallResult, ToolCall\nfrom llama_index.core.workflow import Context\n\nimport dotenv",
       "cell": 37,
@@ -513,11 +322,6 @@
     "d2_mcp-cell-42": {
       "source": "mcp_client = BasicMCPClient(external_mcp_server)\nmcp_tool = McpToolSpec(client=mcp_client)\n\ntools = await mcp_tool.to_tool_list_async()\nprint(\"\\n=== Available Tools ===\\n\")\nfor tool in tools:\n    print(f\"🔧 Name       : {tool.metadata.name}\")\n    print(f\"   Description: {tool.metadata.description}\\n\")",
       "cell": 42,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-43": {
-      "source": "resources = await mcp_tool.fetch_resources()\n\nprint(\"\\n=== Available Resources ===\\n\")\nfor resource in resources:\n    print(f\"📦 URI        : {resource.uri}\")\n    print(f\"   Name       : {resource.name}\")\n    print(f\"   Description: {resource.description}\")\n    print(f\"   MIME Type  : {resource.mimeType}\\n\")",
-      "cell": 43,
       "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
     },
     "d2_mcp-cell-46": {
@@ -1592,19 +1396,6 @@
       "chapterNumber": "D1-01",
       "chapterTitle": "LlamaIndex Basics",
       "file": "1. Llama_index.ipynb",
-      "topic": "문서 로딩",
-      "prompt": "data 폴더의 문서를 LlamaIndex Document로 불러오세요.",
-      "answer": "SimpleDirectoryReader(\"data\").load_data()",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-12"
-    },
-    {
-      "id": "rag-002",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
       "topic": "인덱스 생성",
       "prompt": "문서 목록으로 VectorStoreIndex를 생성하세요.",
       "answer": "VectorStoreIndex.from_documents(documents)",
@@ -1612,98 +1403,7 @@
       "sourceId": "d1_llama-cell-15"
     },
     {
-      "id": "rag-003",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "문장 분할",
-      "prompt": "노드 분할에 사용할 SentenceSplitter를 생성하세요.",
-      "answer": "SentenceSplitter(chunk_size=1024, chunk_overlap=200)",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-21"
-    },
-    {
-      "id": "rag-004",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "노드 생성",
-      "prompt": "문서를 노드 단위로 분할하세요.",
-      "answer": "parser.get_nodes_from_documents(documents)",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-21"
-    },
-    {
-      "id": "rag-005",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "토큰화",
-      "prompt": "GPT-3.5 Turbo 모델에 맞는 tiktoken 인코더를 선택하세요.",
-      "answer": "tiktoken.encoding_for_model(\"gpt-3.5-turbo\")",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-25"
-    },
-    {
-      "id": "rag-006",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "변환 파이프라인",
-      "prompt": "짧은 chunk와 overlap을 갖는 SentenceSplitter를 만드세요.",
-      "answer": "SentenceSplitter(chunk_size=200, chunk_overlap=50)",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-27"
-    },
-    {
-      "id": "rag-007",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "변환 파이프라인",
-      "prompt": "text_splitter 변환을 적용하여 인덱스를 생성하세요.",
-      "answer": "VectorStoreIndex.from_documents(documents=documents, transformations=[text_splitter])",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-27"
-    },
-    {
-      "id": "rag-008",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "Query Engine",
-      "prompt": "인덱스를 질의 엔진으로 변환하세요.",
-      "answer": "index.as_query_engine()",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-32"
-    },
-    {
-      "id": "rag-009",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "질의 실행",
-      "prompt": "query_engine으로 질문을 실행하세요.",
-      "answer": "query_engine.query(\"What is the first programs the author tried writing?\")",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-36"
-    },
-    {
-      "id": "rag-010",
+      "id": "rag-002",
       "subject": "RAG",
       "chapterId": "rag-d1-01",
       "chapterNumber": "D1-01",
@@ -1716,7 +1416,7 @@
       "sourceId": "d1_llama-cell-49"
     },
     {
-      "id": "rag-011",
+      "id": "rag-003",
       "subject": "RAG",
       "chapterId": "rag-d1-01",
       "chapterNumber": "D1-01",
@@ -1729,475 +1429,7 @@
       "sourceId": "d1_llama-cell-49"
     },
     {
-      "id": "rag-012",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "문서 추가",
-      "prompt": "새 텍스트와 ID를 갖는 Document를 만드세요.",
-      "answer": "Document(text=data_text, id_=\"new_doc_id\")",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-59"
-    },
-    {
-      "id": "rag-013",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "문서 추가",
-      "prompt": "기존 인덱스에 새 문서를 삽입하세요.",
-      "answer": "index.insert(docu)",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-59"
-    },
-    {
-      "id": "rag-014",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "문서 삭제",
-      "prompt": "docstore에서도 함께 제거하도록 참조 문서를 삭제하세요.",
-      "answer": "index.delete_ref_doc(id, delete_from_docstore=True)",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-70"
-    },
-    {
-      "id": "rag-015",
-      "subject": "RAG",
-      "chapterId": "rag-d1-01",
-      "chapterNumber": "D1-01",
-      "chapterTitle": "LlamaIndex Basics",
-      "file": "1. Llama_index.ipynb",
-      "topic": "응답 합성",
-      "prompt": "compact 모드의 response synthesizer를 만드세요.",
-      "answer": "get_response_synthesizer(response_mode=\"compact\")",
-      "occurrence": 0,
-      "sourceId": "d1_llama-cell-77"
-    },
-    {
-      "id": "rag-016",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Wikipedia Reader",
-      "prompt": "도시 이름으로 Wikipedia 문서를 불러오세요.",
-      "answer": "reader.load_data(city_names, auto_suggest=False)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-25"
-    },
-    {
-      "id": "rag-017",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "인덱스 생성",
-      "prompt": "Wikipedia 문서로 벡터 인덱스를 만드세요.",
-      "answer": "VectorStoreIndex.from_documents(documents)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-28"
-    },
-    {
-      "id": "rag-018",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Query Engine",
-      "prompt": "인덱스에서 query engine을 생성하세요.",
-      "answer": "index.as_query_engine()",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-30"
-    },
-    {
-      "id": "rag-019",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "RAG 검색",
-      "prompt": "직접 만든 RAG 클래스에서 query engine으로 문맥을 검색하세요.",
-      "answer": "query_engine.query(query)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-38"
-    },
-    {
-      "id": "rag-020",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "RAG 생성",
-      "prompt": "검색 문맥을 사용해 채팅 완성 결과의 텍스트를 가져오세요.",
-      "answer": ").choices[0].message.content",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-38"
-    },
-    {
-      "id": "rag-021",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "RAG 흐름",
-      "prompt": "검색 결과를 응답 생성 단계에 전달하세요.",
-      "answer": "self.generate_response(query, context_str)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-38"
-    },
-    {
-      "id": "rag-022",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Retriever",
-      "prompt": "벡터 인덱스를 retriever로 변환하세요.",
-      "answer": "index.as_retriever()",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-42"
-    },
-    {
-      "id": "rag-023",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "검색",
-      "prompt": "질문과 관련된 노드를 검색하세요.",
-      "answer": "retriever.retrieve(city_question)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-42"
-    },
-    {
-      "id": "rag-024",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Chunk 설정",
-      "prompt": "짧은 문맥용 SentenceSplitter 설정을 완성하세요.",
-      "answer": "SentenceSplitter(chunk_size=200, chunk_overlap=50)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-45"
-    },
-    {
-      "id": "rag-025",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Chunk 설정",
-      "prompt": "긴 문맥용 SentenceSplitter 설정을 완성하세요.",
-      "answer": "SentenceSplitter(chunk_size=1024, chunk_overlap=200)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-45"
-    },
-    {
-      "id": "rag-026",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Top-k 검색",
-      "prompt": "짧은 chunk 인덱스에서 상위 1개를 검색하도록 retriever를 만드세요.",
-      "answer": "index_short.as_retriever(similarity_top_k=1)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-47"
-    },
-    {
-      "id": "rag-027",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "Top-k 검색",
-      "prompt": "짧은 chunk 인덱스에서 상위 2개를 검색하도록 설정하세요.",
-      "answer": "index_short.as_retriever(similarity_top_k=2)",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-53"
-    },
-    {
-      "id": "rag-028",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "문맥 결합",
-      "prompt": "검색된 노드 내용을 두 줄 간격으로 합치세요.",
-      "answer": "\"\\n\\n\".join([n.node.get_content() for n in nodes])",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-56"
-    },
-    {
-      "id": "rag-029",
-      "subject": "RAG",
-      "chapterId": "rag-d1-02",
-      "chapterNumber": "D1-02",
-      "chapterTitle": "RAG Pipeline",
-      "file": "2. RAG.ipynb",
-      "topic": "응답 합성",
-      "prompt": "compact 모드의 response synthesizer를 생성하세요.",
-      "answer": "get_response_synthesizer(response_mode=\"compact\")",
-      "occurrence": 0,
-      "sourceId": "d1_rag-cell-58"
-    },
-    {
-      "id": "rag-030",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "압축 데이터",
-      "prompt": "bz2 압축 JSONL 파일을 텍스트 모드로 여세요.",
-      "answer": "bz2.open(file_path, 'rt')",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-16"
-    },
-    {
-      "id": "rag-031",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "JSONL 파싱",
-      "prompt": "한 줄의 앞뒤 공백을 제거하고 JSON으로 파싱하세요.",
-      "answer": "json.loads(line.strip())",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-16"
-    },
-    {
-      "id": "rag-032",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "데이터 적재",
-      "prompt": "파싱된 항목을 dataset에 추가하세요.",
-      "answer": "dataset.append(data)",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-16"
-    },
-    {
-      "id": "rag-033",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "도메인 추출",
-      "prompt": "각 도메인의 첫 예시만 저장하세요.",
-      "answer": "unique_domains[domain_value] = item",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-21"
-    },
-    {
-      "id": "rag-034",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "질문 유형",
-      "prompt": "각 question_type의 첫 예시만 저장하세요.",
-      "answer": "unique_question_types[question_type] = item",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-28"
-    },
-    {
-      "id": "rag-035",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "분포 집계",
-      "prompt": "question_type별 데이터 개수를 세세요.",
-      "answer": "Counter([item['question_type'] for item in dataset])",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-31"
-    },
-    {
-      "id": "rag-036",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "HTML 파싱",
-      "prompt": "lxml 파서로 검색 결과 HTML을 파싱하세요.",
-      "answer": "BeautifulSoup(html_text[\"page_result\"], features=\"lxml\")",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-44"
-    },
-    {
-      "id": "rag-037",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "텍스트 추출",
-      "prompt": "HTML에서 공백 구분자를 사용해 텍스트만 추출하세요.",
-      "answer": "soup.get_text(\" \", strip=True)",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-44"
-    },
-    {
-      "id": "rag-038",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "문장 분할",
-      "prompt": "텍스트에서 문장 시작·끝 offset을 얻으세요.",
-      "answer": "text_to_sentences_and_offsets(text)",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-44"
-    },
-    {
-      "id": "rag-039",
-      "subject": "RAG",
-      "chapterId": "rag-d2-01",
-      "chapterNumber": "D2-01",
-      "chapterTitle": "Data Preprocessing",
-      "file": "1. Data_preprocessing.ipynb",
-      "topic": "Chunk 제한",
-      "prompt": "각 문장을 최대 4000자로 잘라 chunk를 만드세요.",
-      "answer": "text[start:end][:4000]",
-      "occurrence": 0,
-      "sourceId": "d2_prep-cell-44"
-    },
-    {
-      "id": "rag-040",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "HTML 파싱",
-      "prompt": "검색 결과의 HTML 본문을 텍스트로 변환하세요.",
-      "answer": "soup.get_text(\" \", strip=True)",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-7"
-    },
-    {
-      "id": "rag-041",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "문장 분할",
-      "prompt": "문서의 문장 offset을 추출하세요.",
-      "answer": "text_to_sentences_and_offsets(document)",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-7"
-    },
-    {
-      "id": "rag-042",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "Embedding",
-      "prompt": "OpenAI의 small embedding 모델로 임베딩을 생성하세요.",
-      "answer": "model=\"text-embedding-3-small\"",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-12"
-    },
-    {
-      "id": "rag-043",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "Embedding",
-      "prompt": "응답의 각 item에서 numpy embedding을 추출하세요.",
-      "answer": "[np.array(item.embedding) for item in response.data]",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-12"
-    },
-    {
-      "id": "rag-044",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "코사인 유사도",
-      "prompt": "문서와 질문 임베딩의 코사인 유사도를 계산하세요.",
-      "answer": "np.dot(all_embeddings, query_embedding) / (",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-12"
-    },
-    {
-      "id": "rag-045",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "Top-k",
-      "prompt": "유사도가 큰 순서대로 topk 인덱스를 선택하세요.",
-      "answer": "(-cosine_scores).argsort()[:topk]",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-12"
-    },
-    {
-      "id": "rag-046",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "LlamaIndex 설정",
-      "prompt": "기본 임베딩 모델을 OpenAI small 모델로 지정하세요.",
-      "answer": "OpenAIEmbedding(model=\"text-embedding-3-small\")",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-16"
-    },
-    {
-      "id": "rag-047",
-      "subject": "RAG",
-      "chapterId": "rag-d2-02",
-      "chapterNumber": "D2-02",
-      "chapterTitle": "Search Retrieval",
-      "file": "2. Task_1.ipynb",
-      "topic": "Chunk 설정",
-      "prompt": "LlamaIndex용 문장 분할기를 생성하세요.",
-      "answer": "SentenceSplitter(chunk_size=512, chunk_overlap=0)",
-      "occurrence": 0,
-      "sourceId": "d2_task1-cell-16"
-    },
-    {
-      "id": "rag-048",
+      "id": "rag-004",
       "subject": "RAG",
       "chapterId": "rag-d2-02",
       "chapterNumber": "D2-02",
@@ -2210,7 +1442,7 @@
       "sourceId": "d2_task1-cell-16"
     },
     {
-      "id": "rag-049",
+      "id": "rag-005",
       "subject": "RAG",
       "chapterId": "rag-d2-02",
       "chapterNumber": "D2-02",
@@ -2223,7 +1455,7 @@
       "sourceId": "d2_task1-cell-16"
     },
     {
-      "id": "rag-050",
+      "id": "rag-006",
       "subject": "RAG",
       "chapterId": "rag-d2-02",
       "chapterNumber": "D2-02",
@@ -2236,124 +1468,46 @@
       "sourceId": "d2_task1-cell-23"
     },
     {
-      "id": "rag-051",
+      "id": "rag-007",
       "subject": "RAG",
       "chapterId": "rag-d2-02",
       "chapterNumber": "D2-02",
       "chapterTitle": "Search Retrieval",
       "file": "2. Task_1.ipynb",
-      "topic": "RAG 흐름",
-      "prompt": "검색된 결과로 Reader의 응답을 생성하세요.",
-      "answer": "self.reader.generate_response(query, retrieved_results)",
+      "topic": "Prompt 구성",
+      "prompt": "검색된 chunk를 순회하며 프롬프트의 reference를 구성하세요.",
+      "answer": "for chunk_id, chunk in enumerate(top_k_chunks):",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-29"
+      "sourceId": "d2_task1-cell-23"
     },
     {
-      "id": "rag-052",
+      "id": "rag-008",
       "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "KG API",
-      "prompt": "JSON 본문과 헤더를 넣어 KG 서버에 POST 요청하세요.",
-      "answer": "requests.post(url, json=data, headers=headers)",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "Prompt 구성",
+      "prompt": "system prompt를 chat completion 입력 메시지에 넣으세요.",
+      "answer": "{\"role\": \"system\", \"content\": system_prompt}",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-8"
+      "sourceId": "d2_task1-cell-23"
     },
     {
-      "id": "rag-053",
+      "id": "rag-009",
       "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "질의 생성 Prompt",
-      "prompt": "질문을 Query 형식의 user message로 만드세요.",
-      "answer": "user_message += f\"Query: {query}\\n\"",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "Chat Completion",
+      "prompt": "검색 문맥으로 ChatGPT 응답을 생성하는 호출을 완성하세요.",
+      "answer": "oai_client.chat.completions.create(",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-13"
+      "sourceId": "d2_task1-cell-25"
     },
     {
-      "id": "rag-054",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "구조화 질의",
-      "prompt": "LLM 응답을 JSON 객체로 변환하세요.",
-      "answer": "json.loads(completion)",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-15"
-    },
-    {
-      "id": "rag-055",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "도메인 판별",
-      "prompt": "생성된 질의가 finance 도메인인지 확인하세요.",
-      "answer": "domain == \"finance\"",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-15"
-    },
-    {
-      "id": "rag-056",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "키 정규화",
-      "prompt": "영숫자 이외 문자를 제거하고 소문자로 바꾸세요.",
-      "answer": "re.sub(r'[^a-zA-Z0-9]', '', key).lower()",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-19"
-    },
-    {
-      "id": "rag-057",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "시간대 처리",
-      "prompt": "날짜 처리를 위한 미국 동부 시간대를 만드세요.",
-      "answer": "pytz.timezone('US/Eastern')",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-19"
-    },
-    {
-      "id": "rag-058",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "KG 결과",
-      "prompt": "회사명으로 ticker를 조회하세요.",
-      "answer": "api.finance_get_ticker_by_name(res[0])[\"result\"]",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-21"
-    },
-    {
-      "id": "rag-059",
-      "subject": "RAG",
-      "chapterId": "rag-d2-03",
-      "chapterNumber": "D2-03",
-      "chapterTitle": "Knowledge Graph RAG",
-      "file": "3. Task_2.ipynb",
-      "topic": "KG 결과",
-      "prompt": "여러 KG 결과를 DOC 구분자로 결합하세요.",
-      "answer": "\"<DOC>\\n\".join([str(res) for res in kg_results])",
-      "occurrence": 0,
-      "sourceId": "d2_task2-cell-21"
-    },
-    {
-      "id": "rag-060",
+      "id": "rag-010",
       "subject": "RAG",
       "chapterId": "rag-d2-03",
       "chapterNumber": "D2-03",
@@ -2366,7 +1520,7 @@
       "sourceId": "d2_task2-cell-25"
     },
     {
-      "id": "rag-061",
+      "id": "rag-011",
       "subject": "RAG",
       "chapterId": "rag-d2-03",
       "chapterNumber": "D2-03",
@@ -2379,7 +1533,7 @@
       "sourceId": "d2_task2-cell-31"
     },
     {
-      "id": "rag-062",
+      "id": "rag-012",
       "subject": "RAG",
       "chapterId": "rag-d2-03",
       "chapterNumber": "D2-03",
@@ -2392,7 +1546,7 @@
       "sourceId": "d2_task2-cell-36"
     },
     {
-      "id": "rag-063",
+      "id": "rag-013",
       "subject": "RAG",
       "chapterId": "rag-d2-03",
       "chapterNumber": "D2-03",
@@ -2405,63 +1559,11 @@
       "sourceId": "d2_task2-cell-36"
     },
     {
-      "id": "rag-064",
+      "id": "rag-014",
       "subject": "RAG",
       "chapterId": "rag-d2-04",
       "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "평가 응답 파싱",
-      "prompt": "평가 응답 문자열을 소문자로 만든 뒤 JSON으로 파싱하세요.",
-      "answer": "json.loads(response)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-17"
-    },
-    {
-      "id": "rag-065",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "CRAG 평가",
-      "prompt": "평가 지침과 문맥을 사용해 평가 모델을 호출하세요.",
-      "answer": "generate_answer(user_prompt=context_template, system_prompt=INSTRUCTIONS)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-19"
-    },
-    {
-      "id": "rag-066",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "검색 결합",
-      "prompt": "KG 결과 뒤에 웹 검색 결과를 결합하세요.",
-      "answer": "combined_results.extend(retrieved_results)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-22"
-    },
-    {
-      "id": "rag-067",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "CRAG 점수",
-      "prompt": "정답·부분 정답·환각 패널티로 CRAG 점수를 계산하세요.",
-      "answer": "n_correct_exact + 0.5*n_correct - n_hallucinate",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-25"
-    },
-    {
-      "id": "rag-068",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
+      "chapterTitle": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "topic": "MCP Import",
       "prompt": "LlamaIndex의 MCP 클라이언트와 도구 명세를 불러오세요.",
@@ -2470,24 +1572,11 @@
       "sourceId": "d2_mcp-cell-37"
     },
     {
-      "id": "rag-069",
+      "id": "rag-015",
       "subject": "RAG",
       "chapterId": "rag-d2-04",
       "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "Agent Import",
-      "prompt": "FunctionAgent와 ToolCall 이벤트 타입을 불러오세요.",
-      "answer": "from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult, ToolCall",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-37"
-    },
-    {
-      "id": "rag-070",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
+      "chapterTitle": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "topic": "MCP 연결",
       "prompt": "외부 SSE 주소로 MCP client를 생성하세요.",
@@ -2496,24 +1585,11 @@
       "sourceId": "d2_mcp-cell-42"
     },
     {
-      "id": "rag-071",
+      "id": "rag-016",
       "subject": "RAG",
       "chapterId": "rag-d2-04",
       "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "MCP 도구",
-      "prompt": "client로 MCP tool spec을 생성하세요.",
-      "answer": "McpToolSpec(client=mcp_client)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-42"
-    },
-    {
-      "id": "rag-072",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
+      "chapterTitle": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "topic": "도구 조회",
       "prompt": "MCP 서버의 도구 목록을 비동기로 가져오세요.",
@@ -2522,24 +1598,11 @@
       "sourceId": "d2_mcp-cell-42"
     },
     {
-      "id": "rag-073",
+      "id": "rag-017",
       "subject": "RAG",
       "chapterId": "rag-d2-04",
       "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "리소스 조회",
-      "prompt": "MCP 서버의 리소스를 비동기로 가져오세요.",
-      "answer": "await mcp_tool.fetch_resources()",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-43"
-    },
-    {
-      "id": "rag-074",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
+      "chapterTitle": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "topic": "Agent 생성",
       "prompt": "가져온 tools와 LLM으로 FunctionAgent를 만드세요.",
@@ -2548,50 +1611,11 @@
       "sourceId": "d2_mcp-cell-46"
     },
     {
-      "id": "rag-075",
+      "id": "rag-018",
       "subject": "RAG",
       "chapterId": "rag-d2-04",
       "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "Agent Context",
-      "prompt": "생성한 agent의 workflow context를 만드세요.",
-      "answer": "Context(self.agent)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-46"
-    },
-    {
-      "id": "rag-076",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "Agent 실행",
-      "prompt": "질문과 context로 agent 실행 handler를 만드세요.",
-      "answer": "self.agent.run(question, ctx=self.agent_context)",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-46"
-    },
-    {
-      "id": "rag-077",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
-      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "topic": "MCP RAG",
-      "prompt": "RAG 검색 전에 MCP agent를 초기화하세요.",
-      "answer": "await self.mcp_application.init_agent()",
-      "occurrence": 0,
-      "sourceId": "d2_mcp-cell-55"
-    },
-    {
-      "id": "rag-078",
-      "subject": "RAG",
-      "chapterId": "rag-d2-04",
-      "chapterNumber": "D2-04",
-      "chapterTitle": "RAG Evaluation & MCP",
+      "chapterTitle": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "topic": "MCP RAG",
       "prompt": "시간 정보가 포함된 질의를 MCP application에 보내세요.",

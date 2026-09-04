@@ -16,7 +16,7 @@ CHAPTERS = [
     {"id": "rag-d2-01", "subject": "RAG", "number": "D2-01", "title": "Data Preprocessing", "file": "1. Data_preprocessing.ipynb"},
     {"id": "rag-d2-02", "subject": "RAG", "number": "D2-02", "title": "Search Retrieval", "file": "2. Task_1.ipynb"},
     {"id": "rag-d2-03", "subject": "RAG", "number": "D2-03", "title": "Knowledge Graph RAG", "file": "3. Task_2.ipynb"},
-    {"id": "rag-d2-04", "subject": "RAG", "number": "D2-04", "title": "RAG Evaluation & MCP", "file": "4_RAG_framework_evaluation_with_MCP.ipynb"},
+    {"id": "rag-d2-04", "subject": "RAG", "number": "D2-04", "title": "MCP RAG", "file": "4_RAG_framework_evaluation_with_MCP.ipynb"},
 ]
 
 SOURCES = {
@@ -100,6 +100,9 @@ add("rag-d2-02", "d2_task1", 16, "Chunk 설정", "LlamaIndex용 문장 분할기
 add("rag-d2-02", "d2_task1", 16, "벡터 인덱스", "문서와 parser 변환으로 벡터 인덱스를 만드세요.", "VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])")
 add("rag-d2-02", "d2_task1", 16, "Top-k 검색", "요청된 topk를 similarity_top_k로 전달하세요.", "base_index.as_retriever(similarity_top_k=topk)")
 add("rag-d2-02", "d2_task1", 23, "Prompt 구성", "참조 문맥을 모델 입력 최대 길이로 제한하세요.", "references[:MAX_CONTEXT_REFERENCES_LENGTH]")
+add("rag-d2-02", "d2_task1", 23, "Prompt 구성", "검색된 chunk를 순회하며 프롬프트의 reference를 구성하세요.", "for chunk_id, chunk in enumerate(top_k_chunks):")
+add("rag-d2-02", "d2_task1", 23, "Prompt 구성", "system prompt를 chat completion 입력 메시지에 넣으세요.", '{"role": "system", "content": system_prompt}')
+add("rag-d2-02", "d2_task1", 25, "Chat Completion", "검색 문맥으로 ChatGPT 응답을 생성하는 호출을 완성하세요.", "oai_client.chat.completions.create(")
 add("rag-d2-02", "d2_task1", 29, "RAG 흐름", "검색된 결과로 Reader의 응답을 생성하세요.", "self.reader.generate_response(query, retrieved_results)")
 
 # Day 2 — knowledge graph RAG
@@ -132,6 +135,41 @@ add("rag-d2-04", "d2_mcp", 46, "Agent Context", "생성한 agent의 workflow con
 add("rag-d2-04", "d2_mcp", 46, "Agent 실행", "질문과 context로 agent 실행 handler를 만드세요.", "self.agent.run(question, ctx=self.agent_context)")
 add("rag-d2-04", "d2_mcp", 55, "MCP RAG", "RAG 검색 전에 MCP agent를 초기화하세요.", "await self.mcp_application.init_agent()")
 add("rag-d2-04", "d2_mcp", 55, "MCP RAG", "시간 정보가 포함된 질의를 MCP application에 보내세요.", "await self.mcp_application.query(full_query, verbose=False)")
+
+
+# The certification PDF is intentionally broad. Keep only the code patterns
+# that match both its RAG/llama-index/MCP criteria and the previous exam forms
+# supplied by the learner. This is a compact memorization set, not a survey of
+# every executable line in the notebooks.
+FOCUSED_SPECS = {
+    ("d1_llama", 15, "VectorStoreIndex.from_documents(documents)"),
+    ("d1_llama", 49, "index.as_retriever()"),
+    ("d1_llama", 49, 'retriever.retrieve("Who is the author?")'),
+    ("d2_task1", 16, "VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])"),
+    ("d2_task1", 16, "base_index.as_retriever(similarity_top_k=topk)"),
+    ("d2_task1", 23, "for chunk_id, chunk in enumerate(top_k_chunks):"),
+    ("d2_task1", 23, "references[:MAX_CONTEXT_REFERENCES_LENGTH]"),
+    ("d2_task1", 23, '{"role": "system", "content": system_prompt}'),
+    ("d2_task1", 25, "oai_client.chat.completions.create("),
+    ("d2_task2", 25, "self.get_finance_kg_results(generated_query)"),
+    ("d2_task2", 31, "self.reader.generate_response(query, [kg_results])"),
+    ("d2_task2", 36, "combined_results = [kg_results]"),
+    ("d2_task2", 36, "combined_results = retrieved_results"),
+    ("d2_mcp", 37, "from llama_index.tools.mcp import BasicMCPClient, McpToolSpec"),
+    ("d2_mcp", 42, "BasicMCPClient(external_mcp_server)"),
+    ("d2_mcp", 42, "await mcp_tool.to_tool_list_async()"),
+    ("d2_mcp", 46, "self.agent = FunctionAgent("),
+    ("d2_mcp", 55, "await self.mcp_application.query(full_query, verbose=False)"),
+}
+
+SPECS = [
+    spec
+    for spec in SPECS
+    if (str(spec["sourceKey"]), int(spec["cell"]), str(spec["answer"])) in FOCUSED_SPECS
+]
+
+if len(SPECS) > 20:
+    raise ValueError("Focused RAG bank must stay at 20 questions or fewer.")
 
 
 def read_cell(source_key: str, cell_index: int) -> tuple[str, str]:
@@ -197,13 +235,14 @@ def build() -> None:
 
     for chapter in CHAPTERS:
         chapter["questionCount"] = sum(question["chapterId"] == chapter["id"] for question in rag_questions)
+    active_chapters = [chapter for chapter in CHAPTERS if chapter["questionCount"] > 0]
 
     OUTPUT.write_text(json.dumps({
-        "chapters": chapters + CHAPTERS,
+        "chapters": chapters + active_chapters,
         "cells": cells,
         "questions": questions + rag_questions,
     }, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Generated {len(rag_questions)} RAG questions across {len(CHAPTERS)} notebooks -> {OUTPUT}")
+    print(f"Generated {len(rag_questions)} focused RAG questions across {len(active_chapters)} notebooks -> {OUTPUT}")
 
 
 if __name__ == "__main__":
