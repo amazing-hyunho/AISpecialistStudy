@@ -28,6 +28,9 @@ CHAPTERS = [
     {"id": "llm-07b", "number": "07B", "title": "DPO", "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"},
 ]
 
+for chapter in CHAPTERS:
+    chapter["subject"] = "LLM"
+
 SOURCES = {
     "ch1": "Chapter_1_Exercise_Vector Space.ipynb",
     "ch2": "Chapter_2_Exercise_Dataset.ipynb",
@@ -245,6 +248,7 @@ def build() -> None:
         chapter = chapter_lookup[spec["chapterId"]]
         questions.append({
             "id": f"llm-{index:03d}",
+            "subject": "LLM",
             "chapterId": spec["chapterId"],
             "chapterNumber": chapter["number"],
             "chapterTitle": chapter["title"],
@@ -259,8 +263,25 @@ def build() -> None:
     for chapter in CHAPTERS:
         chapter["questionCount"] = sum(q["chapterId"] == chapter["id"] for q in questions)
 
+    preserved = {"chapters": [], "cells": {}, "questions": []}
+    if OUTPUT.exists():
+        preserved = json.loads(OUTPUT.read_text(encoding="utf-8"))
+
+    preserved_chapters = [chapter for chapter in preserved["chapters"] if chapter.get("subject") not in (None, "LLM")]
+    preserved_questions = [question for question in preserved["questions"] if question.get("subject") not in (None, "LLM")]
+    preserved_source_ids = {question["sourceId"] for question in preserved_questions}
+    preserved_cells = {
+        source_id: cell
+        for source_id, cell in preserved["cells"].items()
+        if source_id in preserved_source_ids
+    }
+
     OUTPUT.write_text(
-        json.dumps({"chapters": CHAPTERS, "cells": cells, "questions": questions}, ensure_ascii=False, indent=2),
+        json.dumps({
+            "chapters": CHAPTERS + preserved_chapters,
+            "cells": {**cells, **preserved_cells},
+            "questions": questions + preserved_questions,
+        }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     print(f"Generated {len(questions)} questions across {len(CHAPTERS)} notebooks -> {OUTPUT}")

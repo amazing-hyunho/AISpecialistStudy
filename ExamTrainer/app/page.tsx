@@ -5,6 +5,7 @@ import questionBankData from './question-bank.json';
 
 type Chapter = {
   id: string;
+  subject: string;
   number: string;
   title: string;
   file: string;
@@ -19,6 +20,7 @@ type Cell = {
 
 type QuestionRecord = {
   id: string;
+  subject: string;
   chapterId: string;
   chapterNumber: string;
   chapterTitle: string;
@@ -48,8 +50,18 @@ const questions: Question[] = bank.questions.map((question) => ({
 const STORAGE_KEY = 'ai-exam-trainer-progress-v2';
 
 const subjects = [
-  { name: 'LLM', detail: '10개 노트북', count: questions.length, active: true },
-  { name: 'RAG', detail: '준비 중', count: 0, active: false },
+  {
+    name: 'LLM',
+    detail: `${bank.chapters.filter((chapter) => chapter.subject === 'LLM').length}개 노트북`,
+    count: questions.filter((question) => question.subject === 'LLM').length,
+    active: true,
+  },
+  {
+    name: 'RAG',
+    detail: `${bank.chapters.filter((chapter) => chapter.subject === 'RAG').length}개 노트북`,
+    count: questions.filter((question) => question.subject === 'RAG').length,
+    active: true,
+  },
   { name: 'Data', detail: 'TIME', count: 0, active: false },
   { name: 'Vision', detail: '준비 중', count: 0, active: false },
   { name: 'On-device', detail: '준비 중', count: 0, active: false },
@@ -78,6 +90,7 @@ function maskedSource(question: Question) {
 
 export default function Home() {
   const [screen, setScreen] = useState<Screen>('home');
+  const [selectedSubject, setSelectedSubject] = useState('LLM');
   const [chapterId, setChapterId] = useState(bank.chapters[0].id);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState('');
@@ -135,6 +148,15 @@ export default function Home() {
     resetQuestion();
   }
 
+  function openSubject(subject: string) {
+    const firstChapter = bank.chapters.find((chapter) => chapter.subject === subject);
+    if (!firstChapter) return;
+    setSelectedSubject(subject);
+    setChapterId(firstChapter.id);
+    setScreen('chapters');
+    resetQuestion();
+  }
+
   function openWrongNotes() {
     setScreen('wrong');
     resetQuestion();
@@ -173,17 +195,19 @@ export default function Home() {
   }
 
   if (screen === 'chapters') {
+    const subjectChapters = bank.chapters.filter((chapter) => chapter.subject === selectedSubject);
+    const subjectQuestions = questions.filter((question) => question.subject === selectedSubject);
     return (
       <main className="app-shell">
         <Header onHome={() => setScreen('home')} onWrong={openWrongNotes} wrongCount={wrongIds.length} />
         <section className="chapter-page">
           <div className="chapter-page-heading">
-            <span className="eyebrow">LLM · 10 Notebooks</span>
+            <span className="eyebrow">{selectedSubject} · {subjectChapters.length} Notebooks</span>
             <h1>학습할 챕터를 선택하세요.</h1>
-            <p>강의 노트북의 TODO와 답안 코드를 기준으로 만든 {questions.length}개 문제입니다.</p>
+            <p>강의 노트북의 코드 셀을 기준으로 만든 {subjectQuestions.length}개 문제입니다.</p>
           </div>
           <div className="chapter-grid">
-            {bank.chapters.map((chapter) => {
+            {subjectChapters.map((chapter) => {
               const chapterQuestions = questions.filter((q) => q.chapterId === chapter.id);
               const solved = chapterQuestions.filter((q) => solvedIds.includes(q.id)).length;
               const wrong = chapterQuestions.filter((q) => wrongIds.includes(q.id)).length;
@@ -229,7 +253,7 @@ export default function Home() {
         <Header onHome={() => setScreen('home')} compact />
         <section className="quiz-layout">
           <aside className="question-rail">
-            <span className="eyebrow">Chapter {current.chapterNumber}</span>
+            <span className="eyebrow">{current.subject} · Chapter {current.chapterNumber}</span>
             <h2>{screen === 'wrong' ? '오답 복습' : current.chapterTitle}</h2>
             <p>강의자료의 원문 코드에서 중요한 한 부분을 가렸습니다.</p>
             <div className="source-meta">
@@ -321,12 +345,12 @@ export default function Home() {
         <div className="hero-copy">
           <span className="eyebrow">AI 인증시험 · 코드 암기</span>
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
-          <p>LLM 강의 노트북 10개의 핵심 코드를 빈칸으로 만들었습니다. 답안지와 비교하고, 틀린 코드는 다시 만납니다.</p>
+          <p>LLM과 RAG 강의 노트북 16개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
-            <button className="primary-button large" onClick={() => setScreen('chapters')}>
-              LLM 챕터 선택 <span>→</span>
+            <button className="primary-button large" onClick={() => openSubject('RAG')}>
+              RAG 챕터 선택 <span>→</span>
             </button>
-            <span className="hero-caption">10개 노트북 · {questions.length}문제</span>
+            <span className="hero-caption">16개 노트북 · {questions.length}문제</span>
           </div>
         </div>
 
@@ -355,7 +379,7 @@ export default function Home() {
             <button
               key={subject.name}
               className={`subject-card ${subject.active ? 'active' : ''}`}
-              onClick={() => subject.active && setScreen('chapters')}
+              onClick={() => subject.active && openSubject(subject.name)}
               disabled={!subject.active}
             >
               <span className="subject-index">0{index + 1}</span>
