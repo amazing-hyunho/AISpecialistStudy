@@ -151,6 +151,46 @@
       "title": "Stable Diffusion v1.4",
       "file": "06_Stable_Diffusion_v1_4.ipynb",
       "questionCount": 3
+    },
+    {
+      "id": "ondevice-cnn-pruning",
+      "subject": "On-device",
+      "number": "01",
+      "title": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "questionCount": 3
+    },
+    {
+      "id": "ondevice-cnn-quant",
+      "subject": "On-device",
+      "number": "02",
+      "title": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "questionCount": 4
+    },
+    {
+      "id": "ondevice-kd",
+      "subject": "On-device",
+      "number": "03",
+      "title": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "questionCount": 4
+    },
+    {
+      "id": "ondevice-llm-pruning",
+      "subject": "On-device",
+      "number": "04",
+      "title": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "questionCount": 3
+    },
+    {
+      "id": "ondevice-llm-quant",
+      "subject": "On-device",
+      "number": "05",
+      "title": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "questionCount": 4
     }
   ],
   "cells": {
@@ -388,6 +428,56 @@
       "source": "# 창의성(높을수록 창의적, 낮을수록 구체적)\nguidance_scale = 7.5\n\n# 생성할 이미지에 대한 텍스트 프롬프트 정의\nprompt = \"A futuristic cityscape at sunset with flying cars\"\n\n# 이미지 생성\nimage = pipe(prompt, guidance_scale=guidance_scale).images[0]\nimage",
       "cell": 9,
       "answerSource": "06_Stable_Diffusion_v1_4.ipynb"
+    },
+    "ondevice-cnn-pruning-cell-29": {
+      "source": "def prune_weight_fine_grained(weight: torch.Tensor, sparsity: float) -> None:\n    \"\"\"가중치 텐서에 대해 fine-grained pruning을 수행하는 함수\n\n    Args:\n        weight: pruning할 가중치 텐서\n        sparsity: pruning할 비율 (0~1 사이 값)\n\n    Returns:\n        pruning mask 텐서\n    \"\"\"\n    # sparsity 값을 0~1 사이로 제한\n    sparsity = min(1.0, max(0.0, sparsity))\n\n    # 특수한 경우 처리\n    if sparsity == 1.0:  # 모든 가중치를 제거\n        weight.zero_()\n        return torch.zeros_like(weight)\n    elif sparsity == 0.0:  # 모든 가중치를 유지\n        return torch.ones_like(weight)\n\n    # 제거할 원소 개수를 계산하세요.\n    # hint: round() 함수를 사용하세요.\n    num_pruned_elements = round(weight.numel() * sparsity)\n\n    # 가중치의 중요도를 절댓값으로 importance 계산\n    # hint: torch.abs() 함수를 사용하세요.\n    importance = torch.abs(weight)\n\n    # pruning trheshold를 계산하세요.\n    # hint: torch.kthvalue() 함수를 사용하세요.\n    threshold = torch.kthvalue(importance.flatten(), num_pruned_elements)[0]\n\n    # threshold보다 큰 값들은 유지(1), 작은 값들은 제거(0)하는 마스크 생성\n    # hint: 부등호를 사용하세요.\n    mask = importance > threshold\n\n    # 마스크를 적용하여 pruning 수행\n    weight.mul_(mask)\n\n    return mask\n\n# 마스크 생성 및 시각화\nmask_fine_grained = prune_weight_fine_grained(weight.clone(), prune_sparsity)\ndraw_weight_distribution(mask_fine_grained, title=\"Fine-grained Pruning Mask\")",
+      "cell": 29,
+      "answerSource": "1. Pruning for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-24": {
+      "source": "def linear_quantize(fp_tensor, bitwidth, scale, zero_point, dtype=torch.int8) -> torch.Tensor:\n    \"\"\"\n    linear quantization for single fp_tensor\n      from\n        fp_tensor = (quantized_tensor - zero_point) * scale\n      we have,\n        quantized_tensor = int(round(fp_tensor / scale)) + zero_point\n    :param tensor: [torch.(cuda.)FloatTensor] floating tensor to be quantized\n    :param bitwidth: [int] quantization bit width\n    :param scale: [torch.(cuda.)FloatTensor] scaling factor\n    :param zero_point: [torch.(cuda.)IntTensor] the desired centroid of tensor values\n    :return:\n        [torch.(cuda.)FloatTensor] quantized tensor whose values are integers\n    \"\"\"\n    assert(fp_tensor.dtype == torch.float)\n    assert(isinstance(scale, float) or\n           (scale.dtype == torch.float and scale.dim() == fp_tensor.dim()))\n    assert(isinstance(zero_point, int) or\n           (zero_point.dtype == dtype and zero_point.dim() == fp_tensor.dim()))\n\n    # Step 1: fp_tensor를 scale 하세요.\n    scaled_tensor = fp_tensor/scale\n    # Step 2: 부동 소수점 값을 정수 값으로 rounding 하세요.\n    rounded_tensor = torch.round(scaled_tensor)\n\n    rounded_tensor = rounded_tensor.to(dtype)\n\n    # Step 3: rounded_tensor를 zero_point 만큼 shift하여 영점을 조정합니다.\n    shifted_tensor = rounded_tensor + zero_point\n\n    # Step 4: shifted_tensor를 bitwidth 범위에 있도록 절사(clamp)합니다.\n    quantized_min, quantized_max = get_quantized_range(bitwidth)\n    quantized_tensor = shifted_tensor.clamp_(quantized_min, quantized_max)\n    return quantized_tensor",
+      "cell": 24,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-33": {
+      "source": "def get_quantization_scale_and_zero_point(fp_tensor, bitwidth):\n    \"\"\"\n    get quantization scale for single tensor\n    :param fp_tensor: [torch.(cuda.)Tensor] floating tensor to be quantized\n    :param bitwidth: [int] quantization bit width\n    :return:\n        [float] scale\n        [int] zero_point\n    \"\"\"\n    quantized_min, quantized_max = get_quantized_range(bitwidth)\n    fp_max = fp_tensor.max().item()\n    fp_min = fp_tensor.min().item()\n\n    # hint: quantized_max - quantized_min = 2 ** bitwith - 1\n    scale = (fp_max - fp_min) / (quantized_max - quantized_min)\n    zero_point = round(quantized_min - fp_min/scale)\n\n    # clip the zero_point to fall in [quantized_min, quantized_max]\n    if zero_point < quantized_min:\n        zero_point = quantized_min\n    elif zero_point > quantized_max:\n        zero_point = quantized_max\n    else: # convert from float to int using round()\n        zero_point = round(zero_point)\n    return scale, int(zero_point)",
+      "cell": 33,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-55": {
+      "source": "def quantized_linear(input, weight, bias, feature_bitwidth, weight_bitwidth,\n                     input_zero_point, output_zero_point,\n                     input_scale, weight_scale, output_scale):\n    \"\"\"\n    quantized fully-connected layer\n    :param input: [torch.CharTensor] quantized input (torch.int8)\n    :param weight: [torch.CharTensor] quantized weight (torch.int8)\n    :param bias: [torch.IntTensor] shifted quantized bias or None (torch.int32)\n    :param feature_bitwidth: [int] quantization bit width of input and output\n    :param weight_bitwidth: [int] quantization bit width of weight\n    :param input_zero_point: [int] input zero point\n    :param output_zero_point: [int] output zero point\n    :param input_scale: [float] input feature scale\n    :param weight_scale: [torch.FloatTensor] weight per-channel scale\n    :param output_scale: [float] output feature scale\n    :return:\n        [torch.CharIntTensor] quantized output feature (torch.int8)\n    \"\"\"\n    assert(input.dtype == torch.int8)\n    assert(weight.dtype == input.dtype)\n    assert(bias is None or bias.dtype == torch.int32)\n    assert(isinstance(input_zero_point, int))\n    assert(isinstance(output_zero_point, int))\n    assert(isinstance(input_scale, float))\n    assert(isinstance(output_scale, float))\n    assert(weight_scale.dtype == torch.float)\n\n    # Step 1: integer-based fully-connected (8-bit multiplication with 32-bit accumulation)\n    if 'cpu' in input.device.type:\n        # use 32-b MAC for simplicity\n        output = torch.nn.functional.linear(input.to(torch.int32), weight.to(torch.int32), bias)\n    else:\n        # 현재 버전의 PyTorch는 GPU에서 정수 기반의 linear() 연산을 아직 지원하지 않습니다.\n        output = torch.nn.functional.linear(input.float(), weight.float(), bias.float())\n\n    # weight scale의 shape 가[oc, 1, 1, 1] 인 반면, output의 shape는 [batch_size, oc]이므로 shape를 조정합니다.\n    weight_scale = weight_scale.flatten().view(1, -1)\n\n    # scale이 부동 소수점이므로, 출력도 부동 소수점으로 변환해야 합니다.\n    output = output.float()\n\n    # Step 2: output 텐서를 scale합니다.\n    output = output*(input_scale * weight_scale / output_scale)\n\n    # Step 3: output을 out_zero_point 만큼 이동하여 영점을 조정합니다.\n    output = output + output_zero_point\n\n    # 모든 값이 지정된 비트폭 범위 내에 있도록 clamp합니다.\n    output = output.round().clamp(*get_quantized_range(feature_bitwidth)).to(torch.int8)\n    return output",
+      "cell": 55,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-kd-cell-26": {
+      "source": "def train_knowledge_distillation(teacher,\n                                 student,\n                                 train_loader,\n                                 epochs,\n                                 learning_rate,\n                                 T,  # temperature\n                                 soft_target_loss_weight,\n                                 ce_loss_weight):\n    ce_loss = nn.CrossEntropyLoss()\n    optimizer = optim.Adam(student.parameters(), lr=learning_rate)\n    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader))\n\n    teacher.eval()  # Teacher set to evaluation mode\n    student.train() # Student to train mode\n\n    for epoch in range(epochs):\n        running_loss = 0.0\n        for inputs, labels in train_loader:\n            inputs, labels = inputs.cuda(), labels.cuda()\n\n            optimizer.zero_grad()\n\n            # Forward pass with the teacher model - do not save gradients here as we do not change the teacher's weights\n            with torch.no_grad():\n                teacher_logits = teacher(inputs)\n\n            # Forward pass with the student model\n            student_logits = student(inputs)\n\n            # Soften the student logits by applying softmax\n            # Hint: nn.functional.softmax()\n            soft_targets = nn.functional.softmax(teacher_logits / T, dim=-1)\n            student_prob = nn.functional.softmax(student_logits / T, dim=-1)\n\n            # Calculate the soft targets loss. Scaled by T**2 as suggested by the authors of the paper \"Distilling the knowledge in a neural network\"\n            soft_targets_loss = torch.sum(soft_targets * (soft_targets.log() - student_prob.log())) / student_prob.size(0) * (T**2)\n\n            # Calculate the true label loss\n            label_loss = ce_loss(student_logits, labels)\n\n            # Weighted sum of the two losses\n            loss = soft_target_loss_weight * soft_targets_loss + ce_loss_weight * label_loss\n\n            loss.backward()\n            optimizer.step()\n            scheduler.step()\n\n            running_loss += loss.item()\n\n        print(f\"Epoch {epoch+1}/{epochs}, Loss: {running_loss / len(train_loader)}\")",
+      "cell": 26,
+      "answerSource": "3. Knowledge Distillation_answer.ipynb"
+    },
+    "ondevice-llm-pruning-cell-16": {
+      "source": "@torch.no_grad()\ndef get_calib_feat(model, tokenizer, samples):\n    input_dict = dict()\n    nsamples_dict = dict()\n    def add_batch(m, x, y, name):\n        if name not in input_dict:\n            input_dict[name] = torch.zeros((m.weight.data.shape[1]), device=m.weight.data.device)\n            nsamples_dict[name] = 0\n\n        if isinstance(x, tuple):\n            x = x[0]\n\n        if len(x.shape) == 2:\n            x = x.unsqueeze(0)\n        tmp = x.shape[0]\n        if len(x.shape) == 3:\n            x = x.reshape((-1, x.shape[-1]))\n        x = x.t()\n\n        input_dict[name] *= nsamples_dict[name] / (nsamples_dict[name] + tmp)\n        nsamples_dict[name] += tmp\n\n        x = x.type(torch.float32)\n        # activation_norm을 계산하세요.\n        # x.shape => (hidden_size, batch_size)\n        activation_norm = torch.norm(x, p=2, dim=1) ** 2\n        # activation_norm.shape => (hidden_size)\n        input_dict[name] += activation_norm / nsamples_dict[name]\n\n    hooks = []\n    for name, m in model.named_modules():\n        if isinstance(m, nn.Linear) and \"lm_head\" not in name:\n            hooks.append(\n                m.register_forward_hook(\n                    partial(add_batch, name=name)))\n\n    print(\"Collecting norm of input activations...\")\n    device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n\n    pbar = tqdm.tqdm(samples)\n    for input_ids in pbar:\n        input_ids = input_ids.to(device)\n        model(input_ids)\n\n    for key in input_dict.keys():\n        input_dict[key].sqrt_()\n\n    for hook in hooks:\n        hook.remove()\n    return input_dict",
+      "cell": 16,
+      "answerSource": "4. Pruning for LLM_answer.ipynb"
+    },
+    "ondevice-llm-pruning-cell-19": {
+      "source": "@torch.no_grad()\ndef prune_wanda(model, sparsity, input_feat):\n    for n, m in model.named_modules():\n        if isinstance(m, nn.Linear) and \"lm_head\" not in n:\n            W = m.weight.data\n            row, col = W.shape\n            num_zeros_per_row = round(col * sparsity)\n            importance = torch.abs(W) * input_feat[n]\n            threshold = torch.kthvalue(importance, num_zeros_per_row, dim=1)[0]\n            mask = importance > threshold.reshape(row, 1)\n            W.mul_(mask)",
+      "cell": 19,
+      "answerSource": "4. Pruning for LLM_answer.ipynb"
+    },
+    "ondevice-llm-quant-cell-27": {
+      "source": "@torch.no_grad()\ndef pseudo_quantize_model_weight_scaleup(\n    model, w_bit, q_group_size, input_feat, scale_factor\n):\n    for n, m in model.named_modules():\n        if isinstance(m, nn.Linear):\n            importance = sum(input_feat[n]).float()\n            # 1퍼센트 채널의 개수\n            num_samples = int(len(importance) * 0.01)\n\n\n            # Step 1: importance를 기준으로 1%의 중요한 채널을 찾으세요  (hint: use torch.topk())\n            # hint : torch.topk() 함수를 사용하세요. torch.topk() 함수는 PyTorch에서 텐서의 값 중 상위 k개의 값과 그들의 인덱스를 반환하는 함수입니다. torch.topk()[0]는 값을, torch.topk()[1]은 인덱스를 반환합니다.\n            outlier_mask = torch.topk(importance, int(len(importance) * 0.01))[1]\n\n            assert outlier_mask.dim() == 1\n\n            # 스케일 팩터를 적용하는 것을 시뮬레이션하기 위해, 양자화 전에 스케일 팩터를 곱하고, 양자화 후에 스케일 팩터로 나눕니다.\n            # scale_factor를 이용해 중요한 가중치 채널의 값을 확대합니다.\n            m.weight.data[:, outlier_mask] *= scale_factor\n\n            m.weight.data = pseudo_quantize_tensor(m.weight.data, n_bit=w_bit, q_group_size=q_group_size)\n\n\n            # Step 2: scale_factor를 이용해 중요한 가중치 채널의 값을 다시 축소하세요.\n            m.weight.data[:, outlier_mask] /= scale_factor",
+      "cell": 27,
+      "answerSource": "5. Quantization for LLM_answer.ipynb"
+    },
+    "ondevice-llm-quant-cell-55": {
+      "source": "@torch.no_grad()\ndef smooth_ln_fcs(ln, fcs, act_scales, alpha=0.5):\n    if not isinstance(fcs, list):\n        fcs = [fcs]\n    assert isinstance(ln, nn.LayerNorm)\n    for fc in fcs:\n        assert isinstance(fc, nn.Linear)\n        assert ln.weight.numel() == fc.in_features == act_scales.numel()\n\n    device, dtype = fcs[0].weight.device, fcs[0].weight.dtype\n    act_scales = act_scales.to(device=device, dtype=dtype)\n    weight_scales = torch.cat(\n        [fc.weight.abs().max(dim=0, keepdim=True)[0] for fc in fcs], dim=0\n    )\n    weight_scales = weight_scales.max(dim=0)[0].clamp(min=1e-5)\n\n    scales = (\n        #Activation Scales 값과 Weight Scales 값에 alpha를 적절히 거듭제곱해주어야 합니다.\n        #Hint: pow()함수를 통해서 거듭제곱을 사용할 수 있습니다.\n        act_scales.pow(alpha) / weight_scales.pow(1 - alpha)\n    )\n\n    scales.clamp(min=1e-5).to(device).to(dtype)\n\n    ln.weight.div_(scales)\n    ln.bias.div_(scales)\n\n    for fc in fcs:\n        fc.weight.mul_(scales.view(1, -1))",
+      "cell": 55,
+      "answerSource": "5. Quantization for LLM_answer.ipynb"
+    },
+    "ondevice-llm-quant-cell-50": {
+      "source": "@torch.no_grad()\ndef smooth_lm_by_scale(model, scale):\n    \"\"\"\n    LLM(OPT 모델)의 각 Transformer Block에 대해 LayerNorm과 Linear layer 를 smoothing 하는 함수.\n    - self-attention 블록의 (LN, q/k/v projection) 연결 구조와 feed-forward 블록의 (LN, fc1) 연결 구조에 동일한 스케일을 적용.\n    \"\"\"\n    for name, module in model.named_modules():\n        if isinstance(module, OPTDecoderLayer):\n            # Self-Attention 부분 smoothing\n            attn_ln = module.self_attn_layer_norm\n            qkv = [\n                module.self_attn.q_proj,\n                module.self_attn.k_proj,\n                module.self_attn.v_proj,\n            ]\n            smooth_ln_fcs_by_scale(attn_ln, qkv, scale)\n\n            # Feed-Forward 부분 smoothing\n            ffn_ln = module.final_layer_norm\n            fc1 = module.fc1\n            smooth_ln_fcs_by_scale(ffn_ln, fc1, scale)\n\n\n@torch.no_grad()\ndef smooth_ln_fcs_by_scale(ln, fcs, scale):\n    \"\"\"\n    LayerNorm(LN)과 그에 연결된 Fully Connected layer(FC)들 간의 파라미터 스케일을 맞추어 모델의 출력 분포를 안정화시키는 함수.\n\n    내부 단계:\n    1. LayerNorm의 weight, bias를 scale로 나눔 (출력 스케일 축소)\n    2. 이후 연결된 FC layer의 weight를 동일 scale로 곱해 상쇄 (입력 스케일 복원)\n\n    즉, forward 상에서 전체 스케일은 유지되면서 내부 파라미터 분포만 조정됨.\n    \"\"\"\n    if not isinstance(fcs, list):\n        fcs = [fcs]\n    assert isinstance(ln, nn.LayerNorm)\n    for fc in fcs:\n        assert isinstance(fc, nn.Linear)\n\n    # Step 1: layernorm의 weight와 bias를 scale로 나누어주세요.\n    # div_() 함수는 텐서 자체를 스케일로 나누는 인플레이스 연산\n    ln.weight.div_(scale)\n    ln.bias.div_(scale)\n\n    for fc in fcs:\n        # Step 2: fc의 weight에 scale을 곱해주세요.\n        # mul_() 함수는 텐서 자체에 스케일을 곱하는 인플레이스 연산\n        fc.weight.mul_(scale)",
+      "cell": 50,
+      "answerSource": "5. Quantization for LLM_answer.ipynb"
     }
   },
   "questions": [
@@ -1417,6 +1507,240 @@
       "answer": "pipe(prompt, guidance_scale=guidance_scale).images[0]",
       "occurrence": 0,
       "sourceId": "vision-sd-cell-9"
+    },
+    {
+      "id": "ondevice-001",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Pruning 개수",
+      "prompt": "목표 sparsity로 제거할 가중치 원소 수를 계산하세요.",
+      "answer": "round(weight.numel() * sparsity)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-29"
+    },
+    {
+      "id": "ondevice-002",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Magnitude Threshold",
+      "prompt": "절댓값 importance에서 pruning 기준값을 구하세요.",
+      "answer": "torch.kthvalue(importance.flatten(), num_pruned_elements)[0]",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-29"
+    },
+    {
+      "id": "ondevice-003",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Pruning Mask",
+      "prompt": "threshold보다 중요한 가중치만 유지하는 mask를 만드세요.",
+      "answer": "importance > threshold",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-29"
+    },
+    {
+      "id": "ondevice-004",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Linear Quantization",
+      "prompt": "부동소수점 tensor를 quantization scale로 나누세요.",
+      "answer": "fp_tensor/scale",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-24"
+    },
+    {
+      "id": "ondevice-005",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Quantization Scale",
+      "prompt": "부동소수점 범위와 정수 범위로 scale을 계산하세요.",
+      "answer": "(fp_max - fp_min) / (quantized_max - quantized_min)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-33"
+    },
+    {
+      "id": "ondevice-006",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Zero Point",
+      "prompt": "최솟값을 기준으로 zero point를 계산하세요.",
+      "answer": "round(quantized_min - fp_min/scale)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-33"
+    },
+    {
+      "id": "ondevice-007",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Output Requantization",
+      "prompt": "누적된 정수 출력을 input·weight·output scale로 재조정하세요.",
+      "answer": "output*(input_scale * weight_scale / output_scale)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-55"
+    },
+    {
+      "id": "ondevice-008",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Teacher Forward",
+      "prompt": "Teacher의 가중치를 갱신하지 않고 logits을 얻으세요.",
+      "answer": "teacher_logits = teacher(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-009",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Soft Target",
+      "prompt": "temperature를 적용한 Teacher logits을 확률분포로 변환하세요.",
+      "answer": "nn.functional.softmax(teacher_logits / T, dim=-1)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-010",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Distillation Loss",
+      "prompt": "Teacher와 Student 확률분포의 soft-target loss를 계산하세요.",
+      "answer": "torch.sum(soft_targets * (soft_targets.log() - student_prob.log())) / student_prob.size(0) * (T**2)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-011",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Loss 결합",
+      "prompt": "soft-target loss와 정답 label loss를 가중합하세요.",
+      "answer": "soft_target_loss_weight * soft_targets_loss + ce_loss_weight * label_loss",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-012",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Activation Norm",
+      "prompt": "입력 activation의 채널별 L2 norm 제곱을 계산하세요.",
+      "answer": "torch.norm(x, p=2, dim=1) ** 2",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-16"
+    },
+    {
+      "id": "ondevice-013",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "WANDA Importance",
+      "prompt": "가중치 크기와 입력 feature를 결합해 importance를 계산하세요.",
+      "answer": "torch.abs(W) * input_feat[n]",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-19"
+    },
+    {
+      "id": "ondevice-014",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Row-wise Mask",
+      "prompt": "각 행의 threshold를 broadcast하여 pruning mask를 만드세요.",
+      "answer": "importance > threshold.reshape(row, 1)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-19"
+    },
+    {
+      "id": "ondevice-015",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "Outlier Channel",
+      "prompt": "importance 상위 1% 채널의 index를 선택하세요.",
+      "answer": "torch.topk(importance, int(len(importance) * 0.01))[1]",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-27"
+    },
+    {
+      "id": "ondevice-016",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "Scale 복원",
+      "prompt": "pseudo quantization 후 중요 채널의 임시 확대를 되돌리세요.",
+      "answer": "m.weight.data[:, outlier_mask] /= scale_factor",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-27"
+    },
+    {
+      "id": "ondevice-017",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "SmoothQuant Scale",
+      "prompt": "activation과 weight scale에 alpha를 적용해 smoothing scale을 계산하세요.",
+      "answer": "act_scales.pow(alpha) / weight_scales.pow(1 - alpha)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-55"
+    },
+    {
+      "id": "ondevice-018",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "LayerNorm Smoothing",
+      "prompt": "연결된 FC와 상쇄되도록 LayerNorm weight를 scale로 나누세요.",
+      "answer": "ln.weight.div_(scale)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-50"
     }
   ]
 }
