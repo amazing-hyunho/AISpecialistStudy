@@ -47,8 +47,11 @@ const questions: Question[] = bank.questions.map((question) => ({
   ...bank.cells[question.sourceId],
 }));
 
-const STORAGE_KEY = 'ai-exam-trainer-progress-v3';
-const LEGACY_STORAGE_KEY = 'ai-exam-trainer-progress-v2';
+const STORAGE_KEY = 'ai-exam-trainer-progress-v4';
+const LEGACY_STORAGE_KEYS = [
+  'ai-exam-trainer-progress-v3',
+  'ai-exam-trainer-progress-v2',
+];
 
 const subjects = [
   {
@@ -102,7 +105,9 @@ export default function Home() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    const legacyStored = stored ? null : window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    const legacyStored = stored
+      ? null
+      : LEGACY_STORAGE_KEYS.map((key) => window.localStorage.getItem(key)).find(Boolean) ?? null;
     const progress = stored ?? legacyStored;
     queueMicrotask(() => {
       if (progress) {
@@ -112,7 +117,7 @@ export default function Home() {
             solvedIds?: string[];
           };
           const keepCompatibleIds = (ids: string[] = []) =>
-            legacyStored ? ids.filter((id) => id.startsWith('llm-')) : ids;
+            legacyStored ? ids.filter((id) => id.startsWith('rag-')) : ids;
           setWrongIds(keepCompatibleIds(parsed.wrongIds));
           setSolvedIds(keepCompatibleIds(parsed.solvedIds));
         } catch {

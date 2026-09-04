@@ -41,9 +41,16 @@ SOURCES = {
     "ch6": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb",
     "ch6lora": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb",
     "ch7": "llm_from_scratch/Chapter_7_Finetuning_to_Follow_Instructions_KR.ipynb",
+    "lora_exercise": "Chapter_6_Excercise_Finetuning_Classification_LoRA.ipynb",
+    "dpo_notebook": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
 }
 
-DPO_SOURCE = '''chosen_full_tokens = tokenizer.encode(
+DPO_SOURCE = '''prompt = format_input(entry)
+rejected_response = entry["rejected"]
+chosen_response = entry["chosen"]
+prompt_tokens = tokenizer.encode(prompt)
+
+chosen_full_tokens = tokenizer.encode(
     f"{prompt}\\n\\n### Response:\\n{chosen_response}"
 )
 rejected_full_tokens = tokenizer.encode(
@@ -177,14 +184,69 @@ add("llm-07a", "ch7", "타깃 시프트", "타깃에서 첫 번째 토큰을 제
 add("llm-07a", "ch7", "Padding Mask", "첫 pad token 뒤의 나머지 padding을 무시하세요.", "targets[indices[1:]] = ignore_index")
 
 # Chapter 7B - DPO. These exact completions follow the exercise hints.
-add("llm-07b", "dpo", "선호 응답", "chosen 시퀀스에 선호 응답을 연결하세요.", "chosen_response")
-add("llm-07b", "dpo", "비선호 응답", "rejected 시퀀스에 비선호 응답을 연결하세요.", "rejected_response")
+add("llm-07b", "dpo", "선호 응답", "chosen 시퀀스에 선호 응답을 연결하세요.", "chosen_response", 1)
+add("llm-07b", "dpo", "비선호 응답", "rejected 시퀀스에 비선호 응답을 연결하세요.", "rejected_response", 1)
 add("llm-07b", "dpo", "자동회귀 시프트", "레이블을 한 칸 앞당겨 logits와 정렬하세요.", "labels[:, 1:].clone()")
 add("llm-07b", "dpo", "자동회귀 시프트", "logits의 마지막 시점을 제외하세요.", "logits[:, :-1, :]")
 add("llm-07b", "dpo", "정답 로그확률", "정답 레이블 위치의 log probability를 모으세요.", "input=log_probs")
 add("llm-07b", "dpo", "Policy 비율", "Policy 모델의 chosen-rejected 로그확률 차이를 구하세요.", "model_chosen_logprobs - model_rejected_logprobs")
 add("llm-07b", "dpo", "Reference 비율", "Reference 모델의 chosen-rejected 로그확률 차이를 구하세요.", "reference_chosen_logprobs - reference_rejected_logprobs")
 add("llm-07b", "dpo", "DPO Loss", "DPO logits에 log-sigmoid 손실을 적용하세요.", "-F.logsigmoid(beta * logits)")
+
+
+# Previous-exam focus: model/tokenizer loading, preference dataset shaping,
+# and LoRA configuration. These are exact course-code equivalents; this course
+# implements LoRA directly rather than importing PEFT's LoraConfig.
+add("llm-06b", "lora_exercise", "LoRA 설정", "강의자료에서 LoRA rank 설정값을 선언하세요.", "LORA_RANK = 16")
+add("llm-06b", "lora_exercise", "LoRA 설정", "강의자료에서 LoRA alpha 설정값을 선언하세요.", "LORA_ALPHA = 16")
+add("llm-07b", "dpo_notebook", "토크나이저 로드", "DPO 학습에 사용할 GPT-2 토크나이저를 로드하세요.", 'tokenizer = tiktoken.get_encoding("gpt2")')
+add("llm-07b", "dpo_notebook", "Policy 모델 로드", "학습 대상 Policy 모델을 생성하세요.", "policy_model = GPTModel(BASE_CONFIG)")
+add("llm-07b", "dpo_notebook", "Policy 모델 로드", "Policy 모델에 SFT 가중치를 로드하세요.", 'policy_model.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=True))')
+add("llm-07b", "dpo_notebook", "Reference 모델 로드", "고정 기준점으로 사용할 Reference 모델을 생성하세요.", "reference_model = GPTModel(BASE_CONFIG)")
+add("llm-07b", "dpo", "Preference Dataset", "데이터 항목을 학습 프롬프트 형식으로 변환하세요.", "prompt = format_input(entry)")
+add("llm-07b", "dpo", "Preference Dataset", "dataset 항목에서 rejected 응답을 가져오세요.", 'entry["rejected"]')
+add("llm-07b", "dpo", "Preference Dataset", "dataset 항목에서 chosen 응답을 가져오세요.", 'entry["chosen"]')
+
+
+FOCUSED_SPECS = {
+    # Representative ???? sections from the core notebooks.
+    ("ch2", "enc_sample[1:context_size+1]"),
+    ("ch2", "token_ids[i + 1 : i + max_length + 1]"),
+    ("ch3", "queries @ keys.transpose(1, 2)"),
+    ("ch3", "-torch.inf"),
+    ("ch4", "tok_embeds + pos_embeds"),
+    ("ch4", "torch.argmax(logits, dim=-1, keepdim=True)"),
+    ("ch5", "torch.nn.functional.cross_entropy(logits.flatten(0, 1), target_batch.flatten())"),
+    ("ch5", "loss.backward()"),
+    # LoRA ???? sections and this notebook's direct LoraConfig equivalent.
+    ("lora_exercise", "LORA_RANK = 16"),
+    ("lora_exercise", "LORA_ALPHA = 16"),
+    ("ch6lora", "torch.empty(in_dim, rank)"),
+    ("ch6lora", "torch.zeros(rank, out_dim)"),
+    ("ch6lora", "(self.alpha / self.rank) * (x @ self.A @ self.B)"),
+    ("ch6lora", "param.requires_grad = False"),
+    ("ch6lora", "replace_linear_with_lora(model, rank=16, alpha=16)"),
+    # DPO previous-exam flow and ???? sections.
+    ("dpo_notebook", 'tokenizer = tiktoken.get_encoding("gpt2")'),
+    ("dpo_notebook", "policy_model = GPTModel(BASE_CONFIG)"),
+    ("dpo_notebook", 'policy_model.load_state_dict(torch.load(model_path, map_location="cpu", weights_only=True))'),
+    ("dpo_notebook", "reference_model = GPTModel(BASE_CONFIG)"),
+    ("dpo", "prompt = format_input(entry)"),
+    ("dpo", 'entry["rejected"]'),
+    ("dpo", 'entry["chosen"]'),
+    ("dpo", "chosen_response"),
+    ("dpo", "rejected_response"),
+    ("dpo", "-F.logsigmoid(beta * logits)"),
+}
+
+SPECS = [
+    spec
+    for spec in SPECS
+    if (spec["sourceKey"], spec["answer"]) in FOCUSED_SPECS
+]
+
+if len(SPECS) > 25:
+    raise ValueError("Focused LLM bank must stay at 25 questions or fewer.")
 
 
 def read_code_cells(relative_path: str) -> list[tuple[int, str]]:
@@ -262,6 +324,7 @@ def build() -> None:
 
     for chapter in CHAPTERS:
         chapter["questionCount"] = sum(q["chapterId"] == chapter["id"] for q in questions)
+    active_chapters = [chapter for chapter in CHAPTERS if chapter["questionCount"] > 0]
 
     preserved = {"chapters": [], "cells": {}, "questions": []}
     if OUTPUT.exists():
@@ -278,13 +341,13 @@ def build() -> None:
 
     OUTPUT.write_text(
         json.dumps({
-            "chapters": CHAPTERS + preserved_chapters,
+            "chapters": active_chapters + preserved_chapters,
             "cells": {**cells, **preserved_cells},
             "questions": questions + preserved_questions,
         }, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"Generated {len(questions)} questions across {len(CHAPTERS)} notebooks -> {OUTPUT}")
+    print(f"Generated {len(questions)} focused LLM questions across {len(active_chapters)} notebooks -> {OUTPUT}")
 
 
 if __name__ == "__main__":
