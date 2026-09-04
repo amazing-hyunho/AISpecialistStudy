@@ -79,6 +79,30 @@
       "title": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
       "questionCount": 5
+    },
+    {
+      "id": "data-ts",
+      "subject": "Data",
+      "number": "TS",
+      "title": "Time Series",
+      "file": "ts_practice.ipynb",
+      "questionCount": 9
+    },
+    {
+      "id": "data-gcf",
+      "subject": "Data",
+      "number": "GCF",
+      "title": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "questionCount": 7
+    },
+    {
+      "id": "data-ncf",
+      "subject": "Data",
+      "number": "NCF",
+      "title": "Neural Collaborative Filtering",
+      "file": "RecSys_NCF.ipynb",
+      "questionCount": 2
     }
   ],
   "cells": {
@@ -206,6 +230,41 @@
       "source": "from llama_index.llms.openai import OpenAI\n\nclass RAGwithMCP:\n    def __init__(self, mcp_tool):\n        self.mcp_application = KGQueryEngineWithMCP(mcp_tool, model='gpt-4o-mini')\n        self.reader = Reader()\n\n    async def retrieve(self, query: str, query_time: str, search_results: list, topk: int):\n        await self.mcp_application.init_agent()\n\n        full_query = f\"\"\"Query: {query} When inferring time information, rely solely on the query time. Do not infer the time scope from the query itself.\nQuery time: {query_time}\"\"\"\n\n        mcp_result = await self.mcp_application.query(full_query, verbose=False)\n        return mcp_result\n\n    def generate_response(self, query: str, query_time: str, retrieved_results: str):\n        answer = self.reader.generate_response(query, query_time, retrieved_results)\n        return answer\n\n    async def inference(self, query: str, search_results: list, query_time: str, topk: int):\n        retrieved_results = await self.retrieve(query, query_time, search_results, topk)\n        answer = self.generate_response(query, query_time, retrieved_results)\n        return {\n            \"retrieved_results\": retrieved_results,\n            \"answer\": answer\n        }\n\nrag_mcp = RAGwithMCP(mcp_tool)",
       "cell": 55,
       "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
+    },
+    "data-ts-cell-23": {
+      "source": "def train(model, train_loader, test_loader):\n  train_hist = []\n  test_hist = []\n  num_epochs = 10\n  loss_fn = nn.MSELoss(reduction='mean')\n  optimizer = optim.Adam(model.parameters(), lr=1e-3)\n\n  for epoch in range(num_epochs):\n    total_train_loss = 0.0\n    total_test_loss = 0.0\n\n    # train\n    model.train()\n    for batch_x, batch_y in train_loader:\n      batch_x, batch_y = batch_x.to(device), batch_y.to(device)\n      pred = model(batch_x)[:, -1, 0]\n      loss = loss_fn(pred, batch_y)\n\n      optimizer.zero_grad()\n      loss.backward()\n      optimizer.step()\n\n      total_train_loss += loss.item()\n\n    avg_loss = total_train_loss / len(train_loader)\n    train_hist.append(avg_loss)\n\n    # evaluate\n    model.eval()\n    with torch.no_grad():\n      for test_x, test_y in test_loader:\n        test_x, test_y = test_x.to(device), test_y.to(device)\n        test_pred = model(test_x)[:, -1, 0]\n        test_loss = loss_fn(test_pred, test_y)\n        total_test_loss += test_loss.item()\n\n    avg_test_loss = total_test_loss / len(test_loader)\n    test_hist.append(avg_test_loss)\n\n    print(f'Epoch {epoch + 1:2d}/{num_epochs} - Training Loss: {avg_loss:.4f}, Test Loss: {avg_test_loss:.4f}')\n\n  x = np.linspace(1, num_epochs, num_epochs)\n  plt.plot(x, train_hist, scalex=True, label=\"Training loss\")\n  plt.plot(x, test_hist, label=\"Test loss\")\n  plt.legend()\n\ntrain(model, train_loader, test_loader)\n\n# Epoch  1/10 - Training Loss: 0.1736, Test Loss: 0.4874\n# Epoch  2/10 - Training Loss: 0.0388, Test Loss: 0.0877\n# Epoch  3/10 - Training Loss: 0.0078, Test Loss: 0.0072\n# Epoch  4/10 - Training Loss: 0.0031, Test Loss: 0.0097\n# Epoch  5/10 - Training Loss: 0.0023, Test Loss: 0.0123\n# Epoch  6/10 - Training Loss: 0.0020, Test Loss: 0.0188\n# Epoch  7/10 - Training Loss: 0.0020, Test Loss: 0.0111\n# Epoch  8/10 - Training Loss: 0.0021, Test Loss: 0.0165\n# Epoch  9/10 - Training Loss: 0.0018, Test Loss: 0.0225\n# Epoch 10/10 - Training Loss: 0.0017, Test Loss: 0.0177",
+      "cell": 23,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "data-ts-cell-27": {
+      "source": "def test(model, X_test, y_test):\n  model.eval()\n  with torch.no_grad():\n    X_test = X_test.to(device)                     # (N, seq_len, 1)\n    y_hat = model(X_test)                          # (N, seq_len, 1)\n    test_predictions = y_hat[:, -1, 0]\n\n  test_predictions = test_predictions.cpu().numpy()\n  y_test = y_test.cpu().numpy()\n\n  rmse = root_mean_squared_error(y_test, test_predictions)\n  mape = mean_absolute_percentage_error(y_test, test_predictions)\n\n  return rmse, mape\n\nrmse, mape = test(model, X_test, y_test)\nprint(f'RMSE: {rmse:.4f}')\nprint(f'MAPE: {mape:.4f}')\n\n# RMSE: 0.1194\n# MAPE: 0.0847",
+      "cell": 27,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "data-ts-cell-34": {
+      "source": "class RNNModel(nn.Module):\n  def __init__(self, input_size, hidden_size, num_layers):\n      super(RNNModel, self).__init__()\n      self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n      self.fc = nn.Linear(hidden_size, 1)\n\n  def forward(self, x):\n      out, _ = self.rnn(x)\n      return self.fc(out)",
+      "cell": 34,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "data-gcf-cell-13": {
+      "source": "class NGCFLayer(nn.Module):\n    def __init__(self, input_dim, output_dim, dropout=0.1):\n        super().__init__()\n        self.W1 = nn.Linear(input_dim, output_dim)\n        self.W2 = nn.Linear(input_dim, output_dim)\n        # self.dropout = nn.Dropout(dropout)\n        self.leaky_relu = nn.LeakyReLU(0.2)\n\n    def forward(self, edge_index, node_features, user_num, item_num):\n        '''\n        edge_index : 엣지 정보 (src, dst)의 집합.\n        node_features: node별 이전 layer에서 생성된 벡터 정보가 담긴 matrix (H^(l-1)) (|V| * d)\n        '''\n\n        src, dst = edge_index # src : user, dst : movie\n\n        # calculate node degree\n        deg = torch.zeros(node_features.size(0), device=node_features.device)\n        # calculate user degree\n        deg.index_add_(0, src, torch.ones_like(src, dtype=torch.float))\n        # calculate movie degree\n        deg.index_add_(0, dst, torch.ones_like(dst, dtype=torch.float))\n\n        # calculate 1/(root(deg(u)) * root(deg(i))) for all edge\n        norm = 1.0/torch.sqrt(deg[src]*deg[dst])\n\n        src_feat = node_features[src] # H_u\n        dst_feat = node_features[dst] # H_i\n\n        edge_messages_for_src = self.W1(dst_feat) + self.W2(dst_feat*src_feat)\n        edge_messages_for_src *= norm.unsqueeze(1)\n\n        edge_messages_for_dst = self.W1(src_feat) + self.W2(src_feat*dst_feat)\n        edge_messages_for_dst *= norm.unsqueeze(1)\n\n        aggregated_messages = torch.zeros_like(node_features)\n        aggregated_messages.index_add(0, src, edge_messages_for_src)\n        aggregated_messages[:user_num] += self.W1(node_features[:user_num])\n\n        aggregated_messages.index_add_(0, dst, edge_messages_for_dst)\n        aggregated_messages[user_num:] += self.W1(node_features[user_num:])\n\n        aggregated_features = self.leaky_relu(aggregated_messages)\n\n        # engineering approach\n        # aggregated_features = self.dropout(aggregated_features)\n        return aggregated_features",
+      "cell": 13,
+      "answerSource": "RecSys_GCF_sol.ipynb"
+    },
+    "data-gcf-cell-14": {
+      "source": "class NGCF(nn.Module):\n    def __init__(self, num_users, num_items, embedding_dim, layer_dims, dropout=0.1):\n        super().__init__()\n        self.num_users = num_users\n        self.num_items = num_items\n        self.embedding_dim = embedding_dim\n        self.node_embeddings = nn.Embedding(self.num_users+self.num_items,self.embedding_dim)\n        nn.init.xavier_uniform_(self.node_embeddings.weight)\n\n        self.layers = nn.ModuleList([\n            NGCFLayer(input_dim=(embedding_dim if i == 0 else layer_dims[i - 1]),\n                      output_dim=layer_dims[i], dropout=dropout)\n            for i in range(len(layer_dims))\n        ])\n\n    def forward(self, edge_index):\n        node_features = self.node_embeddings.weight\n        layer_outputs = [node_features]\n        for layer in self.layers:\n            node_features = layer(edge_index, node_features,self.num_users, self.num_items)\n            layer_outputs.append(node_features)\n\n        # Hint: NGCF의 final feature(representation)은 layer 별 feature에 대한 concatenated vector\n        # Hint: 최종 final feature matrix에는 [feuture_vector for users + feature_vector for items]가 들어있음.\n\n        final_features = torch.concat(layer_outputs,dim=-1)\n        user_features = final_features[:self.num_users]\n        item_features = final_features[self.num_users:]\n        return user_features, item_features\n\n    def bpr_loss(self, user_emb, pos_item_emb, neg_item_emb, reg_weight=1e-4):\n        pos_scores = torch.sum(user_emb * pos_item_emb, dim=1)\n        neg_scores = torch.sum(user_emb * neg_item_emb, dim=1)\n        loss = -torch.mean(F.logsigmoid(pos_scores - neg_scores))\n        reg_loss = reg_weight * (user_emb.norm(2).pow(2) + pos_item_emb.norm(2).pow(2) \\\n                                 + neg_item_emb.norm(2).pow(2)) / user_emb.size(0)\n        return loss + reg_loss",
+      "cell": 14,
+      "answerSource": "RecSys_GCF_sol.ipynb"
+    },
+    "data-ncf-cell-10": {
+      "source": "### Embedding layer + NCF layer\n# 2-layer(including output layer)\n\n# hidden layer + active layer(RELU) + output\n# latent vector dim: 32\n# input dim: 64\n\nclass Neural_Collaborative_Filtering(nn.Module):\n  def __init__(self, n_users, n_movies):\n    '''\n    n_users = # of users\n    n_movies = # of movies\n    '''\n    super().__init__()\n    # convert all users and items into 32-dim learnable latent factors(vectors)\n    self.user_embedding = nn.Embedding(n_users, 32)\n    self.movie_embedding = nn.Embedding(n_movies, 32)\n\n    # Neural network for rating prediction\n    self.fc1 = nn.Linear(64,32) # 64 = user_i embedding + movie_j embedding\n    self.relu = nn.ReLU()\n    self.fc2= nn.Linear(32,1)\n\n  def forward(self, users, movies, ratings = None):\n    user_embedding = self.user_embedding(users)\n    movie_embedding = self.movie_embedding(movies)\n    input_embedding = torch.cat([user_embedding, movie_embedding], dim = 1)\n\n    hidden_feature = self.fc1(input_embedding)\n    hidden_feature = self.relu(hidden_feature)\n\n    output = self.fc2(hidden_feature) # output is prediction\n\n    return output",
+      "cell": 10,
+      "answerSource": "RecSys_NCF.ipynb"
+    },
+    "data-ncf-cell-18": {
+      "source": "from sklearn.metrics import mean_squared_error\n\nmodel_output_list = []\ntarget_rating_list = []\n\nmodel.eval()\n\nwith torch.no_grad():\n  for i, batched_data in enumerate(test_loader):\n    model_output = model(batched_data['users'],batched_data['movies'])\n    model_output_batch = model_output.cpu().numpy().squeeze(axis=1).tolist()\n    model_output_list += (model_output_batch)\n\n    target_rating = batched_data['ratings']\n    target_rating_batch = target_rating.cpu().numpy().tolist()\n    target_rating_list += target_rating_batch\n\nmse = mean_squared_error(target_rating_list, model_output_list)\nrms = np.sqrt(mse)\nprint(f\"rms: {rms}\")",
+      "cell": 18,
+      "answerSource": "RecSys_NCF.ipynb"
     }
   },
   "questions": [
@@ -767,6 +826,240 @@
       "answer": "await self.mcp_application.query(full_query, verbose=False)",
       "occurrence": 0,
       "sourceId": "d2_mcp-cell-55"
+    },
+    {
+      "id": "data-001",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Device 이동",
+      "prompt": "학습 입력과 정답을 실행 장치로 이동하세요.",
+      "answer": "batch_x, batch_y = batch_x.to(device), batch_y.to(device)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-002",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "모델 출력",
+      "prompt": "시퀀스의 마지막 시점 예측값을 선택하세요.",
+      "answer": "model(batch_x)[:, -1, 0]",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-003",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "손실 계산",
+      "prompt": "예측값과 정답으로 학습 손실을 계산하세요.",
+      "answer": "loss_fn(pred, batch_y)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-004",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Gradient 초기화",
+      "prompt": "이전 학습 단계의 gradient를 초기화하세요.",
+      "answer": "optimizer.zero_grad()",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-005",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "역전파",
+      "prompt": "현재 손실을 역전파하세요.",
+      "answer": "loss.backward()",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-006",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "가중치 갱신",
+      "prompt": "계산된 gradient로 모델 파라미터를 갱신하세요.",
+      "answer": "optimizer.step()",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-007",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "RMSE",
+      "prompt": "시계열 정답과 예측값의 RMSE를 계산하세요.",
+      "answer": "root_mean_squared_error(y_test, test_predictions)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-27"
+    },
+    {
+      "id": "data-008",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "MAPE",
+      "prompt": "시계열 정답과 예측값의 MAPE를 계산하세요.",
+      "answer": "mean_absolute_percentage_error(y_test, test_predictions)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-27"
+    },
+    {
+      "id": "data-009",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "RNN Layer",
+      "prompt": "입력·은닉 차원과 층 수로 batch-first RNN을 선언하세요.",
+      "answer": "nn.RNN(input_size, hidden_size, num_layers, batch_first=True)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-34"
+    },
+    {
+      "id": "data-010",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Degree 정규화",
+      "prompt": "사용자와 아이템 degree로 edge 정규화 계수를 계산하세요.",
+      "answer": "1.0/torch.sqrt(deg[src]*deg[dst])",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-13"
+    },
+    {
+      "id": "data-011",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Message Passing",
+      "prompt": "아이템 노드로 전달할 edge message를 계산하세요.",
+      "answer": "self.W1(src_feat) + self.W2(src_feat*dst_feat)",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-13"
+    },
+    {
+      "id": "data-012",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Message 집계",
+      "prompt": "아이템 목적지 인덱스에 edge message를 누적하세요.",
+      "answer": "aggregated_messages.index_add_(0, dst, edge_messages_for_dst)",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-13"
+    },
+    {
+      "id": "data-013",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "NGCF Layer",
+      "prompt": "각 NGCF layer에 edge와 현재 node feature를 전달하세요.",
+      "answer": "layer(edge_index, node_features,self.num_users, self.num_items)",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
+      "id": "data-014",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Layer 결합",
+      "prompt": "모든 layer의 feature를 마지막 차원으로 연결하세요.",
+      "answer": "torch.concat(layer_outputs,dim=-1)",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
+      "id": "data-015",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "사용자 Feature",
+      "prompt": "결합된 feature에서 사용자 부분을 선택하세요.",
+      "answer": "final_features[:self.num_users]",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
+      "id": "data-016",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "아이템 Feature",
+      "prompt": "결합된 feature에서 아이템 부분을 선택하세요.",
+      "answer": "final_features[self.num_users:]",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
+      "id": "data-017",
+      "subject": "Data",
+      "chapterId": "data-ncf",
+      "chapterNumber": "NCF",
+      "chapterTitle": "Neural Collaborative Filtering",
+      "file": "RecSys_NCF.ipynb",
+      "topic": "Embedding 결합",
+      "prompt": "사용자와 영화 embedding을 입력 feature로 연결하세요.",
+      "answer": "torch.cat([user_embedding, movie_embedding], dim = 1)",
+      "occurrence": 0,
+      "sourceId": "data-ncf-cell-10"
+    },
+    {
+      "id": "data-018",
+      "subject": "Data",
+      "chapterId": "data-ncf",
+      "chapterNumber": "NCF",
+      "chapterTitle": "Neural Collaborative Filtering",
+      "file": "RecSys_NCF.ipynb",
+      "topic": "평가 Metric",
+      "prompt": "sklearn으로 실제 평점과 모델 출력의 MSE를 계산하세요.",
+      "answer": "mean_squared_error(target_rating_list, model_output_list)",
+      "occurrence": 0,
+      "sourceId": "data-ncf-cell-18"
     }
   ]
 }

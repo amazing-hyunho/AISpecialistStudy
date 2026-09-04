@@ -66,7 +66,12 @@ const subjects = [
     count: questions.filter((question) => question.subject === 'RAG').length,
     active: true,
   },
-  { name: 'Data', detail: 'TIME', count: 0, active: false },
+  {
+    name: 'Data',
+    detail: `${bank.chapters.filter((chapter) => chapter.subject === 'Data').length}개 노트북`,
+    count: questions.filter((question) => question.subject === 'Data').length,
+    active: true,
+  },
   { name: 'Vision', detail: '준비 중', count: 0, active: false },
   { name: 'On-device', detail: '준비 중', count: 0, active: false },
 ];
@@ -355,10 +360,10 @@ export default function Home() {
         <div className="hero-copy">
           <span className="eyebrow">AI 인증시험 · 코드 암기</span>
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
-          <p>LLM과 RAG 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
+          <p>LLM·RAG·Data 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
-            <button className="primary-button large" onClick={() => openSubject('RAG')}>
-              RAG 챕터 선택 <span>→</span>
+            <button className="primary-button large" onClick={() => openSubject('Data')}>
+              Data 챕터 선택 <span>→</span>
             </button>
             <span className="hero-caption">{bank.chapters.length}개 노트북 · {questions.length}문제</span>
           </div>
