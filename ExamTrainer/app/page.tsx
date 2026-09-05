@@ -62,11 +62,18 @@ const questions: Question[] = bank.questions.map((question) => ({
   explanation: questionExplanations[question.id],
 }));
 
-const STORAGE_KEY = 'ai-exam-trainer-progress-v4';
+const STORAGE_KEY = 'ai-exam-trainer-progress-v5';
 const LEGACY_STORAGE_KEYS = [
+  'ai-exam-trainer-progress-v4',
   'ai-exam-trainer-progress-v3',
   'ai-exam-trainer-progress-v2',
 ];
+const REPLACED_QUESTION_IDS = new Set([
+  'data-015',
+  'data-016',
+  'vision-016',
+  'vision-018',
+]);
 
 const subjects = [
   {
@@ -135,10 +142,12 @@ export default function Home() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    const legacyStored = stored
+    const legacyEntry = stored
       ? null
-      : LEGACY_STORAGE_KEYS.map((key) => window.localStorage.getItem(key)).find(Boolean) ?? null;
-    const progress = stored ?? legacyStored;
+      : LEGACY_STORAGE_KEYS
+        .map((key) => ({ key, value: window.localStorage.getItem(key) }))
+        .find((entry) => entry.value) ?? null;
+    const progress = stored ?? legacyEntry?.value;
     queueMicrotask(() => {
       if (progress) {
         try {
@@ -146,8 +155,13 @@ export default function Home() {
             wrongIds?: string[];
             solvedIds?: string[];
           };
-          const keepCompatibleIds = (ids: string[] = []) =>
-            legacyStored ? ids.filter((id) => id.startsWith('rag-')) : ids;
+          const keepCompatibleIds = (ids: string[] = []) => {
+            if (!legacyEntry) return ids;
+            if (legacyEntry.key === 'ai-exam-trainer-progress-v4') {
+              return ids.filter((id) => !REPLACED_QUESTION_IDS.has(id));
+            }
+            return ids.filter((id) => id.startsWith('rag-'));
+          };
           setWrongIds(keepCompatibleIds(parsed.wrongIds));
           setSolvedIds(keepCompatibleIds(parsed.solvedIds));
         } catch {

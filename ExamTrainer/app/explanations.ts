@@ -235,12 +235,12 @@ export const questionExplanations: Record<string, QuestionExplanation> = {
     memory: 'layer_outputs는 마지막 차원 dim=-1로 concat.',
   },
   'data-015': {
-    why: '결합 node tensor에서 앞쪽 num_users 행이 사용자 node에 대응하므로 해당 구간을 사용자 feature로 분리합니다.',
-    memory: '사용자는 [:num_users].',
+    why: 'fit_transform은 학습 데이터에서 최솟값과 최댓값을 학습하면서 동시에 정규화하며, 평가 데이터에는 이 범위를 그대로 재사용해야 정보 누출을 막을 수 있습니다.',
+    memory: 'train은 fit_transform, test는 transform만 사용한다.',
   },
   'data-016': {
-    why: '사용자 행 다음부터는 아이템 node이므로 num_users 이후 구간을 아이템 feature로 분리합니다.',
-    memory: '아이템은 [num_users:].',
+    why: 'stratify에 평점을 지정하면 학습·평가 세트의 평점 분포가 원본과 비슷하게 유지되어 평가 편향을 줄일 수 있습니다.',
+    memory: '분류형 target 분포를 유지하려면 train_test_split의 stratify에 target을 전달한다.',
   },
   'data-017': {
     why: '사용자 embedding과 영화 embedding을 feature 축으로 연결하면 MLP가 두 표현의 조합으로 평점을 예측할 수 있습니다.',
@@ -312,16 +312,16 @@ export const questionExplanations: Record<string, QuestionExplanation> = {
     memory: 'reverse step의 핵심은 x에서 scaled predicted noise를 뺀다.',
   },
   'vision-016': {
-    why: 'float16으로 pipeline 가중치를 로드하면 float32보다 GPU 메모리 사용량과 연산량을 줄일 수 있습니다.',
-    memory: 'Stable Diffusion GPU 로드는 torch_dtype=torch.float16.',
+    why: '가장 큰 logit의 class index와 정답을 비교한 boolean tensor를 float로 바꿔 평균내면 batch의 Top-1 Accuracy가 됩니다.',
+    memory: 'Top-1 Accuracy는 (argmax 예측 == target)의 float 평균.',
   },
   'vision-017': {
     why: 'guidance scale은 무조건·조건부 예측 차이를 얼마나 강하게 반영할지 정하며 값이 높을수록 prompt를 더 강하게 따릅니다.',
     memory: '강의 설정의 guidance_scale은 7.5.',
   },
   'vision-018': {
-    why: 'pipeline 호출은 생성 결과를 images 목록으로 반환하므로 한 장을 사용할 때 첫 번째 원소를 선택합니다.',
-    memory: 'pipe(prompt, guidance_scale=...).images[0].',
+    why: 'confusion matrix는 실제 class를 행, 예측 class를 열로 집계해 어떤 class 쌍에서 오분류가 발생하는지 보여줍니다.',
+    memory: 'confusion_matrix의 인자 순서는 y_true인 all_labels, y_pred인 all_preds.',
   },
 
   'ondevice-001': {

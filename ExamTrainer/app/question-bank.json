@@ -86,7 +86,7 @@
       "number": "TS",
       "title": "Time Series",
       "file": "ts_practice.ipynb",
-      "questionCount": 9
+      "questionCount": 10
     },
     {
       "id": "data-gcf",
@@ -94,7 +94,7 @@
       "number": "GCF",
       "title": "Graph Collaborative Filtering",
       "file": "RecSys_GCF_practice.ipynb",
-      "questionCount": 7
+      "questionCount": 5
     },
     {
       "id": "data-ncf",
@@ -102,7 +102,7 @@
       "number": "NCF",
       "title": "Neural Collaborative Filtering",
       "file": "RecSys_NCF.ipynb",
-      "questionCount": 2
+      "questionCount": 3
     },
     {
       "id": "vision-resnet",
@@ -110,7 +110,7 @@
       "number": "01",
       "title": "ResNet18 · CIFAR-10",
       "file": "01_ResNet18_CIFAR10.ipynb",
-      "questionCount": 3
+      "questionCount": 4
     },
     {
       "id": "vision-vit",
@@ -118,7 +118,7 @@
       "number": "02",
       "title": "Vision Transformer · CIFAR-10",
       "file": "02_ViT_CIFAR10.ipynb",
-      "questionCount": 3
+      "questionCount": 4
     },
     {
       "id": "vision-detr",
@@ -150,7 +150,7 @@
       "number": "06",
       "title": "Stable Diffusion v1.4",
       "file": "06_Stable_Diffusion_v1_4.ipynb",
-      "questionCount": 3
+      "questionCount": 1
     },
     {
       "id": "ondevice-cnn-pruning",
@@ -344,6 +344,16 @@
       "cell": 14,
       "answerSource": "RecSys_GCF_sol.ipynb"
     },
+    "data-ts-cell-13": {
+      "source": "# Scaling dataset\nscaler = MinMaxScaler(feature_range=(0, 1))\ntrain_scaled = scaler.fit_transform(train_data.values)\ntest_scaled = scaler.transform(test_data.values)\n\nfor v in train_data.values[:5, 0]:\n  print(f'{v:6.3f}', end=' ')\nprint()\n# 66.681 66.995 67.101 69.484 69.193\n\nfor v in train_scaled[:5, 0]:\n  print(f'{v:6.3f}', end=' ')\nprint()\n# 0.144  0.147  0.148  0.172  0.169",
+      "cell": 13,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "data-ncf-cell-8": {
+      "source": "# convert actual index for user and items as consecutive integer\nlbl_user = preprocessing.LabelEncoder()\nlbl_movie = preprocessing.LabelEncoder()\n\ndf.userId = lbl_user.fit_transform(df.userId.values)\ndf.movieId = lbl_movie.fit_transform(df.movieId.values)\n\n# devide original dataframe into train, test dataframe (9:1)\ndf_train, df_test = model_selection.train_test_split(df, test_size=0.1, random_state=42, stratify=df.rating.values)\n\ntrain_dataset = MovieLens(users = df_train.userId.values, movies = df_train.movieId.values, ratings = df_train.rating.values)\ntest_dataset = MovieLens(users = df_test.userId.values, movies = df_test.movieId.values, ratings = df_test.rating.values)\n\nprint(len(train_dataset))\nprint(len(test_dataset))",
+      "cell": 8,
+      "answerSource": "RecSys_NCF.ipynb"
+    },
     "data-ncf-cell-10": {
       "source": "### Embedding layer + NCF layer\n# 2-layer(including output layer)\n\n# hidden layer + active layer(RELU) + output\n# latent vector dim: 32\n# input dim: 64\n\nclass Neural_Collaborative_Filtering(nn.Module):\n  def __init__(self, n_users, n_movies):\n    '''\n    n_users = # of users\n    n_movies = # of movies\n    '''\n    super().__init__()\n    # convert all users and items into 32-dim learnable latent factors(vectors)\n    self.user_embedding = nn.Embedding(n_users, 32)\n    self.movie_embedding = nn.Embedding(n_movies, 32)\n\n    # Neural network for rating prediction\n    self.fc1 = nn.Linear(64,32) # 64 = user_i embedding + movie_j embedding\n    self.relu = nn.ReLU()\n    self.fc2= nn.Linear(32,1)\n\n  def forward(self, users, movies, ratings = None):\n    user_embedding = self.user_embedding(users)\n    movie_embedding = self.movie_embedding(movies)\n    input_embedding = torch.cat([user_embedding, movie_embedding], dim = 1)\n\n    hidden_feature = self.fc1(input_embedding)\n    hidden_feature = self.relu(hidden_feature)\n\n    output = self.fc2(hidden_feature) # output is prediction\n\n    return output",
       "cell": 10,
@@ -419,15 +429,20 @@
       "cell": 21,
       "answerSource": "05_DDPM.ipynb"
     },
-    "vision-sd-cell-6": {
-      "source": "from diffusers import StableDiffusionPipeline\nimport torch\nfrom IPython.display import display\n\n# 모델 로드 (Stable Diffusion v1-4)\nmodel_id = \"CompVis/stable-diffusion-v1-4\"\npipe = StableDiffusionPipeline.from_pretrained(\n    model_id,\n    torch_dtype=torch.float16   # 메모리 절약을 위해 권장\n).to(\"cuda\")\n\n# 파이프라인 내부 구성 요소 출력\nfor name, component in pipe.components.items():\n    print(f\"{name}: {type(component).__name__}\")",
-      "cell": 6,
-      "answerSource": "06_Stable_Diffusion_v1_4.ipynb"
+    "vision-resnet-cell-10": {
+      "source": "from dataclasses import dataclass  # 설정을 깔끔하게 묶기 위한 dataclass\n\n@dataclass\nclass TrainConfig:\n    base_epochs_if_new: int = 20  # 처음 실험 시 epoch 수\n    extra_epochs_if_resume: int = 10  # 체크포인트 존재 시 추가 실험 epoch 수\n    lr: float = 0.1  # learning rate\n    weight_decay: float = 5e-4  # L2 정규화\n    momentum: float = 0.9  # SGD momentum\n    label_smoothing: float = 0.0  # 필요 시 label smoothing, 예) [0, 1, 0] ->  [0.05, 0.9, 0.05]\n\ncfg = TrainConfig()  # config 인스턴스 생성\n\ndef accuracy_top1(logits, targets):\n    preds = logits.argmax(dim=1)  # 가장 큰 logit의 클래스 선택, logits = [B, C], preds = [B]\n    return (preds == targets).float().mean().item()  # top-1 accuracy, scalar\n\nscaler = torch.amp.GradScaler(enabled=torch.cuda.is_available())  # AMP용 scaler, 학습 속도를 높이고 메모리 사용량을 줄임\nprint(scaler)\n\ndef train_one_epoch(model, loader, optimizer, criterion):\n    model.train()  # train mode(dropout/bn 동작 변경)\n    total_loss, total_acc = 0.0, 0.0  # 누적 loss/acc\n    n = 0  # 샘플 수 누적\n    t0 = time.time()  # 시간 측정 시작\n    for images, labels in loader:\n        images = images.to(device, non_blocking=True)  # 입력을 GPU로 이동 (Asynchronous transfer)\n        labels = labels.to(device, non_blocking=True)  # 라벨을 GPU로 이동 (Asynchronous transfer)\n\n        optimizer.zero_grad(set_to_none=True)  # gradient 초기화\n        with torch.amp.autocast(device_type=device.type, enabled=torch.cuda.is_available()):  # AMP autocast\n            logits = model(images)  # forward\n            loss = criterion(logits, labels)  # loss 계산\n        scaler.scale(loss).backward()  # scaled backward\n        scaler.step(optimizer)  # optimizer step\n        scaler.update()  # scaler 업데이트\n\n        bs = images.size(0)  # batch size\n        total_loss += loss.item() * bs  # batch loss 누적\n        total_acc  += accuracy_top1(logits.detach(), labels) * bs  # logits값만 복사, batch acc 누적\n        n += bs  # 샘플 수 누적\n\n    dt = time.time() - t0  # epoch 수행 시간\n    return total_loss / n, total_acc / n, dt  # 평균 loss/acc/시간\n\n@torch.no_grad()   # Autograd off, 함수 내부에서 기울기 계산 멈춤\ndef evaluate(model, loader, criterion):\n    model.eval()  # eval mode, i.e., Dropout 비활성화, BN Running Stats 고정\n    total_loss, total_acc = 0.0, 0.0  # 누적\n    n = 0  # 샘플 수\n    for images, labels in loader:\n        images = images.to(device, non_blocking=True)  # GPU 이동\n        labels = labels.to(device, non_blocking=True)  # GPU 이동\n        logits = model(images)  # forward\n        loss = criterion(logits, labels)  # loss\n        bs = images.size(0)  # batch size\n        total_loss += loss.item() * bs  # 누적\n        total_acc  += accuracy_top1(logits, labels) * bs  # 누적\n        n += bs  # 누적\n    return total_loss / n, total_acc / n  # 평균 loss/acc\n\ndef plot_history(hist):\n    epochs = np.arange(1, len(hist['train_loss'])+1)  # epoch index\n    plt.figure(figsize=(12,4))\n    plt.plot(epochs, hist['train_loss'], label='train_loss')  # train loss\n    plt.plot(epochs, hist['val_loss'], label='val_loss')  # val loss\n    plt.xlabel('epoch'); plt.ylabel('loss'); plt.legend(); plt.grid(True)\n    plt.show()\n\n    plt.figure(figsize=(12,4))\n    plt.plot(epochs, hist['train_acc'], label='train_acc')  # train acc\n    plt.plot(epochs, hist['val_acc'], label='val_acc')  # val acc\n    plt.xlabel('epoch'); plt.ylabel('acc'); plt.legend(); plt.grid(True)\n    plt.show()",
+      "cell": 10,
+      "answerSource": "01_ResNet18_CIFAR10.ipynb"
     },
     "vision-sd-cell-9": {
       "source": "# 창의성(높을수록 창의적, 낮을수록 구체적)\nguidance_scale = 7.5\n\n# 생성할 이미지에 대한 텍스트 프롬프트 정의\nprompt = \"A futuristic cityscape at sunset with flying cars\"\n\n# 이미지 생성\nimage = pipe(prompt, guidance_scale=guidance_scale).images[0]\nimage",
       "cell": 9,
       "answerSource": "06_Stable_Diffusion_v1_4.ipynb"
+    },
+    "vision-vit-cell-26": {
+      "source": "import seaborn as sns\nfrom sklearn.metrics import confusion_matrix\nimport numpy as np\n\ndef plot_confusion_matrix(model, data_loader):\n    model.eval()\n    all_preds = []\n    all_labels = []\n\n    with torch.no_grad():\n        for data, target in data_loader:\n            data = data.to(device)\n            target = target.to(device)\n            output = model(data)  # 입력 배치에 대한 모델 forward(로짓 출력)\n            _, preds = torch.max(output, dim=1)   # preds = maximum indices\n            all_preds.extend(preds.cpu().numpy())\n            all_labels.extend(target.cpu().numpy())\n\n    cm = confusion_matrix(all_labels, all_preds)\n    plt.figure(figsize=(10, 8))\n    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)\n    plt.xlabel('Predicted')\n    plt.xticks(rotation=45, ha='right')\n    plt.yticks(rotation=0)\n\n    plt.ylabel('Actual')\n    plt.title('Confusion Matrix')\n    plt.show()\n\nplot_confusion_matrix(model, test_loader)",
+      "cell": 26,
+      "answerSource": "02_ViT_CIFAR10.ipynb"
     },
     "ondevice-cnn-pruning-cell-29": {
       "source": "def prune_weight_fine_grained(weight: torch.Tensor, sparsity: float) -> None:\n    \"\"\"가중치 텐서에 대해 fine-grained pruning을 수행하는 함수\n\n    Args:\n        weight: pruning할 가중치 텐서\n        sparsity: pruning할 비율 (0~1 사이 값)\n\n    Returns:\n        pruning mask 텐서\n    \"\"\"\n    # sparsity 값을 0~1 사이로 제한\n    sparsity = min(1.0, max(0.0, sparsity))\n\n    # 특수한 경우 처리\n    if sparsity == 1.0:  # 모든 가중치를 제거\n        weight.zero_()\n        return torch.zeros_like(weight)\n    elif sparsity == 0.0:  # 모든 가중치를 유지\n        return torch.ones_like(weight)\n\n    # 제거할 원소 개수를 계산하세요.\n    # hint: round() 함수를 사용하세요.\n    num_pruned_elements = round(weight.numel() * sparsity)\n\n    # 가중치의 중요도를 절댓값으로 importance 계산\n    # hint: torch.abs() 함수를 사용하세요.\n    importance = torch.abs(weight)\n\n    # pruning trheshold를 계산하세요.\n    # hint: torch.kthvalue() 함수를 사용하세요.\n    threshold = torch.kthvalue(importance.flatten(), num_pruned_elements)[0]\n\n    # threshold보다 큰 값들은 유지(1), 작은 값들은 제거(0)하는 마스크 생성\n    # hint: 부등호를 사용하세요.\n    mask = importance > threshold\n\n    # 마스크를 적용하여 pruning 수행\n    weight.mul_(mask)\n\n    return mask\n\n# 마스크 생성 및 시각화\nmask_fine_grained = prune_weight_fine_grained(weight.clone(), prune_sparsity)\ndraw_weight_distribution(mask_fine_grained, title=\"Fine-grained Pruning Mask\")",
@@ -1225,28 +1240,28 @@
     {
       "id": "data-015",
       "subject": "Data",
-      "chapterId": "data-gcf",
-      "chapterNumber": "GCF",
-      "chapterTitle": "Graph Collaborative Filtering",
-      "file": "RecSys_GCF_practice.ipynb",
-      "topic": "사용자 Feature",
-      "prompt": "결합된 feature에서 사용자 부분을 선택하세요.",
-      "answer": "final_features[:self.num_users]",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "데이터 정규화",
+      "prompt": "학습 데이터에서 범위를 학습하며 Min-Max 정규화를 적용하세요.",
+      "answer": "scaler.fit_transform(train_data.values)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-ts-cell-13"
     },
     {
       "id": "data-016",
       "subject": "Data",
-      "chapterId": "data-gcf",
-      "chapterNumber": "GCF",
-      "chapterTitle": "Graph Collaborative Filtering",
-      "file": "RecSys_GCF_practice.ipynb",
-      "topic": "아이템 Feature",
-      "prompt": "결합된 feature에서 아이템 부분을 선택하세요.",
-      "answer": "final_features[self.num_users:]",
+      "chapterId": "data-ncf",
+      "chapterNumber": "NCF",
+      "chapterTitle": "Neural Collaborative Filtering",
+      "file": "RecSys_NCF.ipynb",
+      "topic": "Stratified Split",
+      "prompt": "평점 분포를 유지하며 데이터를 9:1 학습·평가 세트로 나누세요.",
+      "answer": "model_selection.train_test_split(df, test_size=0.1, random_state=42, stratify=df.rating.values)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-ncf-cell-8"
     },
     {
       "id": "data-017",
@@ -1472,15 +1487,15 @@
     {
       "id": "vision-016",
       "subject": "Vision",
-      "chapterId": "vision-sd",
-      "chapterNumber": "06",
-      "chapterTitle": "Stable Diffusion v1.4",
-      "file": "06_Stable_Diffusion_v1_4.ipynb",
-      "topic": "Half Precision",
-      "prompt": "GPU 메모리를 줄이도록 pipeline 가중치 자료형을 지정하세요.",
-      "answer": "torch_dtype=torch.float16",
+      "chapterId": "vision-resnet",
+      "chapterNumber": "01",
+      "chapterTitle": "ResNet18 · CIFAR-10",
+      "file": "01_ResNet18_CIFAR10.ipynb",
+      "topic": "Top-1 Accuracy",
+      "prompt": "예측 class와 정답이 일치하는 비율을 scalar accuracy로 계산하세요.",
+      "answer": "(preds == targets).float().mean().item()",
       "occurrence": 0,
-      "sourceId": "vision-sd-cell-6"
+      "sourceId": "vision-resnet-cell-10"
     },
     {
       "id": "vision-017",
@@ -1498,15 +1513,15 @@
     {
       "id": "vision-018",
       "subject": "Vision",
-      "chapterId": "vision-sd",
-      "chapterNumber": "06",
-      "chapterTitle": "Stable Diffusion v1.4",
-      "file": "06_Stable_Diffusion_v1_4.ipynb",
-      "topic": "Image Generation",
-      "prompt": "프롬프트와 guidance scale로 이미지를 생성하고 첫 결과를 꺼내세요.",
-      "answer": "pipe(prompt, guidance_scale=guidance_scale).images[0]",
+      "chapterId": "vision-vit",
+      "chapterNumber": "02",
+      "chapterTitle": "Vision Transformer · CIFAR-10",
+      "file": "02_ViT_CIFAR10.ipynb",
+      "topic": "Confusion Matrix",
+      "prompt": "전체 정답과 예측 class로 confusion matrix를 계산하세요.",
+      "answer": "confusion_matrix(all_labels, all_preds)",
       "occurrence": 0,
-      "sourceId": "vision-sd-cell-9"
+      "sourceId": "vision-vit-cell-26"
     },
     {
       "id": "ondevice-001",

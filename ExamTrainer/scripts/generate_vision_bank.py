@@ -58,10 +58,10 @@ add("vision-ddpm", 15, "Forward Diffusion", "x₀와 Gaussian noise를 이용해
 add("vision-ddpm", 17, "Noisy Sample", "학습 시 정답 noise를 사용해 xₜ를 생성하세요.", "q_sample(x_start=x_start, t=t, noise=noise)")
 add("vision-ddpm", 21, "Reverse Diffusion", "역과정 평균에서 모델이 예측한 noise를 제거하는 항을 완성하세요.", "x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t")
 
-# Stable Diffusion: pipeline precision, CFG strength, and generated image extraction.
-add("vision-sd", 6, "Half Precision", "GPU 메모리를 줄이도록 pipeline 가중치 자료형을 지정하세요.", "torch_dtype=torch.float16")
+# Evaluation metrics and Stable Diffusion guidance.
+add("vision-resnet", 10, "Top-1 Accuracy", "예측 class와 정답이 일치하는 비율을 scalar accuracy로 계산하세요.", "(preds == targets).float().mean().item()")
 add("vision-sd", 9, "Classifier-free Guidance", "프롬프트 조건을 따르는 강도를 강의자료 값으로 설정하세요.", "guidance_scale = 7.5")
-add("vision-sd", 9, "Image Generation", "프롬프트와 guidance scale로 이미지를 생성하고 첫 결과를 꺼내세요.", "pipe(prompt, guidance_scale=guidance_scale).images[0]")
+add("vision-vit", 26, "Confusion Matrix", "전체 정답과 예측 class로 confusion matrix를 계산하세요.", "confusion_matrix(all_labels, all_preds)")
 
 
 if len(SPECS) > 20:

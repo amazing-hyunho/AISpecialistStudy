@@ -72,8 +72,8 @@ add("data-gcf", "gcf", 13, "Message Passing", "아이템 노드로 전달할 edg
 add("data-gcf", "gcf", 13, "Message 집계", "아이템 목적지 인덱스에 edge message를 누적하세요.", "aggregated_messages.index_add_(0, dst, edge_messages_for_dst)")
 add("data-gcf", "gcf", 14, "NGCF Layer", "각 NGCF layer에 edge와 현재 node feature를 전달하세요.", "layer(edge_index, node_features,self.num_users, self.num_items)")
 add("data-gcf", "gcf", 14, "Layer 결합", "모든 layer의 feature를 마지막 차원으로 연결하세요.", "torch.concat(layer_outputs,dim=-1)")
-add("data-gcf", "gcf", 14, "사용자 Feature", "결합된 feature에서 사용자 부분을 선택하세요.", "final_features[:self.num_users]")
-add("data-gcf", "gcf", 14, "아이템 Feature", "결합된 feature에서 아이템 부분을 선택하세요.", "final_features[self.num_users:]")
+add("data-ts", "ts", 13, "데이터 정규화", "학습 데이터에서 범위를 학습하며 Min-Max 정규화를 적용하세요.", "scaler.fit_transform(train_data.values)")
+add("data-ncf", "ncf", 8, "Stratified Split", "평점 분포를 유지하며 데이터를 9:1 학습·평가 세트로 나누세요.", "model_selection.train_test_split(df, test_size=0.1, random_state=42, stratify=df.rating.values)")
 
 # NCF: complete notebook code selected for model flow and sklearn metrics.
 add("data-ncf", "ncf", 10, "Embedding 결합", "사용자와 영화 embedding을 입력 feature로 연결하세요.", "torch.cat([user_embedding, movie_embedding], dim = 1)")
