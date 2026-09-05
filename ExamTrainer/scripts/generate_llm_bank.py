@@ -119,9 +119,12 @@ add("llm-03a", "ch3", "K 투영", "Key를 만드는 선형 투영 레이어를 �
 add("llm-03a", "ch3", "V 투영", "Value를 만드는 선형 투영 레이어를 완성하세요.", "self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)")
 add("llm-03a", "ch3", "Q·K 계산", "입력에서 Key 벡터를 계산하세요.", "keys = self.W_key(x)")
 add("llm-03a", "ch3", "Q·K 계산", "입력에서 Query 벡터를 계산하세요.", "queries = self.W_query(x)")
+add("llm-03a", "ch3", "Value 계산", "입력에 Value 투영 레이어를 적용하세요.", "values = self.W_value(x)")
 add("llm-03a", "ch3", "어텐션 스코어", "Query와 전치한 Key의 내적을 계산하세요.", "queries @ keys.transpose(1, 2)")
 add("llm-03a", "ch3", "인과적 마스킹", "미래 토큰의 스코어를 음의 무한대로 채우세요.", "-torch.inf")
+add("llm-03a", "ch3", "어텐션 가중치", "스케일된 어텐션 점수에 softmax를 적용하세요.", "torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)")
 add("llm-03a", "ch3", "문맥 벡터", "어텐션 가중치와 Value로 문맥 벡터를 계산하세요.", "attn_weights @ values")
+add("llm-03a", "ch3", "어텐션 호출", "생성한 CausalAttention 인스턴스에 batch를 전달하세요.", "ca(batch)")
 
 # Chapter 3B - Multi-head visualization
 add("llm-03b", "ch3viz", "헤드 분리", "Key를 여러 어텐션 헤드로 나누고 차원을 전치하세요.", "keys.view(b, num_tokens, module.num_heads, module.head_dim).transpose(1, 2)")
@@ -134,6 +137,7 @@ add("llm-04", "ch4", "LayerNorm", "평균과 분산으로 입력을 정규화하
 add("llm-04", "ch4", "LayerNorm", "학습 가능한 scale과 shift를 적용하세요.", "self.scale * norm_x + self.shift")
 add("llm-04", "ch4", "FeedForward", "임베딩 차원을 4배로 확장하는 Linear 층을 만드세요.", "nn.Linear(cfg[\"emb_dim\"], 4 * cfg[\"emb_dim\"])")
 add("llm-04", "ch4", "FeedForward", "FeedForward 블록의 활성화 함수를 채우세요.", "GELU()")
+add("llm-04", "ch4", "FeedForward", "4배로 확장한 은닉 차원을 다시 임베딩 차원으로 줄이세요.", "nn.Linear(4 * cfg[\"emb_dim\"], cfg[\"emb_dim\"])")
 add("llm-04", "ch4", "Residual Block", "정규화된 입력에 Attention을 적용하세요.", "x = self.att(x)")
 add("llm-04", "ch4", "Residual Block", "두 번째 정규화 뒤에 FeedForward를 적용하세요.", "x = self.ff(x)")
 add("llm-04", "ch4", "토큰 임베딩", "GPT의 토큰 임베딩 레이어를 완성하세요.", "nn.Embedding(cfg[\"vocab_size\"], cfg[\"emb_dim\"])")
@@ -141,6 +145,8 @@ add("llm-04", "ch4", "위치 임베딩", "GPT의 위치 임베딩 레이어를 �
 add("llm-04", "ch4", "출력 헤드", "임베딩을 어휘 점수로 변환하는 출력 헤드를 만드세요.", "nn.Linear(cfg[\"emb_dim\"], cfg[\"vocab_size\"], bias=False)")
 add("llm-04", "ch4", "입력 임베딩", "토큰 임베딩과 위치 임베딩을 더하세요.", "tok_embeds + pos_embeds")
 add("llm-04", "ch4", "Transformer 통과", "입력을 쌓인 Transformer block에 통과시키세요.", "self.trf_blocks(x)")
+add("llm-04", "ch4", "출력 헤드", "최종 정규화 결과에 어휘 출력 헤드를 적용하세요.", "self.out_head(x)")
+add("llm-04", "ch4", "그래디언트 해제", "토큰 생성 추론에서 gradient 계산을 끄세요.", "with torch.no_grad():")
 add("llm-04", "ch4", "마지막 시점", "다음 토큰 예측에 마지막 시점 logits만 선택하세요.", "logits[:, -1, :]")
 add("llm-04", "ch4", "Greedy Decoding", "가장 큰 logit의 토큰을 선택하세요.", "torch.argmax(logits, dim=-1, keepdim=True)")
 add("llm-04", "ch4", "토큰 연결", "예측 토큰을 기존 시퀀스 뒤에 붙이세요.", "torch.cat((idx, idx_next), dim=1)")
@@ -153,6 +159,8 @@ add("llm-05", "ch5", "배치 손실", "현재 입력과 타깃 배치의 손실�
 add("llm-05", "ch5", "역전파", "손실에서 역전파를 수행하세요.", "loss.backward()")
 add("llm-05", "ch5", "가중치 갱신", "계산된 gradient로 파라미터를 갱신하세요.", "optimizer.step()")
 add("llm-05", "ch5", "Greedy Decoding", "마지막 위치의 최대 logit 토큰을 선택하세요.", "torch.argmax(logits, dim=-1, keepdim=True)")
+add("llm-05", "ch5", "마지막 시점", "다음 토큰 생성을 위해 마지막 시점 logits만 선택하세요.", "logits[:, -1, :]")
+add("llm-05", "ch5", "토큰 연결", "선택한 idx_next를 기존 토큰 시퀀스 뒤에 붙이세요.", "torch.cat((idx, idx_next), dim=1)")
 add("llm-05", "ch5", "배치 차원", "단일 토큰 시퀀스에 배치 차원을 추가하세요.", "unsqueeze(0)")
 add("llm-05", "ch5", "배치 차원", "디코딩 전에 배치 차원을 제거하세요.", "token_ids.squeeze(0)")
 add("llm-05", "ch5", "Optimizer", "모델 파라미터로 AdamW optimizer를 생성하세요.", "torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)")
@@ -166,6 +174,7 @@ add("llm-06a", "ch6", "파라미터 동결", "기존 모델의 모든 파라미�
 add("llm-06a", "ch6", "출력층 교체", "이진 분류용 출력 헤드로 교체하세요.", "torch.nn.Linear(in_features=BASE_CONFIG[\"emb_dim\"], out_features=num_classes)")
 add("llm-06a", "ch6", "선택적 미세조정", "마지막 Transformer block만 선택하세요.", "model.trf_blocks[-1].parameters()")
 add("llm-06a", "ch6", "선택적 미세조정", "선택한 층의 학습을 다시 허용하세요.", "param.requires_grad = True")
+add("llm-06a", "ch6", "정규화층 미세조정", "최종 LayerNorm 파라미터의 학습을 허용하세요.", "param.requires_grad = True", 1)
 
 # Chapter 6B - LoRA
 add("llm-06b", "ch6lora", "LoRA A", "A 행렬을 입력 차원과 rank 크기로 생성하세요.", "torch.empty(in_dim, rank)")
@@ -191,6 +200,7 @@ add("llm-07b", "dpo", "자동회귀 시프트", "logits의 마지막 시점을 �
 add("llm-07b", "dpo", "정답 로그확률", "정답 레이블 위치의 log probability를 모으세요.", "input=log_probs")
 add("llm-07b", "dpo", "Policy 비율", "Policy 모델의 chosen-rejected 로그확률 차이를 구하세요.", "model_chosen_logprobs - model_rejected_logprobs")
 add("llm-07b", "dpo", "Reference 비율", "Reference 모델의 chosen-rejected 로그확률 차이를 구하세요.", "reference_chosen_logprobs - reference_rejected_logprobs")
+add("llm-07b", "dpo", "DPO Logits", "Policy 비율에서 Reference 비율을 빼세요.", "model_logratios - reference_logratios")
 add("llm-07b", "dpo", "DPO Loss", "DPO logits에 log-sigmoid 손실을 적용하세요.", "-F.logsigmoid(beta * logits)")
 
 
@@ -239,14 +249,26 @@ FOCUSED_SPECS = {
     ("dpo", "-F.logsigmoid(beta * logits)"),
 }
 
-SPECS = [
+focused_specs = [
     spec
     for spec in SPECS
     if (spec["sourceKey"], spec["answer"]) in FOCUSED_SPECS
 ]
 
-if len(SPECS) > 25:
-    raise ValueError("Focused LLM bank must stay at 25 questions or fewer.")
+# Keep the existing exam-focused questions first so their stable IDs and saved
+# progress remain intact. Then append every explicit ????/TODO completion from
+# the exercise notebooks. Chapter 1 and the visualization notebook contain no
+# learner blanks, so they remain outside this completeness pass.
+explicit_fill_specs = [
+    spec
+    for spec in SPECS
+    if spec not in focused_specs
+    and spec["chapterId"] not in {"llm-01", "llm-03b"}
+]
+SPECS = focused_specs + explicit_fill_specs
+
+if len(SPECS) > 120:
+    raise ValueError("Unexpected LLM question expansion; audit the explicit-fill list.")
 
 
 def read_code_cells(relative_path: str) -> list[tuple[int, str]]:

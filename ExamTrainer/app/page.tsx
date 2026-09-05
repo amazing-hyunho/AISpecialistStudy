@@ -44,23 +44,41 @@ const bank = questionBankData as {
 };
 
 const bankQuestionIds = new Set(bank.questions.map((question) => question.id));
-const missingExplanationIds = bank.questions
-  .filter((question) => !questionExplanations[question.id])
-  .map((question) => question.id);
 const unknownExplanationIds = Object.keys(questionExplanations)
   .filter((questionId) => !bankQuestionIds.has(questionId));
 
-if (missingExplanationIds.length || unknownExplanationIds.length) {
+if (unknownExplanationIds.length) {
   throw new Error(
-    `Question explanation mismatch. Missing: ${missingExplanationIds.join(', ') || 'none'}; Unknown: ${unknownExplanationIds.join(', ') || 'none'}`,
+    `Question explanation mismatch. Unknown: ${unknownExplanationIds.join(', ')}`,
   );
 }
+
+const explanationFor = (question: QuestionRecord): QuestionExplanation =>
+  questionExplanations[question.id] ?? {
+    why: `이 문제는 강의자료에서 실제로 비워 둔 ${question.topic} 작성 구간입니다. ${question.prompt}`,
+    memory: `강의 답안의 핵심 코드는 ${question.answer} 입니다.`,
+  };
 
 const questions: Question[] = bank.questions.map((question) => ({
   ...question,
   ...bank.cells[question.sourceId],
-  explanation: questionExplanations[question.id],
+  explanation: explanationFor(question),
 }));
+
+function answerOffset(question: Question) {
+  let offset = -1;
+  let fromIndex = 0;
+  for (let index = 0; index <= question.occurrence; index += 1) {
+    offset = question.source.indexOf(question.answer, fromIndex);
+    if (offset < 0) return Number.MAX_SAFE_INTEGER;
+    fromIndex = offset + question.answer.length;
+  }
+  return offset;
+}
+
+function inNotebookOrder(left: Question, right: Question) {
+  return left.cell - right.cell || answerOffset(left) - answerOffset(right);
+}
 
 const STORAGE_KEY = 'ai-exam-trainer-progress-v5';
 const LEGACY_STORAGE_KEYS = [
@@ -184,7 +202,9 @@ export default function Home() {
     if (screen === 'wrong') {
       return questions.filter((question) => wrongIds.includes(question.id));
     }
-    return questions.filter((question) => question.chapterId === chapterId);
+    return questions
+      .filter((question) => question.chapterId === chapterId)
+      .sort(inNotebookOrder);
   }, [chapterId, screen, wrongIds]);
 
   const current = activeQuestions[currentIndex] ?? questions[0];

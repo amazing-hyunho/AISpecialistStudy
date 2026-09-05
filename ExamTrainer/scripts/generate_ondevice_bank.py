@@ -95,9 +95,69 @@ add("ondevice-llm-quant", 27, "Scale 복원", "pseudo quantization 후 중요 �
 add("ondevice-llm-quant", 55, "SmoothQuant Scale", "activation과 weight scale에 alpha를 적용해 smoothing scale을 계산하세요.", "act_scales.pow(alpha) / weight_scales.pow(1 - alpha)")
 add("ondevice-llm-quant", 50, "LayerNorm Smoothing", "연결된 FC와 상쇄되도록 LayerNorm weight를 scale로 나누세요.", "ln.weight.div_(scale)")
 
+# Every remaining assignment inside YOUR CODE STARTS/ENDS HERE. The focused
+# questions above keep their IDs; these required practice completions append.
+add("ondevice-cnn-pruning", 29, "Magnitude Importance", "가중치의 절댓값으로 importance를 계산하세요.", "importance = torch.abs(weight)")
+add(
+    "ondevice-cnn-pruning", 48, "Layer-wise Sparsity",
+    "각 CNN layer에 강의 답안의 sparsity 값을 설정하세요.",
+    "    'backbone.conv0.weight': 0.5,\n"
+    "    'backbone.conv1.weight': 0.8,\n"
+    "    'backbone.conv2.weight': 0.8,\n"
+    "    'backbone.conv3.weight': 0.7,\n"
+    "    'backbone.conv4.weight': 0.7,\n"
+    "    'backbone.conv5.weight': 0.8,\n"
+    "    'backbone.conv6.weight': 0.8,\n"
+    "    'backbone.conv7.weight': 0.9,\n"
+    "    'classifier.weight': 0.9",
+)
+add("ondevice-cnn-pruning", 54, "Global Weight 결합", "pruning 대상 가중치를 하나의 tensor로 결합하세요.", "all_weights = torch.cat(parameters_to_prune)")
+add("ondevice-cnn-pruning", 54, "Global 원소 수", "결합한 가중치의 전체 원소 수를 구하세요.", "num_elements = all_weights.numel()")
+add("ondevice-cnn-pruning", 54, "Global Pruning 개수", "global sparsity로 0으로 만들 원소 수를 계산하세요.", "num_zeros = round(num_elements * sparsity)")
+add("ondevice-cnn-pruning", 54, "Global Importance", "결합한 가중치의 절댓값 importance를 계산하세요.", "importance = torch.abs(all_weights)")
+add("ondevice-cnn-pruning", 54, "Global Threshold", "global pruning에 사용할 k번째 threshold를 구하세요.", "threshold = torch.kthvalue(importance, num_zeros)[0]")
+add("ondevice-cnn-pruning", 65, "Sparsity Schedule", "pruning 시작 전에는 sparsity를 0으로 설정하세요.", "sparsity = 0")
+add("ondevice-cnn-pruning", 65, "Sparsity Schedule", "pruning 종료 이후에는 최종 sparsity를 사용하세요.", "sparsity = sparsity_end")
+add("ondevice-cnn-pruning", 65, "Sparsity Schedule", "pruning 구간의 cubic sparsity schedule을 완성하세요.", "sparsity = sparsity_end + (sparsity_start - sparsity_end) * (1 - (epoch - epoch_start) / (epoch_end - epoch_start)) ** exponent")
 
-if len(SPECS) > 20:
-    raise ValueError("Focused On-device bank must stay at 20 questions or fewer.")
+add("ondevice-cnn-quant", 24, "Linear Quantization", "scale된 부동소수 tensor를 정수값으로 rounding하세요.", "rounded_tensor = torch.round(scaled_tensor)")
+add("ondevice-cnn-quant", 55, "Output Zero Point", "requantization 결과에 output zero point를 더하세요.", "output = output + output_zero_point")
+add("ondevice-cnn-quant", 63, "Conv Requantization", "convolution 정수 출력을 input·weight·output scale로 재조정하세요.", "output = output*(input_scale * weight_scale / output_scale)")
+add("ondevice-cnn-quant", 63, "Conv Zero Point", "convolution requantization 결과에 output zero point를 더하세요.", "output = output + output_zero_point")
+add("ondevice-cnn-quant", 85, "Codebook 크기", "bitwidth에 따른 클러스터 수를 계산하세요.", "n_clusters = 2**bitwidth")
+add("ondevice-cnn-quant", 96, "Centroid 갱신", "k번 클러스터에 할당된 값의 평균으로 centroid를 갱신하세요.", "codebook.centroids[k] = torch.mean(fp32_tensor[codebook.labels==k])")
+
+add("ondevice-kd", 26, "Student Forward", "Student 모델의 logits을 계산하세요.", "student_logits = student(inputs)")
+add("ondevice-kd", 26, "Student Probability", "temperature를 적용한 Student logits을 확률분포로 변환하세요.", "student_prob = nn.functional.softmax(student_logits / T, dim=-1)")
+add("ondevice-kd", 26, "Label Loss", "Student logits과 정답 label의 cross-entropy loss를 계산하세요.", "label_loss = ce_loss(student_logits, labels)")
+add("ondevice-kd", 39, "Teacher Representation", "gradient 없이 Teacher의 hidden representation을 구하세요.", "_, teacher_hidden_representation = teacher(inputs)")
+add("ondevice-kd", 39, "Student Representation", "Student의 logits과 hidden representation을 구하세요.", "student_logits, student_hidden_representation = student(inputs)")
+add("ondevice-kd", 39, "Cosine Distillation", "Student와 Teacher hidden representation의 cosine loss를 계산하세요.", "hidden_rep_loss = cosine_loss(student_hidden_representation, teacher_hidden_representation,\n                                          target=torch.ones(inputs.size(0)).cuda())")
+add("ondevice-kd", 39, "Label Loss", "Student logits과 label의 cross-entropy loss를 계산하세요.", "label_loss = ce_loss(student_logits, labels)")
+add("ondevice-kd", 39, "Representation Loss 결합", "hidden representation loss와 label loss를 가중합하세요.", "loss = hidden_rep_loss_weight * hidden_rep_loss + ce_loss_weight * label_loss")
+add("ondevice-kd", 52, "Teacher Feature Map", "gradient 없이 Teacher feature map을 구하세요.", "_, teacher_feature_map = teacher(inputs)")
+add("ondevice-kd", 52, "Student Feature Map", "Student logits과 regressor feature map을 구하세요.", "student_logits, regressor_feature_map = student(inputs)")
+add("ondevice-kd", 52, "Feature-map Loss", "Student regressor와 Teacher feature map의 MSE를 계산하세요.", "hidden_rep_loss = mse_loss(regressor_feature_map, teacher_feature_map)")
+add("ondevice-kd", 52, "Label Loss", "Student logits과 label의 cross-entropy loss를 계산하세요.", "label_loss = ce_loss(student_logits, labels)")
+add("ondevice-kd", 52, "Feature-map Loss 결합", "feature-map loss와 label loss를 가중합하세요.", "loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss")
+
+add("ondevice-llm-pruning", 10, "Weight 원소 수", "LLM 가중치 tensor의 전체 원소 수를 구하세요.", "num_elements = W.numel()")
+add("ondevice-llm-pruning", 10, "Pruning 개수", "sparsity로 제거할 LLM 가중치 개수를 계산하세요.", "num_zeros = round(num_elements * sparsity)")
+add("ondevice-llm-pruning", 10, "Weight Importance", "LLM 가중치의 절댓값 importance를 계산하세요.", "importance = torch.abs(W)")
+add("ondevice-llm-pruning", 10, "Weight Threshold", "제거 개수에 해당하는 magnitude threshold를 구하세요.", "threshold = torch.kthvalue(importance.flatten(), num_zeros)[0]")
+add("ondevice-llm-pruning", 10, "Weight Mask", "threshold보다 큰 가중치만 남기는 mask를 만드세요.", "mask = importance > threshold")
+add("ondevice-llm-pruning", 19, "Weight Shape", "WANDA mask 계산을 위해 가중치의 행과 열을 구하세요.", "row, col = W.shape")
+add("ondevice-llm-pruning", 19, "Row Pruning 개수", "각 행에서 제거할 열 개수를 계산하세요.", "num_zeros_per_row = round(col * sparsity)")
+add("ondevice-llm-pruning", 19, "Row Threshold", "각 행별 WANDA importance threshold를 구하세요.", "threshold = torch.kthvalue(importance, num_zeros_per_row, dim=1)[0]")
+
+add("ondevice-llm-quant", 34, "AWQ Scale", "activation scale에 ratio를 거듭제곱해 AWQ scale을 계산하세요.", "scales = s_x ** ratio")
+add("ondevice-llm-quant", 50, "LayerNorm Bias", "LayerNorm bias를 smoothing scale로 나누세요.", "ln.bias.div_(scale)")
+add("ondevice-llm-quant", 67, "Embedding Rotation", "Embedding 가중치의 오른쪽에 rotation 행렬을 곱하세요.", "m.weight.data = W_ @ R1")
+add("ondevice-llm-quant", 67, "Output Rotation", "o_proj와 down_proj 가중치의 왼쪽에 전치 rotation을 곱하세요.", "m.weight.data = R1.T @ W_")
+add("ondevice-llm-quant", 67, "Input Rotation", "Q/K/V와 FFN 가중치의 오른쪽에 rotation 행렬을 곱하세요.", "m.weight.data = W_ @ R1", 1)
+
+if len(SPECS) > 80:
+    raise ValueError("Unexpected On-device question expansion; audit the explicit-fill list.")
 
 
 def read_cell(chapter_id: str, cell_index: int) -> tuple[str, str]:

@@ -6,7 +6,7 @@
       "title": "Dataset & Embeddings",
       "file": "Chapter_2_Exercise_Dataset.ipynb",
       "subject": "LLM",
-      "questionCount": 2
+      "questionCount": 9
     },
     {
       "id": "llm-03a",
@@ -14,7 +14,7 @@
       "title": "Attention",
       "file": "Chapter_3_Excercise_Attention.ipynb",
       "subject": "LLM",
-      "questionCount": 2
+      "questionCount": 11
     },
     {
       "id": "llm-04",
@@ -22,7 +22,7 @@
       "title": "GPT Architecture",
       "file": "Chapter_4_Excercise_GPT.ipynb",
       "subject": "LLM",
-      "questionCount": 2
+      "questionCount": 17
     },
     {
       "id": "llm-05",
@@ -30,7 +30,15 @@
       "title": "Pretraining",
       "file": "Chapter_5_Excercise_Pretraining.ipynb",
       "subject": "LLM",
-      "questionCount": 2
+      "questionCount": 12
+    },
+    {
+      "id": "llm-06a",
+      "number": "06A",
+      "title": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "subject": "LLM",
+      "questionCount": 9
     },
     {
       "id": "llm-06b",
@@ -38,7 +46,15 @@
       "title": "LoRA Finetuning",
       "file": "Chapter_6_Excercise_Finetuning_Classification_LoRA.ipynb",
       "subject": "LLM",
-      "questionCount": 7
+      "questionCount": 9
+    },
+    {
+      "id": "llm-07a",
+      "number": "07A",
+      "title": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "subject": "LLM",
+      "questionCount": 5
     },
     {
       "id": "llm-07b",
@@ -46,7 +62,7 @@
       "title": "DPO",
       "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
       "subject": "LLM",
-      "questionCount": 10
+      "questionCount": 16
     },
     {
       "id": "rag-d1-01",
@@ -86,7 +102,7 @@
       "number": "TS",
       "title": "Time Series",
       "file": "ts_practice.ipynb",
-      "questionCount": 10
+      "questionCount": 21
     },
     {
       "id": "data-gcf",
@@ -94,7 +110,7 @@
       "number": "GCF",
       "title": "Graph Collaborative Filtering",
       "file": "RecSys_GCF_practice.ipynb",
-      "questionCount": 5
+      "questionCount": 9
     },
     {
       "id": "data-ncf",
@@ -158,7 +174,7 @@
       "number": "01",
       "title": "Pruning for CNN",
       "file": "1. Pruning for CNN.ipynb",
-      "questionCount": 3
+      "questionCount": 13
     },
     {
       "id": "ondevice-cnn-quant",
@@ -166,7 +182,7 @@
       "number": "02",
       "title": "Quantization for CNN",
       "file": "2. Quantization for CNN.ipynb",
-      "questionCount": 4
+      "questionCount": 10
     },
     {
       "id": "ondevice-kd",
@@ -174,7 +190,7 @@
       "number": "03",
       "title": "Knowledge Distillation",
       "file": "3. Knowledge Distillation.ipynb",
-      "questionCount": 4
+      "questionCount": 17
     },
     {
       "id": "ondevice-llm-pruning",
@@ -182,7 +198,7 @@
       "number": "04",
       "title": "Pruning for LLM",
       "file": "4. Pruning for LLM.ipynb",
-      "questionCount": 3
+      "questionCount": 11
     },
     {
       "id": "ondevice-llm-quant",
@@ -190,7 +206,7 @@
       "number": "05",
       "title": "Quantization for LLM",
       "file": "5. Quantization for LLM.ipynb",
-      "questionCount": 4
+      "questionCount": 9
     }
   ],
   "cells": {
@@ -258,6 +274,101 @@
       "source": "# ==========================================\n# 5. 메인 실행 코드\n# ==========================================\n# 설정\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\nprint(f\"Using device: {device}\")\n\ntokenizer = tiktoken.get_encoding(\"gpt2\")\n\n# 데이터 로드\nfile_path = \"datas/instruction-data-with-preference.json\"\nurl = \"https://raw.githubusercontent.com/rasbt/LLMs-from-scratch/main/ch07/04_preference-tuning-with-dpo/instruction-data-with-preference.json\"\ndata = download_and_load_file(file_path, url)\n\n# 데이터 분할\ntrain_portion = int(len(data) * 0.85)\ntest_portion = int(len(data) * 0.1)\ntrain_data = data[:train_portion]\ntest_data = data[train_portion:train_portion + test_portion]\nval_data = data[train_portion + test_portion:]\n\n# DataLoader 생성\ncustomized_collate_fn = partial(\n    custom_collate_fn, device=device, mask_prompt_tokens=True, allowed_max_length=1024\n)\n\nbatch_size = 8\ntrain_loader = DataLoader(PreferenceDataset(train_data, tokenizer), batch_size=batch_size,\n                            collate_fn=customized_collate_fn, shuffle=True, drop_last=True)\nval_loader = DataLoader(PreferenceDataset(val_data, tokenizer), batch_size=batch_size,\n                        collate_fn=customized_collate_fn, shuffle=False)\n\n# 모델 설정 (SFT 모델 로드)\nBASE_CONFIG = {\n    \"vocab_size\": 50257, \"context_length\": 1024, \"drop_rate\": 0.0, \"qkv_bias\": True,\n    \"emb_dim\": 1024, \"n_layers\": 24, \"n_heads\": 16 # gpt2-medium config\n}\n\nfile_name = \"gpt2-medium-355M.pth\"\nmodel_path = f\"./models/gpt2/{file_name}\"\ndownload_model(file_name, model_path)\n\n# Policy Model (학습 대상)\npolicy_model = GPTModel(BASE_CONFIG)\npolicy_model.load_state_dict(torch.load(model_path, map_location=\"cpu\", weights_only=True))\npolicy_model.to(device)\n\n# Reference Model (고정 기준점)\nreference_model = GPTModel(BASE_CONFIG)\nreference_model.load_state_dict(torch.load(model_path, map_location=\"cpu\", weights_only=True))\nreference_model.to(device)\nreference_model.eval()\n\n# 학습 시작\noptimizer = torch.optim.AdamW(policy_model.parameters(), lr=5e-6, weight_decay=0.01)\n\nstart_time = time.time()\nnum_epochs = 1\ntracking = train_model_dpo_simple(\n    policy_model=policy_model,\n    reference_model=reference_model,\n    train_loader=train_loader,\n    val_loader=val_loader,\n    optimizer=optimizer,\n    num_epochs=num_epochs,\n    beta=0.1,\n    eval_freq=5,\n    eval_iter=5,\n    start_context=format_input(val_data[2]),\n    tokenizer=tokenizer\n)\nprint(f\"Training completed in {(time.time() - start_time) / 60:.2f} minutes.\")",
       "cell": 2,
       "answerSource": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"
+    },
+    "ch2-cell-0": {
+      "source": "import importlib\nimport tiktoken\n\nprint(\"tiktoken version:\", importlib.metadata.version(\"tiktoken\"))\n\ntokenizer = tiktoken.get_encoding(\"gpt2\")\n\ntext = (\n    \"Hello, do you like tea? <|endoftext|> In the sunlit terraces\"\n     \"of someunknownPlace.\"\n)\nintegers = tokenizer.encode(text, allowed_special={\"<|endoftext|>\"})\nprint(integers)\n\nstrings = tokenizer.decode(integers)\nprint(strings)",
+      "cell": 0,
+      "answerSource": "Chapter_2_Exercise_Dataset.ipynb"
+    },
+    "ch2-cell-3": {
+      "source": "##중요 : 아래 함수는 DataLoader를 생성하는 헬퍼 함수입니다.\nimport tiktoken\ndef create_dataloader_v1(txt, batch_size=4, max_length=256,\n                         stride=128, shuffle=True, drop_last=True,\n                         num_workers=0):\n\n    # 토크나이저를 초기화합니다.\n    tokenizer = tiktoken.get_encoding(\"gpt2\")\n\n    # 데이터셋을 만듭니다.\n    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)\n\n    # 데이터 로더를 만듭니다.\n    dataloader = DataLoader(\n        dataset,\n        batch_size=batch_size,\n        shuffle=shuffle,\n        drop_last=drop_last,\n        num_workers=num_workers\n    )\n\n    return dataloader",
+      "cell": 3,
+      "answerSource": "Chapter_2_Exercise_Dataset.ipynb"
+    },
+    "ch2-cell-5": {
+      "source": "input_ids = torch.tensor([2, 3, 5, 1])\n\nvocab_size = 6\noutput_dim = 3\n\ntorch.manual_seed(123)\nembedding_layer = torch.nn.Embedding(vocab_size, output_dim)\n\nprint(embedding_layer.weight)\n\ntoken_embeddings = embedding_layer(input_ids)\nprint(token_embeddings)",
+      "cell": 5,
+      "answerSource": "Chapter_2_Exercise_Dataset.ipynb"
+    },
+    "ch3-cell-92": {
+      "source": "import torch\nimport torch.nn as nn\n\nclass SelfAttention_v2(nn.Module):\n\n    def __init__(self, d_in, d_out, qkv_bias=False):\n        super().__init__()\n        # v1과의 차이점: nn.Parameter 대신 nn.Linear를 사용합니다.\n        # nn.Linear는 내부적으로 가중치(Weight)와 편향(Bias)을 자동으로 생성하고 관리해줍니다.\n\n        # d_in: 입력 차원, d_out: 출력 차원\n        # bias=qkv_bias: 편향을 사용할지 여부 (True면 학습 가능한 편향 추가)\n        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)\n        self.W_key   = nn.Linear(d_in, d_out, bias=qkv_bias)\n        self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)\n\n    def forward(self, x):\n        # 입력 x를 각 선형 레이어(Linear Layer)에 통과시킵니다.\n        # 내부적으로 행렬 곱(x @ W)과 편향 덧셈(+ b)이 수행됩니다.\n        keys = self.W_key(x)       # Key 생성\n        queries = self.W_query(x)  # Query 생성\n        values = self.W_value(x)   # Value 생성\n\n        # 1. Attention Score 계산 (유사도 측정)\n        # Query와 Key의 전치(Transpose)를 행렬 곱합니다.\n        # keys.T: (시퀀스 길이, d_out) -> (d_out, 시퀀스 길이)로 뒤집음\n        attn_scores = queries @ keys.T\n\n        # 2. Scaling & Softmax (정규화)\n        # 차원 크기의 제곱근으로 나누어 스케일링 후, 확률값으로 변환\n        # dim=-1: 마지막 차원(행)을 기준으로 합이 1이 되도록 함\n        attn_weights = torch.softmax(\n            attn_scores / keys.shape[-1]**0.5, dim=-1\n        )\n\n        # 3. Context Vector 생성 (정보 취합)\n        # 계산된 가중치(attn_weights)를 Value에 곱해 최종 문맥 벡터를 만듭니다.\n        context_vec = attn_weights @ values\n\n        return context_vec\n\n# --- 실행 예시 ---\ntorch.manual_seed(789)\n\nsa_v2 = SelfAttention_v2(d_in, d_out)\nprint(sa_v2(inputs))",
+      "cell": 92,
+      "answerSource": "llm_from_scratch/Chapter_3_Attention_Mechanisms_KR.ipynb"
+    },
+    "ch3-cell-101": {
+      "source": "# 편의상 이전 절에서 만든 SelfAttention_v2 객체의 쿼리와 키 가중치 행렬을 재사용합니다.\nqueries = sa_v2.W_query(inputs)\nkeys = sa_v2.W_key(inputs)\nattn_scores = queries @ keys.T\n\nattn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)\nprint(attn_weights)",
+      "cell": 101,
+      "answerSource": "llm_from_scratch/Chapter_3_Attention_Mechanisms_KR.ipynb"
+    },
+    "ch4-cell-2": {
+      "source": "#####################################\n# Chapter 4: GPT 아키텍처 구성 요소\n#####################################\nclass LayerNorm(nn.Module):\n    \"\"\"\n    층 정규화 (Layer Normalization): 학습 안정성을 높임\n    \"\"\"\n    def __init__(self, emb_dim):\n        super().__init__()\n        self.eps = 1e-5\n        self.scale = nn.Parameter(torch.ones(emb_dim)) # 학습 가능한 스케일 파라미터 (Gamma)\n        self.shift = nn.Parameter(torch.zeros(emb_dim)) # 학습 가능한 시프트 파라미터 (Beta)\n\n    def forward(self, x):\n        mean = x.mean(dim=-1, keepdim=True)\n        var = x.var(dim=-1, keepdim=True, unbiased=False)\n        norm_x = (x - mean) / torch.sqrt(var + self.eps)\n        return self.scale * norm_x + self.shift\n\n\nclass GELU(nn.Module):\n    \"\"\"\n    GELU 활성화 함수: GPT 계열에서 주로 사용하는 비선형 함수\n    \"\"\"\n    def __init__(self):\n        super().__init__()\n\n    def forward(self, x):\n        return 0.5 * x * (1 + torch.tanh(\n            torch.sqrt(torch.tensor(2.0 / torch.pi)) *\n            (x + 0.044715 * torch.pow(x, 3))\n        ))\n\n\nclass FeedForward(nn.Module):\n    \"\"\"\n    피드 포워드 네트워크 (Feed-Forward Network)\n    어텐션이 모은 정보를 각 토큰별로 개별적으로 가공하는 역할\n    보통 임베딩 차원을 4배로 늘렸다가 다시 줄임\n    \"\"\"\n    def __init__(self, cfg):\n        super().__init__()\n        self.layers = nn.Sequential(\n            nn.Linear(cfg[\"emb_dim\"], 4 * cfg[\"emb_dim\"]),\n            GELU(),\n            nn.Linear(4 * cfg[\"emb_dim\"], cfg[\"emb_dim\"]),\n        )\n\n    def forward(self, x):\n        return self.layers(x)\n\n\nclass TransformerBlock(nn.Module):\n    \"\"\"\n    표준 트랜스포머 블록 (Decoder Block)\n    구조: LayerNorm -> Attention -> Add(Residual) -> LayerNorm -> FeedForward -> Add(Residual)\n    \"\"\"\n    def __init__(self, cfg):\n        super().__init__()\n        self.att = MultiHeadAttention(\n            d_in=cfg[\"emb_dim\"],\n            d_out=cfg[\"emb_dim\"],\n            context_length=cfg[\"context_length\"],\n            num_heads=cfg[\"n_heads\"],\n            dropout=cfg[\"drop_rate\"],\n            qkv_bias=cfg[\"qkv_bias\"])\n        self.ff = FeedForward(cfg)\n        self.norm1 = LayerNorm(cfg[\"emb_dim\"])\n        self.norm2 = LayerNorm(cfg[\"emb_dim\"])\n        self.drop_shortcut = nn.Dropout(cfg[\"drop_rate\"])\n\n    def forward(self, x):\n        # 1. 어텐션 블록 (Residual Connection 적용)\n        shortcut = x\n        x = self.norm1(x) # Pre-LayerNorm 방식\n        x = self.att(x)\n        x = self.drop_shortcut(x)\n        x = x + shortcut  # 원본 입력을 더해줌 (기울기 소실 방지)\n\n        # 2. 피드 포워드 블록 (Residual Connection 적용)\n        shortcut = x\n        x = self.norm2(x)\n        x = self.ff(x)\n        x = self.drop_shortcut(x)\n        x = x + shortcut  # 원본 입력 다시 더함\n\n        return x",
+      "cell": 2,
+      "answerSource": "llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb"
+    },
+    "ch5-cell-123": {
+      "source": "import torch\n\n# 1. 체크포인트 파일 로드\n# 저장된 파일(.pth)을 읽어와서 파이썬 딕셔너리 형태로 만듭니다.\n# weights_only=True: 보안을 위해 피클(pickle) 데이터 중 가중치 데이터만 로드하도록 제한합니다. (안전한 로딩)\ncheckpoint = torch.load(\"outputs/model_and_optimizer.pth\", weights_only=True)\n\n# 2. 모델 구조(Skeleton) 재생성\n# 가중치를 담으려면, 가중치가 들어갈 '그릇(모델 구조)'이 먼저 메모리에 있어야 합니다.\n# [중요] 저장할 때 사용했던 설정(GPT_CONFIG_124M)과 똑같이 만들어야 에러가 안 납니다.\nmodel = GPTModel(GPT_CONFIG_124M)\n\n# 3. 모델 가중치(Weight) 복원\n# 체크포인트 딕셔너리에서 'model_state_dict' 키에 저장된 가중치들을 꺼내\n# 방금 만든 빈 모델(model)에 덮어씌웁니다.\nmodel.load_state_dict(checkpoint[\"model_state_dict\"])\n\n# 4. 옵티마이저 초기화\n# 옵티마이저도 새로 생성해야 합니다. 이때 모델의 파라미터(model.parameters())를 연결해줍니다.\n# 주의: 여기서 설정한 lr(학습률) 등은 초기 설정값이며, 바로 아래 줄에서 덮어씌워질 수 있습니다.\noptimizer = torch.optim.AdamW(model.parameters(), lr=0.0005, weight_decay=0.1)\n\n# 5. 옵티마이저 상태(State) 복원 (학습 재개 시 필수!)\n# 옵티마이저는 단순히 학습률만 가지고 있는 게 아니라,\n# 이전 학습 과정에서의 '관성(Momentum)'이나 '스텝 수' 같은 내부 정보를 가지고 있습니다.\n# 이 정보를 복원해야 학습이 끊기지 않고 자연스럽게 이어집니다.\noptimizer.load_state_dict(checkpoint[\"optimizer_state_dict\"])\n\n# 6. 학습 모드 설정\n# 불러온 직후에는 모델이 어떤 상태인지 모르므로, 다시 학습을 시작할 준비(train mode)를 합니다.\nmodel.train()",
+      "cell": 123,
+      "answerSource": "llm_from_scratch/Chapter_5_Pretraining_on_Unlabeled Data_KR.ipynb"
+    },
+    "ch5-cell-113": {
+      "source": "import torch\n\ndef generate(model, idx, max_new_tokens, context_size, temperature=0.0, top_k=None, eos_id=None):\n    \"\"\"\n    텍스트를 생성하는 함수입니다.\n\n    Args:\n        model: 학습된 LLM 모델\n        idx: 현재까지의 문맥(토큰 인덱스들의 텐서) (Batch, Time)\n        max_new_tokens: 최대로 생성할 토큰 수\n        context_size: 모델이 한 번에 처리할 수 있는 최대 문맥 길이\n        temperature: 생성 다양성 조절 (0.0 = 결정적/안전함, 높을수록 창의적/무작위)\n        top_k: 확률이 높은 상위 k개 토큰만 후보로 남김 (이상한 단어 생성 방지)\n        eos_id: '문장 끝'을 알리는 토큰 ID (이게 나오면 생성을 멈춤)\n    \"\"\"\n\n    # 지정된 횟수(max_new_tokens)만큼 반복하며 한 글자씩 생성합니다.\n    for _ in range(max_new_tokens):\n\n        # 1. 문맥 자르기 (Context Cropping)\n        # 입력 길이가 모델의 허용 범위(context_size)를 넘지 않도록, 가장 최근 토큰들만 남깁니다.\n        idx_cond = idx[:, -context_size:]\n\n        # 2. 모델 예측 (Forward Pass)\n        # 기울기 계산을 꺼서 메모리를 아끼고 속도를 높입니다.\n        with torch.no_grad():\n            logits = model(idx_cond)\n\n        # 3. 마지막 토큰의 예측값 추출\n        # 우리는 '다음 단어'만 궁금하므로, 시퀀스의 가장 마지막 타임 스텝의 로짓(Logits)만 가져옵니다.\n        logits = logits[:, -1, :]\n\n        # 4. Top-k 샘플링 (필터링 단계)\n        # 확률이 너무 낮은 엉뚱한 단어들이 선택되는 것을 원천 차단합니다.\n        if top_k is not None:\n            # 상위 k개의 값(top_logits)만 구합니다.\n            top_logits, _ = torch.topk(logits, top_k)\n            # 상위 k개 중 가장 작은 값을 기준으로 삼습니다.\n            min_val = top_logits[:, -1]\n            # 기준보다 작은 값(순위 밖의 단어들)은 -infinity로 바꿉니다.\n            # (나중에 softmax를 통과하면 확률이 0이 되어 절대 뽑히지 않게 됩니다.)\n            logits = torch.where(logits < min_val, torch.tensor(float(\"-inf\")).to(logits.device), logits)\n\n        # 5. 온도 스케일링 (Temperature Scaling) 적용 여부 확인\n        # temperature > 0: 확률에 기반해 '뽑기'를 합니다. (다양한 문장)\n        # temperature == 0: 가장 확률 높은 것만 무조건 고릅니다. (일관된 문장)\n        if temperature > 0.0:\n            # [핵심] 로짓을 온도로 나눕니다.\n            # 온도가 높으면(>1) 분포가 평평해져서 다양한 단어가 나올 확률이 오릅니다.\n            # 온도가 낮으면(<1) 분포가 뾰족해져서 확실한 단어만 나올 확률이 오릅니다.\n            logits = logits / temperature\n\n            # (수치 안정성 팁): 로짓 값이 너무 크면 지수함수(exp) 계산 시 오버플로우가 날 수 있습니다.\n            # 최댓값을 빼주면 결과 확률은 같으면서 값의 크기는 줄어들어 안전합니다.\n            logits = logits - logits.max(dim=-1, keepdim=True).values\n\n            # 로짓을 확률(0~1 사이 값)로 변환합니다.\n            probs = torch.softmax(logits, dim=-1)  # (batch_size, context_len)\n\n            # 확률 분포에 따라 랜덤하게 하나를 뽑습니다. (Weighted Random Sampling)\n            idx_next = torch.multinomial(probs, num_samples=1)  # (batch_size, 1)\n\n        # 6. 그리디 샘플링 (Greedy Sampling)\n        # 온도 설정이 없으면(0.0), 무조건 가장 높은 점수를 받은 토큰을 선택합니다.\n        else:\n            idx_next = torch.argmax(logits, dim=-1, keepdim=True)  # (batch_size, 1)\n\n        # 7. 조기 종료 (Early Stopping)\n        # 만약 뽑힌 토큰이 '문장 종료(EoS)' 토큰이라면 더 이상 생성하지 않고 루프를 깹니다.\n        if idx_next == eos_id:\n            break\n\n        # 8. 결과 누적\n        # 방금 생성한 토큰(idx_next)을 기존 문장(idx) 뒤에 이어 붙입니다.\n        # 이 새로운 문장이 다음 루프의 입력이 됩니다.\n        idx = torch.cat((idx, idx_next), dim=1)  # (batch_size, num_tokens+1)\n\n    return idx",
+      "cell": 113,
+      "answerSource": "llm_from_scratch/Chapter_5_Pretraining_on_Unlabeled Data_KR.ipynb"
+    },
+    "ch5-cell-16": {
+      "source": "import tiktoken\nimport torch\nfrom previous_chapters import generate_text_simple\n\n# 1. 입력 변환 함수 (Encoding Helper)\n# 사람의 언어(Text)를 모델이 이해하는 숫자 텐서(Tensor)로 변환합니다.\ndef text_to_token_ids(text, tokenizer):\n    # tokenizer.encode: 텍스트를 정수 리스트로 변환합니다.\n    # allowed_special: '<|endoftext|>' 같은 특수 토큰을 문자로 취급하지 않고\n    #                  기능을 가진 토큰으로 인식하도록 허용합니다.\n    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})\n\n    # 리스트를 파이토치 텐서로 변환합니다.\n    encoded_tensor = torch.tensor(encoded)\n\n    # unsqueeze(0): 배치 차원을 추가합니다.\n    # 모델은 항상 [배치 크기, 시퀀스 길이] 형태의 입력을 기대합니다.\n    # 예: [1, 2, 3] -> [[1, 2, 3]] (1개의 문장이라는 것을 명시)\n    encoded_tensor = encoded_tensor.unsqueeze(0)\n\n    return encoded_tensor\n\n# 2. 출력 변환 함수 (Decoding Helper)\n# 모델이 내뱉은 숫자 텐서(Tensor)를 다시 사람의 언어(Text)로 변환합니다.\ndef token_ids_to_text(token_ids, tokenizer):\n    # squeeze(0): 불필요한 배치 차원을 제거합니다.\n    # 예: [[1, 2, 3]] -> [1, 2, 3]\n    flat = token_ids.squeeze(0)\n\n    # tokenizer.decode: 정수 리스트(.tolist())를 받아서 문자열로 복원합니다.\n    return tokenizer.decode(flat.tolist())\n\n# --- 실행 코드 ---\n\n# 3. 초기 설정\nstart_context = \"Every effort moves you\" # 모델에게 줄 첫 문장(프롬프트)\ntokenizer = tiktoken.get_encoding(\"gpt2\") # GPT-2용 토크나이저 로드\n\n# 4. 텍스트 생성 실행\n# 입력 텍스트를 텐서로 바꾸고 -> 모델에 넣어 생성하고 -> 결과 텐서를 받습니다.\ntoken_ids = generate_text_simple(\n    model=model,\n    idx=text_to_token_ids(start_context, tokenizer), # \"Every...\"를 텐서로 변환\n    max_new_tokens=10, # 10개의 단어를 추가로 생성\n    context_size=GPT_CONFIG_124M[\"context_length\"]\n)\n\n# 5. 결과 확인\n# 생성된 숫자 텐서를 다시 텍스트로 바꿔서 출력합니다.\nprint(\"출력 텍스트:\\n\", token_ids_to_text(token_ids, tokenizer))",
+      "cell": 16,
+      "answerSource": "llm_from_scratch/Chapter_5_Pretraining_on_Unlabeled Data_KR.ipynb"
+    },
+    "ch5-cell-78": {
+      "source": "import torch\n\n# 노트:\n# 실행 시간을 계산하고 싶다면 다음 주석을 해제하세요. (학습에 얼마나 걸리는지 측정용)\n# import time\n# start_time = time.time()\n\n# 1. 재현성(Reproducibility) 설정\n# 매번 실행할 때마다 결과가 달라지지 않도록 랜덤 시드를 고정합니다.\n# 이렇게 하면 가중치 초기화 등이 동일하게 시작되어 실험 결과를 비교하기 좋습니다.\ntorch.manual_seed(123)\n\n# 2. 모델 인스턴스 생성\n# 사전에 정의된 설정(GPT_CONFIG_124M)을 사용하여 GPT 모델 구조를 만듭니다.\nmodel = GPTModel(GPT_CONFIG_124M)\n\n# 3. 모델을 장치로 이동\n# 모델의 파라미터들을 GPU(cuda) 또는 CPU로 옮깁니다. (이전에 정의한 device 변수 사용)\nmodel.to(device)\n\n# 4. 옵티마이저(Optimizer) 설정\n# AdamW: Adam 알고리즘에 가중치 감쇠(Weight Decay)가 개선된 버전으로, LLM 학습에 표준적으로 쓰입니다.\n# lr=0.0004: 학습률(Learning Rate). 한 번의 업데이트로 가중치를 얼마나 변경할지 결정합니다.\n# weight_decay=0.1: 과적합(Overfitting)을 막기 위해 가중치가 너무 커지지 않도록 억제하는 규제 값입니다.\noptimizer = torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)\n\n# 5. 학습 루프 실행\nnum_epochs = 10  # 전체 데이터를 10번 반복해서 학습\n\n# train_model_simple 함수를 호출하여 학습을 진행하고, 결과(손실 기록 등)를 반환받습니다.\ntrain_losses, val_losses, tokens_seen = train_model_simple(\n    model=model,\n    train_loader=train_loader,\n    val_loader=val_loader,\n    optimizer=optimizer,\n    device=device,\n    num_epochs=num_epochs,\n    eval_freq=5,       # 5번의 스텝(배치 업데이트)마다 검증(Validation)을 수행\n    eval_iter=5,       # 검증 시 5개의 배치만 사용하여 빠르게 손실 계산\n    start_context=\"Every effort moves you\", # 에포크마다 생성 테스트를 해볼 시작 문구\n    tokenizer=tokenizer\n)\n\n# Note:\n# 실행 시간을 계산하고 싶다면 다음 주석을 해제하세요.\n# end_time = time.time()\n# execution_time_minutes = (end_time - start_time) / 60\n# print(f\"훈련 소요 시간: {execution_time_minutes:.2f}분.\")",
+      "cell": 78,
+      "answerSource": "llm_from_scratch/Chapter_5_Pretraining_on_Unlabeled Data_KR.ipynb"
+    },
+    "ch6-cell-30": {
+      "source": "import torch\nfrom torch.utils.data import Dataset\nimport pandas as pd  # 데이터프레임 사용을 위해 pandas 임포트 필요\n\nclass SpamDataset(Dataset):\n    \"\"\"\n    CSV 파일의 텍스트 데이터를 읽어 토큰화, 자르기, 패딩을 수행하여\n    PyTorch 모델에 입력 가능한 형태로 변환하는 데이터셋 클래스\n    \"\"\"\n    def __init__(self, csv_file, tokenizer, max_length=None, pad_token_id=50256):\n        # 1. 데이터 로드: pandas를 사용하여 CSV 파일을 읽어옵니다.\n        self.data = pd.read_csv(csv_file)\n\n        # 2. 토큰화 (Tokenization):\n        # 데이터프레임의 \"Text\" 컬럼에 있는 모든 문장을 하나씩 꺼내서\n        # tokenizer.encode()를 통해 정수 리스트(숫자)로 변환합니다.\n        self.encoded_texts = [\n            tokenizer.encode(text) for text in self.data[\"Text\"]\n        ]\n\n        # 3. 최대 길이(max_length) 결정 로직:\n        if max_length is None:\n            # 사용자가 길이를 지정하지 않았다면, 데이터 중 가장 긴 문장의 길이를 사용\n            self.max_length = self._longest_encoded_length()\n        else:\n            # 사용자가 길이를 지정했다면 그 값을 사용하고,\n            self.max_length = max_length\n            # 지정된 길이보다 긴 문장은 뒷부분을 잘라냅니다 (Truncation).\n            self.encoded_texts = [\n                encoded_text[:self.max_length]\n                for encoded_text in self.encoded_texts\n            ]\n\n        # 4. 패딩 (Padding):\n        # 모든 문장의 길이를 self.max_length로 통일합니다.\n        # 문장 길이가 max_length보다 짧다면, 부족한 만큼 pad_token_id로 채웁니다.\n        # 예: 문장 [10, 20], max=4, pad=0 -> [10, 20, 0, 0]\n        self.encoded_texts = [\n            encoded_text + [pad_token_id] * (self.max_length - len(encoded_text))\n            for encoded_text in self.encoded_texts\n        ]\n\n    def __getitem__(self, index):\n        \"\"\"\n        데이터셋에서 특정 인덱스(index)의 샘플을 가져오는 함수\n        데이터 로더(DataLoader)가 배치를 만들 때 이 함수를 반복 호출합니다.\n        \"\"\"\n        encoded = self.encoded_texts[index]\n        label = self.data.iloc[index][\"Label\"]\n\n        # 파이토치 모델은 '텐서(Tensor)' 형태만 입력받을 수 있으므로 변환합니다.\n        # dtype=torch.long은 정수형(인덱스, 라벨 등)을 의미합니다.\n        return (\n            torch.tensor(encoded, dtype=torch.long),\n            torch.tensor(label, dtype=torch.long)\n        )\n\n    def __len__(self):\n        # 데이터셋의 전체 샘플 개수를 반환 (학습 시 에포크 계산 등에 사용됨)\n        return len(self.data)\n\n    def _longest_encoded_length(self):\n        # 데이터셋 내의 모든 문장 중 가장 긴 문장의 길이를 찾는 헬퍼 함수\n        max_length = 0\n        for encoded_text in self.encoded_texts:\n            encoded_length = len(encoded_text)\n            if encoded_length > max_length:\n                max_length = encoded_length\n        return max_length\n\n        # (참고) 파이썬의 max() 함수를 쓰면 위 6줄을 한 줄로 줄일 수 있습니다:\n        # return max(len(encoded_text) for encoded_text in self.encoded_texts)",
+      "cell": 30,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb"
+    },
+    "ch6-cell-88": {
+      "source": "import torch\n\ndef calc_loss_batch(input_batch, target_batch, model, device):\n    \"\"\"\n    배치 단위로 모델의 손실(Loss)을 계산하는 함수\n    \"\"\"\n    # 1. 데이터를 연산 장치(GPU 또는 CPU)로 이동\n    input_batch, target_batch = input_batch.to(device), target_batch.to(device)\n\n    # 2. 모델 예측 (Forward Pass)\n    # logits shape: [배치 크기, 문장 길이, 단어 집합 크기(Vocab Size)]\n    logits = model(input_batch)\n\n    # 3. 손실 계산 방식 분기 (중요!)\n    # target_batch의 차원 수(dim)를 확인하여 작업 종류를 구분합니다.\n\n    # CASE A: 단순 분류 (Sequence Classification)\n    # 정답(target)이 [0, 1, 0] 처럼 1차원인 경우 (각 문장마다 정답이 하나)\n    if target_batch.dim() == 1:\n        # 문장의 '가장 마지막 토큰'의 예측값(logits[:, -1, :])만 사용하여\n        # 정답과 비교해 손실을 계산합니다.\n        loss = torch.nn.functional.cross_entropy(logits[:, -1, :], target_batch)\n\n    # CASE B: 언어 모델링 (Language Modeling / Next Token Prediction)\n    # 정답이 [[10, 20], [30, 40]] 처럼 2차원인 경우 (모든 단어 위치마다 정답이 존재)\n    else:\n        # 모델 출력과 정답을 일렬로 쭉 폅니다(Flatten).\n        # logits: [배치*길이, 단어집합크기], target: [배치*길이]\n        # 이렇게 모양을 맞춰줘야 CrossEntropy가 모든 단어에 대해 오차를 평균 낼 수 있습니다.\n        loss = torch.nn.functional.cross_entropy(logits.flatten(0, 1), target_batch.flatten())\n\n    return loss",
+      "cell": 88,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb"
+    },
+    "ch6-cell-54": {
+      "source": "for param in model.parameters():\n    param.requires_grad = False",
+      "cell": 54,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb"
+    },
+    "ch6-cell-56": {
+      "source": "torch.manual_seed(123)\n\nnum_classes = 2\nmodel.out_head = torch.nn.Linear(in_features=BASE_CONFIG[\"emb_dim\"], out_features=num_classes)",
+      "cell": 56,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb"
+    },
+    "ch6-cell-62": {
+      "source": "# 1. 마지막 트랜스포머 블록의 파라미터 잠금 해제\n# model.trf_blocks[-1]: 트랜스포머 블록 리스트 중 '가장 마지막(-1)' 블록을 선택\nfor param in model.trf_blocks[-1].parameters():\n    # requires_grad = True:\n    # 이 파라미터(가중치)에 대해 기울기(Gradient)를 계산하도록 설정합니다.\n    # 즉, 역전파(Backpropagation) 때 이 가중치를 '업데이트(학습)' 하겠다는 뜻입니다.\n    param.requires_grad = True\n\n# 2. 마지막 정규화(Normalization) 층의 파라미터 잠금 해제\n# 모델의 최종 출력 직전에 있는 LayerNorm 층도 학습 대상에 포함시킵니다.\nfor param in model.final_norm.parameters():\n    # 마찬가지로 이 층의 가중치도 학습되도록 설정합니다.\n    param.requires_grad = True",
+      "cell": 62,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_KR.ipynb"
+    },
+    "ch6lora-cell-32": {
+      "source": "import torch\n\nclass LinearWithLoRA(torch.nn.Module):\n    \"\"\"\n    기존의 Linear 레이어를 감싸서(Wrapping),\n    LoRA 어댑터를 추가한 새로운 복합 레이어를 만드는 클래스\n    \"\"\"\n    def __init__(self, linear, rank, alpha):\n        super().__init__()\n\n        # 1. 기존 레이어 저장 (Frozen Weights)\n        # 이미 학습된 레이어 가중치(W)를 그대로 가져옵니다.\n        # 실제 사용 시에는 이 레이어의 가중치를 고정(freeze)시켜 학습되지 않게 합니다.\n        self.linear = linear\n\n        # 2. LoRA 레이어 생성 (Trainable Adapter)\n        # 기존 레이어와 똑같은 입/출력 차원을 가지지만, 내부는 훨씬 가벼운 LoRA 레이어를 만듭니다.\n        # linear.in_features, linear.out_features: 기존 레이어의 스펙을 그대로 베껴옵니다.\n        self.lora = LoRALayer(\n            linear.in_features, linear.out_features, rank, alpha\n        )\n\n    def forward(self, x):\n        # 3. 결과 합치기 (The Core Logic)\n        # 원래 모델이 하던 계산 결과 : self.linear(x)\n        # LoRA가 새로 학습한 변화량 : self.lora(x)\n        # 최종 결과 = 원래 결과 + 변화량\n        return self.linear(x) + self.lora(x)",
+      "cell": 32,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb"
+    },
+    "ch6lora-cell-35": {
+      "source": "import torch\n\ndef replace_linear_with_lora(model, rank, alpha):\n    \"\"\"\n    모델 내의 모든 Linear 레이어를 찾아 LoRA가 적용된 레이어로 교체하는 재귀 함수\n\n    Args:\n        model: 수정할 파이토치 모델 (또는 모델의 하위 모듈)\n        rank: LoRA의 Rank (r)\n        alpha: LoRA의 Alpha (스케일링 계수)\n    \"\"\"\n\n    # 1. 자식 모듈 순회 (Iterate Children)\n    # named_children(): 현재 모듈 바로 아래에 있는 구성 요소들을 (이름, 객체) 쌍으로 가져옵니다.\n    # 예: (\"attn\", AttentionModule), (\"mlp\", MLPModule) ...\n    for name, module in model.named_children():\n\n        # 2. 교체 대상 확인 (Check Target)\n        # 현재 보고 있는 모듈이 'torch.nn.Linear'인지 확인합니다.\n        # (즉, 우리가 LoRA를 붙이고 싶은 기본 선형 층인지 확인)\n        if isinstance(module, torch.nn.Linear):\n\n            # 3. 레이어 교체 (Swap Layer)\n            # setattr(객체, 속성이름, 새로운값): 객체의 속성을 동적으로 변경하는 파이썬 내장 함수\n            # model의 'name'에 해당하는 레이어를 -> 'LinearWithLoRA'로 덮어씌웁니다.\n            # 이때 기존 module을 인자로 넘겨줘서 가중치를 그대로 보존하게 합니다.\n            setattr(model, name, LinearWithLoRA(module, rank, alpha))\n\n        else:\n            # 4. 재귀 호출 (Dig Deeper)\n            # 만약 Linear 레이어가 아니라면(예: 트랜스포머 블록, 어텐션 층 등 컨테이너라면),\n            # 그 내부에도 Linear 레이어가 숨어있을 수 있으므로\n            # 그 안으로 들어가서 다시 똑같은 작업(replace_linear_with_lora)을 수행하라고 시킵니다.\n            replace_linear_with_lora(module, rank, alpha)",
+      "cell": 35,
+      "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb"
+    },
+    "ch7-cell-41": {
+      "source": "def custom_collate_draft_2(\n    batch,\n    pad_token_id=50256,\n    device=\"cpu\"\n):\n    # 배치에서 가장 긴 시퀀스 찾기\n    batch_max_length = max(len(item)+1 for item in batch)\n\n    # 입력 및 타깃 준비\n    inputs_lst, targets_lst = [], []\n\n    for item in batch:\n        new_item = item.copy()\n        # <|endoftext|> 토큰 추가\n        new_item += [pad_token_id]\n        # 시퀀스를 max_length까지 패딩\n        padded = (\n            new_item + [pad_token_id] *\n            (batch_max_length - len(new_item))\n        )\n        inputs = torch.tensor(padded[:-1])  # 입력을 위해 마지막 토큰 자르기\n        targets = torch.tensor(padded[1:])  # 타깃을 위해 오른쪽으로 +1 이동\n        inputs_lst.append(inputs)\n        targets_lst.append(targets)\n\n    # 입력 리스트를 텐서로 변환하고 타깃 장치로 전송\n    inputs_tensor = torch.stack(inputs_lst).to(device)\n    targets_tensor = torch.stack(targets_lst).to(device)\n    return inputs_tensor, targets_tensor",
+      "cell": 41,
+      "answerSource": "llm_from_scratch/Chapter_7_Finetuning_to_Follow_Instructions_KR.ipynb"
+    },
+    "ch7-cell-46": {
+      "source": "def custom_collate_fn(\n    batch,\n    pad_token_id=50256,\n    ignore_index=-100,\n    allowed_max_length=None,\n    device=\"cpu\"\n):\n    # 배치에서 가장 긴 시퀀스 찾기\n    batch_max_length = max(len(item)+1 for item in batch)\n\n    # 입력과 타깃 패딩 및 준비\n    inputs_lst, targets_lst = [], []\n\n    for item in batch:\n        new_item = item.copy()\n        # <|endoftext|> 토큰 추가\n        new_item += [pad_token_id]\n        # 시퀀스를 max_length까지 패딩\n        padded = (\n            new_item + [pad_token_id] *\n            (batch_max_length - len(new_item))\n        )\n        inputs = torch.tensor(padded[:-1])  # 입력을 위해 마지막 토큰 자르기\n        targets = torch.tensor(padded[1:])  # 목표를 위해 오른쪽으로 +1 이동\n\n        # 새로 추가: 목표에서 첫 번째 패딩 토큰을 제외한 모든 토큰을 ignore_index로 바꾸기\n        mask = targets == pad_token_id\n        indices = torch.nonzero(mask).squeeze()\n        if indices.numel() > 1:\n            targets[indices[1:]] = ignore_index\n\n        # 새로 추가: 최대 시퀀스 길이로 자르기 (선택 사항)\n        if allowed_max_length is not None:\n            inputs = inputs[:allowed_max_length]\n            targets = targets[:allowed_max_length]\n\n        inputs_lst.append(inputs)\n        targets_lst.append(targets)\n\n    # 입력 및 타깃 리스트를 텐서로 변환하고 타깃 장치로 전송\n    inputs_tensor = torch.stack(inputs_lst).to(device)\n    targets_tensor = torch.stack(targets_lst).to(device)\n\n    return inputs_tensor, targets_tensor",
+      "cell": 46,
+      "answerSource": "llm_from_scratch/Chapter_7_Finetuning_to_Follow_Instructions_KR.ipynb"
     },
     "d1_llama-cell-15": {
       "source": "index = VectorStoreIndex.from_documents(documents)",
@@ -363,6 +474,16 @@
       "source": "from sklearn.metrics import mean_squared_error\n\nmodel_output_list = []\ntarget_rating_list = []\n\nmodel.eval()\n\nwith torch.no_grad():\n  for i, batched_data in enumerate(test_loader):\n    model_output = model(batched_data['users'],batched_data['movies'])\n    model_output_batch = model_output.cpu().numpy().squeeze(axis=1).tolist()\n    model_output_list += (model_output_batch)\n\n    target_rating = batched_data['ratings']\n    target_rating_batch = target_rating.cpu().numpy().tolist()\n    target_rating_list += target_rating_batch\n\nmse = mean_squared_error(target_rating_list, model_output_list)\nrms = np.sqrt(mse)\nprint(f\"rms: {rms}\")",
       "cell": 18,
       "answerSource": "RecSys_NCF.ipynb"
+    },
+    "data-ts-cell-29": {
+      "source": "class Conv1DModel(nn.Module):\n  def __init__(self, input_size, hidden_size):\n    super(Conv1DModel, self).__init__()\n    self.conv1d = nn.Conv1d(in_channels=input_size, \\\n                            out_channels=hidden_size, \\\n                            kernel_size=2, stride=1)\n    self.fc = nn.Linear(hidden_size, 1)\n\n  def forward(self, x):\n    x = x.transpose(1, 2)\n    x = self.conv1d(x)\n    x = x.transpose(1, 2)\n    return self.fc(x)",
+      "cell": 29,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "data-ts-cell-43": {
+      "source": "class EncoderRNN(nn.Module):\n  def __init__(self, input_size, hidden_size, num_layers):\n    super(EncoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n\n  def forward(self, x):\n    _, h = self.rnn(x)\n    return h\n\nclass DecoderRNN(nn.Module):\n  def __init__(self, input_size, hidden_size, num_layers):\n    super(DecoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n    self.fc = nn.Linear(hidden_size, input_size)\n\n  def forward(self, x, h):\n    out, h = self.rnn(x, h)\n    out = self.fc(out)\n    return out, h\n\nclass RNNRNN(nn.Module):\n  def __init__(self, input_size, hidden_size, num_layers):\n    super(RNNRNN, self).__init__()\n    self.encoder = EncoderRNN(input_size, hidden_size, num_layers)\n    self.decoder = DecoderRNN(input_size, hidden_size, num_layers)\n\n  def forward(self, source, target_len):\n    h = self.encoder(source)\n    predictions = []\n    input = source[:, -1, :].unsqueeze(1)\n    for t in range(target_len):\n      out, h = self.decoder(input, h)\n      predictions.append(out.squeeze(1))\n      input = out\n    outputs = torch.stack(predictions, dim=1)\n\n    return outputs\n\nmodel_ = RNNRNN(input_size, hidden_size, num_layers).to(device)\nprint(model_)\n\n# RNNRNN(\n#   (encoder): EncoderRNN(\n#     (rnn): RNN(1, 64, num_layers=2, batch_first=True)\n#   )\n#   (decoder): DecoderRNN(\n#     (rnn): RNN(1, 64, num_layers=2, batch_first=True)\n#     (fc): Linear(in_features=64, out_features=1, bias=True)\n#   )\n# )",
+      "cell": 43,
+      "answerSource": "ts_solution.ipynb"
     },
     "vision-resnet-cell-5": {
       "source": "# CIFAR-10에서 널리 쓰는 normalize 값\nCIFAR10_MEAN = (0.4914, 0.4822, 0.4465)  # 채널별 평균(R,G,B)\nCIFAR10_STD  = (0.2023, 0.1994, 0.2010)  # 채널별 표준편차(R,G,B)\n\ntrain_tfms = T.Compose([  # train transform(augmentation 포함)\n    T.RandomCrop(32, padding=4),  # 32x32를 padding 후 random crop\n    T.RandomHorizontalFlip(),  # 좌우 반전\n    T.ToTensor(),  # PIL -> torch tensor (C,H,W), 0~1\n    T.Normalize(CIFAR10_MEAN, CIFAR10_STD),  # 정규화, -2.5~2.5\n])\n\ntest_tfms = T.Compose([  # test transform(augmentation 없음)\n    T.ToTensor(),  # 텐서 변환\n    T.Normalize(CIFAR10_MEAN, CIFAR10_STD),  # 정규화\n])\n\ndata_root = './data'  # 데이터 저장 경로\ntrain_set = torchvision.datasets.CIFAR10(root=data_root, train=True, download=True, transform=train_tfms)  # train set\ntest_set  = torchvision.datasets.CIFAR10(root=data_root, train=False, download=True, transform=test_tfms)  # test set\n\nclass_names = train_set.classes  # 클래스 이름 목록\nnum_classes = len(class_names)  # 클래스 개수(10)\nprint('classes:', class_names)  # 클래스 출력\n\n# 이미지 사이즈 출력\nx0, y0 = train_set[0]  # 한 샘플 로드(이미 transform 적용된 텐서)\nprint('Sample image tensor shape (C,H,W):', tuple(x0.shape))  # (3,32,32)\n\nbatch_size = 256  # 배치 크기\nnum_workers = min(8, os.cpu_count() or 2)  # dataloader worker 수(환경에 맞게)\n\ntrain_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)  # train loader\ntest_loader  = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)  # test loader\n\nprint('Total batch size (train: %d, test: %d)' % (len(train_loader), len(test_loader)))  # 배치 개수 확인",
@@ -492,6 +613,61 @@
     "ondevice-llm-quant-cell-50": {
       "source": "@torch.no_grad()\ndef smooth_lm_by_scale(model, scale):\n    \"\"\"\n    LLM(OPT 모델)의 각 Transformer Block에 대해 LayerNorm과 Linear layer 를 smoothing 하는 함수.\n    - self-attention 블록의 (LN, q/k/v projection) 연결 구조와 feed-forward 블록의 (LN, fc1) 연결 구조에 동일한 스케일을 적용.\n    \"\"\"\n    for name, module in model.named_modules():\n        if isinstance(module, OPTDecoderLayer):\n            # Self-Attention 부분 smoothing\n            attn_ln = module.self_attn_layer_norm\n            qkv = [\n                module.self_attn.q_proj,\n                module.self_attn.k_proj,\n                module.self_attn.v_proj,\n            ]\n            smooth_ln_fcs_by_scale(attn_ln, qkv, scale)\n\n            # Feed-Forward 부분 smoothing\n            ffn_ln = module.final_layer_norm\n            fc1 = module.fc1\n            smooth_ln_fcs_by_scale(ffn_ln, fc1, scale)\n\n\n@torch.no_grad()\ndef smooth_ln_fcs_by_scale(ln, fcs, scale):\n    \"\"\"\n    LayerNorm(LN)과 그에 연결된 Fully Connected layer(FC)들 간의 파라미터 스케일을 맞추어 모델의 출력 분포를 안정화시키는 함수.\n\n    내부 단계:\n    1. LayerNorm의 weight, bias를 scale로 나눔 (출력 스케일 축소)\n    2. 이후 연결된 FC layer의 weight를 동일 scale로 곱해 상쇄 (입력 스케일 복원)\n\n    즉, forward 상에서 전체 스케일은 유지되면서 내부 파라미터 분포만 조정됨.\n    \"\"\"\n    if not isinstance(fcs, list):\n        fcs = [fcs]\n    assert isinstance(ln, nn.LayerNorm)\n    for fc in fcs:\n        assert isinstance(fc, nn.Linear)\n\n    # Step 1: layernorm의 weight와 bias를 scale로 나누어주세요.\n    # div_() 함수는 텐서 자체를 스케일로 나누는 인플레이스 연산\n    ln.weight.div_(scale)\n    ln.bias.div_(scale)\n\n    for fc in fcs:\n        # Step 2: fc의 weight에 scale을 곱해주세요.\n        # mul_() 함수는 텐서 자체에 스케일을 곱하는 인플레이스 연산\n        fc.weight.mul_(scale)",
       "cell": 50,
+      "answerSource": "5. Quantization for LLM_answer.ipynb"
+    },
+    "ondevice-cnn-pruning-cell-48": {
+      "source": "def get_model_sparsity(model: nn.Module) -> float:\n    \"\"\"\n    모델 전체의 sparsity 계산.\n\n    Args:\n        model: 스파시티를 계산할 모델\n\n    Returns:\n        float: 모델의 전체 스파시티 비율 (0~1 사이 값)\n    \"\"\"\n    num_nonzeros, num_elements = 0, 0\n    for param in model.parameters():\n        num_nonzeros += param.count_nonzero()\n        num_elements += param.numel()\n    return 1 - float(num_nonzeros) / num_elements\n\ncustom_sparsity_dict = {\n    # Key는 수정하지 마시고, 각 layer의 sparsity 값을 조정하세요.\n    'backbone.conv0.weight': 0.5,\n    'backbone.conv1.weight': 0.8,\n    'backbone.conv2.weight': 0.8,\n    'backbone.conv3.weight': 0.7,\n    'backbone.conv4.weight': 0.7,\n    'backbone.conv5.weight': 0.8,\n    'backbone.conv6.weight': 0.8,\n    'backbone.conv7.weight': 0.9,\n    'classifier.weight': 0.9\n}\n\n# 프루닝 적용 및 평가\npruner = FineGrainedPruner(model, custom_sparsity_dict)\npruner.apply(model)\ncustom_pruned_model_accuracy = evaluate(model, dataloader['test'])\ncustom_sparsity = get_model_sparsity(model)\nmodel.recover_model()\n\n# 결과 출력\nprint(f\"custom_pruned_model has accuracy={custom_pruned_model_accuracy:.2f}%\")\nprint(f\"Model sparsity: {custom_sparsity:.3f}\")",
+      "cell": 48,
+      "answerSource": "1. Pruning for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-pruning-cell-54": {
+      "source": "class FineGrainedPrunerV2:\n    def __init__(self, model, sparsity, global_prune=False):\n        \"\"\"\n        전역 또는 레이어별 프루닝을 위한 프루너 클래스\n\n        Args:\n            model: 프루닝할 모델\n            sparsity: 프루닝 비율 (0~1)\n            global_prune: 전역 프루닝 여부\n        \"\"\"\n        self.masks = FineGrainedPrunerV2.prune(model, sparsity, global_prune)\n\n    @torch.no_grad()\n    def apply(self, model):\n        \"\"\"프루닝 마스크를 모델에 적용\"\"\"\n        for name, param in model.named_parameters():\n            if name in self.masks:\n                param *= self.masks[name]\n\n    @staticmethod\n    @torch.no_grad()\n    def prune(model, sparsity, global_prune):\n        \"\"\"\n        전역 또는 레이어별 프루닝 수행\n\n        Args:\n            model: 프루닝할 모델\n            sparsity: 프루닝 비율 (0~1)\n            global_prune: 전역 프루닝 여부\n\n        Returns:\n            masks: 프루닝 마스크 딕셔너리\n        \"\"\"\n        masks = dict()\n        if global_prune:\n            # 모든 2D 이상의 파라미터를 1차원으로 변환하여 수집\n            parameters_to_prune = []\n            for name, param in model.named_parameters():\n                if param.dim() > 1:  # conv, fc 레이어만 프루닝\n                    parameters_to_prune.append(param.view(-1))\n\n            # 모든 weight를 하나의 텐서로 결합해주세요..\n            # hint: torch.cat()을 사용하세요.\n            all_weights = torch.cat(parameters_to_prune)\n\n            # all_weights를 대상으로 global threshold를 구해주세요.\n            num_elements = all_weights.numel()\n            num_zeros = round(num_elements * sparsity)\n            importance = torch.abs(all_weights)\n            threshold = torch.kthvalue(importance, num_zeros)[0]\n\n            # threshold 기반 마스크 생성\n            for name, param in model.named_parameters():\n                if param.dim() > 1:\n                    mask = torch.abs(param.data) > threshold\n                    masks[name] = mask\n        else:\n            # 레이어별 프루닝 수행\n            for name, param in model.named_parameters():\n                if param.dim() > 1: # we only prune conv and fc weights\n                    masks[name] = prune_weight_fine_grained(param, sparsity)\n        return masks",
+      "cell": 54,
+      "answerSource": "1. Pruning for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-pruning-cell-65": {
+      "source": "def get_sparsity_schedule(num_epochs: int,\n                          epoch_start: int,\n                          epoch_end: int,\n                          sparsity_start: float,\n                          sparsity_end: float,\n                          exponent: int,\n                          ) -> List[float]:\n    \"\"\"\n    스파시티 스케줄을 생성하는 함수입니다.\n\n    Args:\n        num_epochs: 전체 에폭 수\n        epoch_start: 스파시티 스케줄링 시작 에폭\n        epoch_end: 스파시티 스케줄링 종료 에폭\n        sparsity_start: 시작 스파시티 값\n        sparsity_end: 종료 스파시티 값\n        exponent: 스케줄링 지수 (1: linear, 3: cubic)\n\n    Returns:\n        각 에폭별 스파시티 값 리스트\n    \"\"\"\n    sparsity_schedule = []\n    for epoch in range(num_epochs):\n        # 위 수식에 맞게 sparsity를 계산하세요. (단, epoch_start보다 작은 경우 0으로 epochs_end 이후는 sparsity_end로 설정합니다.)\n        if epoch < epoch_start:\n            sparsity = 0\n        elif epoch >= epoch_end:\n            sparsity = sparsity_end\n        else:\n            sparsity = sparsity_end + (sparsity_start - sparsity_end) * (1 - (epoch - epoch_start) / (epoch_end - epoch_start)) ** exponent\n\n        sparsity_schedule.append(sparsity)\n    return sparsity_schedule\n\n# Linear sparsity schedule\n# linear_sparsity_schedule = [0.9, 0.925, 0.95, 0.95, 0.95]\nlinear_sparsity_schedule = get_sparsity_schedule(num_finetune_epochs, 0, 2, 0.9, target_sparsity, 1)\nprint(\"Linear sparsity schedule:\", linear_sparsity_schedule)\n\n# Cubic sparsity schedule\n# cubic_sparsity_schedule = [0.9, 0.94375, 0.95, 0.95, 0.95]\ncubic_sparsity_schedule = get_sparsity_schedule(num_finetune_epochs, 0, 2, 0.9, target_sparsity, 3)\nprint(\"Cubic sparsity schedule:\", cubic_sparsity_schedule)",
+      "cell": 65,
+      "answerSource": "1. Pruning for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-63": {
+      "source": "def quantized_conv2d(input, weight, bias, feature_bitwidth, weight_bitwidth,\n                     input_zero_point, output_zero_point,\n                     input_scale, weight_scale, output_scale,\n                     stride, padding, dilation, groups):\n    \"\"\"\n    quantized 2d convolution\n    :param input: [torch.CharTensor] quantized input (torch.int8)\n    :param weight: [torch.CharTensor] quantized weight (torch.int8)\n    :param bias: [torch.IntTensor] shifted quantized bias or None (torch.int32)\n    :param feature_bitwidth: [int] quantization bit width of input and output\n    :param weight_bitwidth: [int] quantization bit width of weight\n    :param input_zero_point: [int] input zero point\n    :param samp: [int] output zero point\n    :param input_scale: [float] input feature scale\n    :param weight_scale: [torch.FloatTensor] weight per-channel scale\n    :param output_scale: [float] output feature scale\n    :return:\n        [torch.(cuda.)CharTensor] quantized output feature\n    \"\"\"\n    assert(len(padding) == 4)\n    assert(input.dtype == torch.int8)\n    assert(weight.dtype == input.dtype)\n    assert(bias is None or bias.dtype == torch.int32)\n    assert(isinstance(input_zero_point, int))\n    assert(isinstance(output_zero_point, int))\n    assert(isinstance(input_scale, float))\n    assert(isinstance(output_scale, float))\n    assert(weight_scale.dtype == torch.float)\n\n    # Step 1: calculate integer-based 2d convolution (8-bit multiplication with 32-bit accumulation)\n    input = torch.nn.functional.pad(input, padding, 'constant', input_zero_point)\n    if 'cpu' in input.device.type:\n        # use 32-b MAC for simplicity\n        output = torch.nn.functional.conv2d(input.to(torch.int32), weight.to(torch.int32), None, stride, 0, dilation, groups)\n    else:\n        # 현재 버전의 PyTorch는 GPU에서 정수 기반의 conv2d() 연산을 아직 지원하지 않습니다.\n        output = torch.nn.functional.conv2d(input.float(), weight.float(), None, stride, 0, dilation, groups)\n        output = output.round().to(torch.int32)\n    if bias is not None:\n        output = output + bias.view(1, -1, 1, 1)\n\n\n    # weight scale의 shape가 [oc, 1, 1, 1]인 반면, output의 shape는 [batch_size, oc, height, width]이므로 shape를 조정합니다.\n    weight_scale = weight_scale.flatten().view(1, -1, 1, 1)\n\n    # scale이 부동 소수점이므로, 출력도 부동 소수점으로 변환해야 합니다.\n    output = output.float()\n\n    # hint: 이번 코드 블록은 quantized_linear()와 매우 유사합니다.\n\n    # Step 2: output 텐서를 scale합니다.\n    output = output*(input_scale * weight_scale / output_scale)\n\n    # Step 3: output을 out_zero_point 만큼 이동하여 영점을 조정합니다.\n    output = output + output_zero_point\n\n    # 모든 값이 지정된 비트폭 범위 내에 있도록 clamp 합니다.\n    output = output.round().clamp(*get_quantized_range(feature_bitwidth)).to(torch.int8)\n    return output",
+      "cell": 63,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-85": {
+      "source": "def k_means_quantize(fp32_tensor: torch.Tensor, bitwidth=4, codebook=None):\n    \"\"\"\n    quantize tensor using k-means clustering\n    :param fp32_tensor:\n    :param bitwidth: [int] quantization bit width, default=4\n    :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)\n    :return:\n        [Codebook = (centroids, labels)]\n            centroids: [torch.(cuda.)FloatTensor] the cluster centroids\n            labels: [torch.(cuda.)LongTensor] cluster label tensor\n    \"\"\"\n    if codebook is None:\n        # bitwidth에 따라 클러스터 수를 설정하세요.\n        n_clusters = 2**bitwidth\n        # k-means를 사용하여 quantization centroid를 얻습니다.\n        kmeans = KMeans(n_clusters=n_clusters, mode='euclidean', verbose=0)\n        labels = kmeans.fit_predict(fp32_tensor.view(-1, 1)).to(torch.long)\n        centroids = kmeans.centroids.to(torch.float).view(-1)\n        codebook = Codebook(centroids, labels)\n    # 추론에서 사용할 quantized tensor를 구하기 위해 코드북을 디코딩하세요.\n    quantized_tensor = codebook.centroids[codebook.labels]\n    fp32_tensor.set_(quantized_tensor.view_as(fp32_tensor))\n    return codebook",
+      "cell": 85,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-cnn-quant-cell-96": {
+      "source": "def update_codebook(fp32_tensor: torch.Tensor, codebook: Codebook):\n    \"\"\"\n    update the centroids in the codebook using updated fp32_tensor\n    :param fp32_tensor: [torch.(cuda.)Tensor]\n    :param codebook: [Codebook] (the cluster centroids, the cluster label tensor)\n    \"\"\"\n    n_clusters = codebook.centroids.numel()\n    fp32_tensor = fp32_tensor.view(-1)\n    for k in range(n_clusters):\n    # hint : torch.mean() 함수를 이용하여 평균을 구할 수 있습니다.\n        codebook.centroids[k] = torch.mean(fp32_tensor[codebook.labels==k])",
+      "cell": 96,
+      "answerSource": "2. Quantization for CNN_answer.ipynb"
+    },
+    "ondevice-kd-cell-39": {
+      "source": "def train_cosine_loss(teacher,\n                      student,\n                      train_loader,\n                      epochs,\n                      learning_rate,\n                      hidden_rep_loss_weight,\n                      ce_loss_weight):\n    ce_loss = nn.CrossEntropyLoss()\n    cosine_loss = nn.CosineEmbeddingLoss()\n    optimizer = optim.Adam(student.parameters(), lr=learning_rate)\n    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader))\n\n    teacher.eval()  # Teacher set to evaluation mode\n    student.train() # Student to train mode\n\n    for epoch in range(epochs):\n        running_loss = 0.0\n        for inputs, labels in train_loader:\n            inputs, labels = inputs.cuda(), labels.cuda()\n\n            optimizer.zero_grad()\n\n            # Forward pass with the teacher model and keep only the hidden representation\n            with torch.no_grad():\n                _, teacher_hidden_representation = teacher(inputs)\n\n            # Forward pass with the student model\n            student_logits, student_hidden_representation = student(inputs)\n\n            # Calculate the cosine loss. Target is a vector of ones. From the loss formula above we can see that is\n            # the case where loss minimization leads to cosine similarity increase.\n            # Hint: cosine_loss(x, y, target)에서 target은 1로 이루어진 vector이며, torch.ones(inputs.size(0)).cuda())를 사용\n            hidden_rep_loss = cosine_loss(student_hidden_representation, teacher_hidden_representation,\n                                          target=torch.ones(inputs.size(0)).cuda())\n\n            # Calculate the true label loss\n            label_loss = ce_loss(student_logits, labels)\n\n            # Weighted sum of the two losses\n            loss = hidden_rep_loss_weight * hidden_rep_loss + ce_loss_weight * label_loss\n\n            loss.backward()\n            optimizer.step()\n            scheduler.step()\n\n            running_loss += loss.item()\n\n        print(f\"Epoch {epoch+1}/{epochs}, Loss: {running_loss / len(train_loader)}\")",
+      "cell": 39,
+      "answerSource": "3. Knowledge Distillation_answer.ipynb"
+    },
+    "ondevice-kd-cell-52": {
+      "source": "def train_mse_loss(teacher,\n                   student,\n                   train_loader,\n                   epochs,\n                   learning_rate,\n                   feature_map_weight,\n                   ce_loss_weight):\n    ce_loss = nn.CrossEntropyLoss()\n    mse_loss = nn.MSELoss()\n    optimizer = optim.Adam(student.parameters(), lr=learning_rate)\n    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs * len(train_loader))\n\n    teacher.eval()  # Teacher set to evaluation mode\n    student.train() # Student to train mode\n\n    for epoch in range(epochs):\n        running_loss = 0.0\n        for inputs, labels in train_loader:\n            inputs, labels = inputs.cuda(), labels.cuda()\n\n            optimizer.zero_grad()\n\n            # Again ignore teacher logits\n            with torch.no_grad():\n                _, teacher_feature_map = teacher(inputs)\n\n            # Forward pass with the student model\n            student_logits, regressor_feature_map = student(inputs)\n\n            # Calculate the loss\n            hidden_rep_loss = mse_loss(regressor_feature_map, teacher_feature_map)\n\n            # Calculate the true label loss\n            label_loss = ce_loss(student_logits, labels)\n\n            # Weighted sum of the two losses\n            loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss\n\n            loss.backward()\n            optimizer.step()\n            scheduler.step()\n\n            running_loss += loss.item()\n\n        print(f\"Epoch {epoch+1}/{epochs}, Loss: {running_loss / len(train_loader)}\")",
+      "cell": 52,
+      "answerSource": "3. Knowledge Distillation_answer.ipynb"
+    },
+    "ondevice-llm-pruning-cell-10": {
+      "source": "@torch.no_grad()\ndef prune_magnitude(model, sparsity):\n    for n, m in model.named_modules():\n        if isinstance(m, nn.Linear) and \"lm_head\" not in n:\n            W = m.weight.data\n            num_elements = W.numel()\n            num_zeros = round(num_elements * sparsity)\n            importance = torch.abs(W)\n            threshold = torch.kthvalue(importance.flatten(), num_zeros)[0]\n            mask = importance > threshold\n            W.mul_(mask)",
+      "cell": 10,
+      "answerSource": "4. Pruning for LLM_answer.ipynb"
+    },
+    "ondevice-llm-quant-cell-34": {
+      "source": "@torch.no_grad()\ndef auto_scale_block(module, name, w_bit,\n                     q_group_size,\n                     input_feat):\n\n    # find the best scale ratio\n    def _search_module_scale(block, linears2scale: list, x, kwargs={}):\n\n        x = x.to(next(block.parameters()).device)\n        with torch.no_grad():\n            org_out = block(x, **kwargs)\n            if isinstance(org_out, tuple):\n                org_out = org_out[0]\n\n        s_x = x.view(-1, x.shape[-1]).abs().mean(0)\n        s_x = torch.clamp(s_x, 1e-5)\n\n\n        # Step 1: best_error, best_ratio, 및 best_scales를 초기화\n        best_error = torch.inf\n        best_ratio = -1\n        best_scales = 0\n\n\n        n_grid = 20\n        history = []\n\n        org_sd = {k: v.cpu() for k, v in block.state_dict().items()}\n        for ratio in range(n_grid):\n            # ratio is the \\alpha in the formula\n            ratio = ratio * 1 / n_grid\n\n\n            # Step 2: 공식에 따라 스케일 계산\n            scales = s_x ** ratio\n\n            assert scales.shape == s_x.shape\n\n            scales = scales / (scales.max() * scales.min()).sqrt().view(1, -1)\n\n            for fc in linears2scale:\n\n                scales = scales.to(fc.weight.device)\n\n\n                # Step 3: scale_factor를 이용해 중요한 가중치 채널의 값을 확대합니다.\n                fc.weight.data *= scales\n\n                fc.weight.data = pseudo_quantize_tensor(fc.weight.data, w_bit, q_group_size)\n\n                # Step 4: scale_factor를 이용해 중요한 가중치 채널의 값을 다시 축소하세요.\n                fc.weight.data /= scales\n\n\n            out = block(x, **kwargs)\n            if isinstance(out, tuple):\n                out = out[0]\n\n            loss = (org_out - out).float().pow(2).mean().item()  # float prevents overflow\n            history.append(loss)\n            is_best = loss < best_error\n            if is_best:\n                best_error = loss\n                best_ratio = ratio\n                best_scales = scales\n            block.load_state_dict(org_sd)\n\n        if best_ratio == -1:\n            print(history)\n            raise Exception\n\n        best_scales = best_scales.view(-1)\n\n        assert torch.isnan(best_scales).sum() == 0, best_scales\n        return best_scales.detach()\n\n    # (1) Self-Attention 입력 부분 (Q, K, V projection)\n    inp = input_feat[name + '.self_attn.out_proj']\n    inp = torch.cat([x.unsqueeze(0) for x in inp], dim=0).unsqueeze(0)\n    qkv = [module.self_attn.q_proj, module.self_attn.k_proj, module.self_attn.v_proj]\n    final_scales = _search_module_scale(module.self_attn, qkv, inp)\n    scale_ln_fcs(module.self_attn_layer_norm, qkv, final_scales)\n\n    # (2) Self-Attention 출력 부분 (out_proj)\n    inp = input_feat[name + '.self_attn.out_proj']\n    inp = torch.cat([x.unsqueeze(0) for x in inp], dim=0)\n    final_scales = _search_module_scale(module.self_attn.out_proj, [module.self_attn.out_proj], inp)\n    scale_fc_fc(module.self_attn.v_proj, module.self_attn.out_proj, final_scales)\n\n    # (3) Feed-Forward Network 첫 번째 FC (fc1)\n    inp = input_feat[name + '.fc1']\n    inp = torch.cat([x.unsqueeze(0) for x in inp], dim=0)\n    final_scales = _search_module_scale(module.fc1, [module.fc1], inp)\n    scale_ln_fcs(module.final_layer_norm, module.fc1, final_scales)\n\n    # (4) Feed-Forward Network 두 번째 FC (fc2)\n    inp = input_feat[name + '.fc2']\n    inp = torch.cat([x.unsqueeze(0) for x in inp], dim=0)\n    final_scales = _search_module_scale(module.fc2, [module.fc2], inp)\n    scale_fc_fc(module.fc1, module.fc2, final_scales)\n\n@torch.no_grad()\ndef pseudo_quantize_model_weight_auto_scale(model, w_bit, q_group_size, input_feat):\n    \"\"\"\n    OPT 계열 모델 전체에 대해 자동 스케일 조정(auto-scale) 기반 pseudo quantization 수행.\n    각 Decoder Layer 단위로 auto_scale_block을 적용.\n    \"\"\"\n    from transformers.models.opt.modeling_opt import OPTDecoderLayer\n\n    # 각 OPTDecoderLayer(Transformer 블록)에 대해 auto scaling 수행\n    for name, module in model.named_modules():\n        if isinstance(module, OPTDecoderLayer):\n            auto_scale_block(module, name, w_bit, q_group_size, input_feat)\n\n    # 모든 Linear layer에 pseudo quantization 최종 적용\n    for n, m in model.named_modules():\n        if isinstance(m, nn.Linear):\n            m.weight.data = pseudo_quantize_tensor(\n                m.weight.data, n_bit=w_bit, q_group_size=q_group_size\n            )",
+      "cell": 34,
+      "answerSource": "5. Quantization for LLM_answer.ipynb"
+    },
+    "ondevice-llm-quant-cell-67": {
+      "source": "def rotate_model_weight(model, R1):\n    \"\"\"\n    모델의 모든 Embedding 및 Linear Layer 파라미터에 회전 행렬(R1)을 적용하여\n    Weight Space Rotation을 수행하는 함수.\n\n    - QuaRot, SpinQuant 등의 기법에서 사용되는 핵심 단계로, 모델의 weight를 직교 행렬로 회전시켜 Outlier 완화\n    - 회전 행렬 R1은 (hidden_dim × hidden_dim) 형태의 직교 행렬이어야 함.\n    \"\"\"\n    for n, m in model.named_modules():\n        # Pytorch에서 '@' 연산자는 행렬 곱 (dot product)을 의미합니다.\n        # nn.Linear의 weight 파라미터는 W^T 형태로 저장되어 있다는 점을 유의해야 합니다.\n        #\n        # Shape 요약:\n        #   Embedding  : (num_tokens, hidden_dim)\n        #   Linear     : (out_channels, in_channels)\n        #   Rotation R : (hidden_dim, hidden_dim)\n\n        if isinstance(m, nn.Embedding):\n            # Embedding Weight: (num_tokens, hidden_dim)\n            W_ = m.weight.data\n            m.weight.data = W_ @ R1\n\n        if isinstance(m, nn.Linear):\n            # Linear Layer: (out_features, in_features)\n            if \"o_proj\" in n or \"down_proj\" in n:\n                # Attention 출력 또는 FFN 다운프로젝션\n                W_ = m.weight.data\n                m.weight.data = R1.T @ W_\n            else:\n                # Q, K, V 프로젝션 및 FFN 게이트/업프로젝션\n                W_ = m.weight.data\n                m.weight.data = W_ @ R1\n\n\n        # GPU 메모리 캐시 정리\n        torch.cuda.empty_cache()",
+      "cell": 67,
       "answerSource": "5. Quantization for LLM_answer.ipynb"
     }
   },
@@ -818,6 +994,825 @@
       "topic": "Preference Dataset",
       "prompt": "dataset 항목에서 chosen 응답을 가져오세요.",
       "answer": "entry[\"chosen\"]",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-026",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "토큰 인코딩",
+      "prompt": "특수 토큰을 허용하며 문자열을 토큰 ID로 변환하세요.",
+      "answer": "tokenizer.encode(text, allowed_special={\"<|endoftext|>\"})",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-0"
+    },
+    {
+      "id": "llm-027",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "토큰 디코딩",
+      "prompt": "토큰 ID를 다시 문자열로 복원하세요.",
+      "answer": "tokenizer.decode(integers)",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-0"
+    },
+    {
+      "id": "llm-028",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "입력 청크",
+      "prompt": "현재 위치부터 max_length만큼 입력 청크를 자르세요.",
+      "answer": "token_ids[i:i+max_length]",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-2"
+    },
+    {
+      "id": "llm-029",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "Dataset 규약",
+      "prompt": "같은 인덱스의 입력과 타깃을 반환하세요.",
+      "answer": "self.input_ids[idx], self.target_ids[idx]",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-2"
+    },
+    {
+      "id": "llm-030",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "DataLoader",
+      "prompt": "DataLoader에 학습 데이터셋을 전달하세요.",
+      "answer": "dataset",
+      "occurrence": 1,
+      "sourceId": "ch2-cell-3"
+    },
+    {
+      "id": "llm-031",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "토큰 임베딩",
+      "prompt": "단어장 크기와 출력 차원으로 임베딩 레이어를 만드세요.",
+      "answer": "torch.nn.Embedding(vocab_size, output_dim)",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-5"
+    },
+    {
+      "id": "llm-032",
+      "subject": "LLM",
+      "chapterId": "llm-02",
+      "chapterNumber": "02",
+      "chapterTitle": "Dataset & Embeddings",
+      "file": "Chapter_2_Exercise_Dataset.ipynb",
+      "topic": "토큰 임베딩",
+      "prompt": "정수 토큰 ID에 임베딩 레이어를 적용하세요.",
+      "answer": "embedding_layer(input_ids)",
+      "occurrence": 0,
+      "sourceId": "ch2-cell-5"
+    },
+    {
+      "id": "llm-033",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "Q 투영",
+      "prompt": "Query를 만드는 선형 투영 레이어를 완성하세요.",
+      "answer": "self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-034",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "K 투영",
+      "prompt": "Key를 만드는 선형 투영 레이어를 완성하세요.",
+      "answer": "self.W_key   = nn.Linear(d_in, d_out, bias=qkv_bias)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-035",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "V 투영",
+      "prompt": "Value를 만드는 선형 투영 레이어를 완성하세요.",
+      "answer": "self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-036",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "Q·K 계산",
+      "prompt": "입력에서 Key 벡터를 계산하세요.",
+      "answer": "keys = self.W_key(x)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-037",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "Q·K 계산",
+      "prompt": "입력에서 Query 벡터를 계산하세요.",
+      "answer": "queries = self.W_query(x)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-038",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "Value 계산",
+      "prompt": "입력에 Value 투영 레이어를 적용하세요.",
+      "answer": "values = self.W_value(x)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-039",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "어텐션 가중치",
+      "prompt": "스케일된 어텐션 점수에 softmax를 적용하세요.",
+      "answer": "torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-101"
+    },
+    {
+      "id": "llm-040",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "문맥 벡터",
+      "prompt": "어텐션 가중치와 Value로 문맥 벡터를 계산하세요.",
+      "answer": "attn_weights @ values",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-92"
+    },
+    {
+      "id": "llm-041",
+      "subject": "LLM",
+      "chapterId": "llm-03a",
+      "chapterNumber": "03A",
+      "chapterTitle": "Attention",
+      "file": "Chapter_3_Excercise_Attention.ipynb",
+      "topic": "어텐션 호출",
+      "prompt": "생성한 CausalAttention 인스턴스에 batch를 전달하세요.",
+      "answer": "ca(batch)",
+      "occurrence": 0,
+      "sourceId": "ch3-cell-126"
+    },
+    {
+      "id": "llm-042",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "LayerNorm",
+      "prompt": "평균과 분산으로 입력을 정규화하세요.",
+      "answer": "(x - mean) / torch.sqrt(var + self.eps)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-043",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "LayerNorm",
+      "prompt": "학습 가능한 scale과 shift를 적용하세요.",
+      "answer": "self.scale * norm_x + self.shift",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-044",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "FeedForward",
+      "prompt": "임베딩 차원을 4배로 확장하는 Linear 층을 만드세요.",
+      "answer": "nn.Linear(cfg[\"emb_dim\"], 4 * cfg[\"emb_dim\"])",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-045",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "FeedForward",
+      "prompt": "FeedForward 블록의 활성화 함수를 채우세요.",
+      "answer": "GELU()",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-046",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "FeedForward",
+      "prompt": "4배로 확장한 은닉 차원을 다시 임베딩 차원으로 줄이세요.",
+      "answer": "nn.Linear(4 * cfg[\"emb_dim\"], cfg[\"emb_dim\"])",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-047",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "Residual Block",
+      "prompt": "정규화된 입력에 Attention을 적용하세요.",
+      "answer": "x = self.att(x)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-048",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "Residual Block",
+      "prompt": "두 번째 정규화 뒤에 FeedForward를 적용하세요.",
+      "answer": "x = self.ff(x)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-2"
+    },
+    {
+      "id": "llm-049",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "토큰 임베딩",
+      "prompt": "GPT의 토큰 임베딩 레이어를 완성하세요.",
+      "answer": "nn.Embedding(cfg[\"vocab_size\"], cfg[\"emb_dim\"])",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-3"
+    },
+    {
+      "id": "llm-050",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "위치 임베딩",
+      "prompt": "GPT의 위치 임베딩 레이어를 완성하세요.",
+      "answer": "nn.Embedding(cfg[\"context_length\"], cfg[\"emb_dim\"])",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-3"
+    },
+    {
+      "id": "llm-051",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "출력 헤드",
+      "prompt": "임베딩을 어휘 점수로 변환하는 출력 헤드를 만드세요.",
+      "answer": "nn.Linear(cfg[\"emb_dim\"], cfg[\"vocab_size\"], bias=False)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-3"
+    },
+    {
+      "id": "llm-052",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "Transformer 통과",
+      "prompt": "입력을 쌓인 Transformer block에 통과시키세요.",
+      "answer": "self.trf_blocks(x)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-3"
+    },
+    {
+      "id": "llm-053",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "출력 헤드",
+      "prompt": "최종 정규화 결과에 어휘 출력 헤드를 적용하세요.",
+      "answer": "self.out_head(x)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-3"
+    },
+    {
+      "id": "llm-054",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "그래디언트 해제",
+      "prompt": "토큰 생성 추론에서 gradient 계산을 끄세요.",
+      "answer": "with torch.no_grad():",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-4"
+    },
+    {
+      "id": "llm-055",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "마지막 시점",
+      "prompt": "다음 토큰 예측에 마지막 시점 logits만 선택하세요.",
+      "answer": "logits[:, -1, :]",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-4"
+    },
+    {
+      "id": "llm-056",
+      "subject": "LLM",
+      "chapterId": "llm-04",
+      "chapterNumber": "04",
+      "chapterTitle": "GPT Architecture",
+      "file": "Chapter_4_Excercise_GPT.ipynb",
+      "topic": "토큰 연결",
+      "prompt": "예측 토큰을 기존 시퀀스 뒤에 붙이세요.",
+      "answer": "torch.cat((idx, idx_next), dim=1)",
+      "occurrence": 0,
+      "sourceId": "ch4-cell-4"
+    },
+    {
+      "id": "llm-057",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "학습 모드",
+      "prompt": "학습 루프 전에 모델을 train 모드로 전환하세요.",
+      "answer": "model.train()",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-123"
+    },
+    {
+      "id": "llm-058",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "기울기 초기화",
+      "prompt": "이전 배치의 gradient를 초기화하세요.",
+      "answer": "optimizer.zero_grad()",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-76"
+    },
+    {
+      "id": "llm-059",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "배치 손실",
+      "prompt": "현재 입력과 타깃 배치의 손실을 계산하세요.",
+      "answer": "calc_loss_batch(input_batch, target_batch, model, device)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-70"
+    },
+    {
+      "id": "llm-060",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "가중치 갱신",
+      "prompt": "계산된 gradient로 파라미터를 갱신하세요.",
+      "answer": "optimizer.step()",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-76"
+    },
+    {
+      "id": "llm-061",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "Greedy Decoding",
+      "prompt": "마지막 위치의 최대 logit 토큰을 선택하세요.",
+      "answer": "torch.argmax(logits, dim=-1, keepdim=True)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-113"
+    },
+    {
+      "id": "llm-062",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "마지막 시점",
+      "prompt": "다음 토큰 생성을 위해 마지막 시점 logits만 선택하세요.",
+      "answer": "logits[:, -1, :]",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-113"
+    },
+    {
+      "id": "llm-063",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "토큰 연결",
+      "prompt": "선택한 idx_next를 기존 토큰 시퀀스 뒤에 붙이세요.",
+      "answer": "torch.cat((idx, idx_next), dim=1)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-113"
+    },
+    {
+      "id": "llm-064",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "배치 차원",
+      "prompt": "단일 토큰 시퀀스에 배치 차원을 추가하세요.",
+      "answer": "unsqueeze(0)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-16"
+    },
+    {
+      "id": "llm-065",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "배치 차원",
+      "prompt": "디코딩 전에 배치 차원을 제거하세요.",
+      "answer": "token_ids.squeeze(0)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-16"
+    },
+    {
+      "id": "llm-066",
+      "subject": "LLM",
+      "chapterId": "llm-05",
+      "chapterNumber": "05",
+      "chapterTitle": "Pretraining",
+      "file": "Chapter_5_Excercise_Pretraining.ipynb",
+      "topic": "Optimizer",
+      "prompt": "모델 파라미터로 AdamW optimizer를 생성하세요.",
+      "answer": "torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)",
+      "occurrence": 0,
+      "sourceId": "ch5-cell-78"
+    },
+    {
+      "id": "llm-067",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "Truncation",
+      "prompt": "토큰 시퀀스를 설정된 최대 길이로 자르세요.",
+      "answer": "encoded_text[:self.max_length]",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-30"
+    },
+    {
+      "id": "llm-068",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "Padding",
+      "prompt": "부족한 길이를 pad token으로 채우세요.",
+      "answer": "encoded_text + [pad_token_id] * (self.max_length - len(encoded_text))",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-30"
+    },
+    {
+      "id": "llm-069",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "Label",
+      "prompt": "DataFrame에서 분류 정답 Label을 가져오세요.",
+      "answer": "self.data.iloc[index][\"Label\"]",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-30"
+    },
+    {
+      "id": "llm-070",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "분류 Logits",
+      "prompt": "마지막 토큰의 출력만 분류에 사용하세요.",
+      "answer": "logits[:, -1, :]",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-88"
+    },
+    {
+      "id": "llm-071",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "파라미터 동결",
+      "prompt": "기존 모델의 모든 파라미터를 동결하세요.",
+      "answer": "param.requires_grad = False",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-54"
+    },
+    {
+      "id": "llm-072",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "출력층 교체",
+      "prompt": "이진 분류용 출력 헤드로 교체하세요.",
+      "answer": "torch.nn.Linear(in_features=BASE_CONFIG[\"emb_dim\"], out_features=num_classes)",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-56"
+    },
+    {
+      "id": "llm-073",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "선택적 미세조정",
+      "prompt": "마지막 Transformer block만 선택하세요.",
+      "answer": "model.trf_blocks[-1].parameters()",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-62"
+    },
+    {
+      "id": "llm-074",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "선택적 미세조정",
+      "prompt": "선택한 층의 학습을 다시 허용하세요.",
+      "answer": "param.requires_grad = True",
+      "occurrence": 0,
+      "sourceId": "ch6-cell-62"
+    },
+    {
+      "id": "llm-075",
+      "subject": "LLM",
+      "chapterId": "llm-06a",
+      "chapterNumber": "06A",
+      "chapterTitle": "Classification Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification.ipynb",
+      "topic": "정규화층 미세조정",
+      "prompt": "최종 LayerNorm 파라미터의 학습을 허용하세요.",
+      "answer": "param.requires_grad = True",
+      "occurrence": 1,
+      "sourceId": "ch6-cell-62"
+    },
+    {
+      "id": "llm-076",
+      "subject": "LLM",
+      "chapterId": "llm-06b",
+      "chapterNumber": "06B",
+      "chapterTitle": "LoRA Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification_LoRA.ipynb",
+      "topic": "Residual 적용",
+      "prompt": "기존 Linear 출력에 LoRA 출력을 더하세요.",
+      "answer": "self.linear(x) + self.lora(x)",
+      "occurrence": 0,
+      "sourceId": "ch6lora-cell-32"
+    },
+    {
+      "id": "llm-077",
+      "subject": "LLM",
+      "chapterId": "llm-06b",
+      "chapterNumber": "06B",
+      "chapterTitle": "LoRA Finetuning",
+      "file": "Chapter_6_Excercise_Finetuning_Classification_LoRA.ipynb",
+      "topic": "레이어 교체",
+      "prompt": "교체할 모듈이 Linear 층인지 확인하세요.",
+      "answer": "isinstance(module, torch.nn.Linear)",
+      "occurrence": 0,
+      "sourceId": "ch6lora-cell-35"
+    },
+    {
+      "id": "llm-078",
+      "subject": "LLM",
+      "chapterId": "llm-07a",
+      "chapterNumber": "07A",
+      "chapterTitle": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "topic": "구분 토큰",
+      "prompt": "각 학습 시퀀스 끝에 구분 토큰을 추가하세요.",
+      "answer": "pad_token_id",
+      "occurrence": 1,
+      "sourceId": "ch7-cell-41"
+    },
+    {
+      "id": "llm-079",
+      "subject": "LLM",
+      "chapterId": "llm-07a",
+      "chapterNumber": "07A",
+      "chapterTitle": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "topic": "Padding",
+      "prompt": "배치의 최대 길이까지 pad token으로 채우세요.",
+      "answer": "pad_token_id",
+      "occurrence": 2,
+      "sourceId": "ch7-cell-41"
+    },
+    {
+      "id": "llm-080",
+      "subject": "LLM",
+      "chapterId": "llm-07a",
+      "chapterNumber": "07A",
+      "chapterTitle": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "topic": "입력 시프트",
+      "prompt": "입력에서 마지막 토큰을 제외하세요.",
+      "answer": "torch.tensor(padded[:-1])",
+      "occurrence": 0,
+      "sourceId": "ch7-cell-41"
+    },
+    {
+      "id": "llm-081",
+      "subject": "LLM",
+      "chapterId": "llm-07a",
+      "chapterNumber": "07A",
+      "chapterTitle": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "topic": "타깃 시프트",
+      "prompt": "타깃에서 첫 번째 토큰을 제외하세요.",
+      "answer": "torch.tensor(padded[1:])",
+      "occurrence": 0,
+      "sourceId": "ch7-cell-41"
+    },
+    {
+      "id": "llm-082",
+      "subject": "LLM",
+      "chapterId": "llm-07a",
+      "chapterNumber": "07A",
+      "chapterTitle": "Instruction Finetuning",
+      "file": "Chapter_7_Exercise_Follow_Instructions.ipynb",
+      "topic": "Padding Mask",
+      "prompt": "첫 pad token 뒤의 나머지 padding을 무시하세요.",
+      "answer": "targets[indices[1:]] = ignore_index",
+      "occurrence": 0,
+      "sourceId": "ch7-cell-46"
+    },
+    {
+      "id": "llm-083",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "자동회귀 시프트",
+      "prompt": "레이블을 한 칸 앞당겨 logits와 정렬하세요.",
+      "answer": "labels[:, 1:].clone()",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-084",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "자동회귀 시프트",
+      "prompt": "logits의 마지막 시점을 제외하세요.",
+      "answer": "logits[:, :-1, :]",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-085",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "정답 로그확률",
+      "prompt": "정답 레이블 위치의 log probability를 모으세요.",
+      "answer": "input=log_probs",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-086",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "Policy 비율",
+      "prompt": "Policy 모델의 chosen-rejected 로그확률 차이를 구하세요.",
+      "answer": "model_chosen_logprobs - model_rejected_logprobs",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-087",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "Reference 비율",
+      "prompt": "Reference 모델의 chosen-rejected 로그확률 차이를 구하세요.",
+      "answer": "reference_chosen_logprobs - reference_rejected_logprobs",
+      "occurrence": 0,
+      "sourceId": "dpo-completions"
+    },
+    {
+      "id": "llm-088",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "DPO Logits",
+      "prompt": "Policy 비율에서 Reference 비율을 빼세요.",
+      "answer": "model_logratios - reference_logratios",
       "occurrence": 0,
       "sourceId": "dpo-completions"
     },
@@ -1290,6 +2285,201 @@
       "sourceId": "data-ncf-cell-18"
     },
     {
+      "id": "data-019",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "평가 Device 이동",
+      "prompt": "평가 입력과 정답을 실행 장치로 이동하세요.",
+      "answer": "test_x, test_y = test_x.to(device), test_y.to(device)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-020",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "평가 예측",
+      "prompt": "평가 배치의 마지막 시점 예측값을 선택하세요.",
+      "answer": "model(test_x)[:, -1, 0]",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-021",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "평가 손실",
+      "prompt": "평가 예측과 정답으로 test loss를 계산하세요.",
+      "answer": "loss_fn(test_pred, test_y)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-23"
+    },
+    {
+      "id": "data-022",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Conv1D Layer",
+      "prompt": "입력 채널과 은닉 채널로 1D convolution을 선언하세요.",
+      "answer": "nn.Conv1d(in_channels=input_size, \\\n                            out_channels=hidden_size, \\\n                            kernel_size=2, stride=1)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-29"
+    },
+    {
+      "id": "data-023",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Conv1D 출력층",
+      "prompt": "은닉 채널을 하나의 예측값으로 변환하세요.",
+      "answer": "nn.Linear(hidden_size, 1)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-29"
+    },
+    {
+      "id": "data-024",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "RNN 출력층",
+      "prompt": "RNN 은닉 상태를 하나의 예측값으로 변환하세요.",
+      "answer": "nn.Linear(hidden_size, 1)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-34"
+    },
+    {
+      "id": "data-025",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "RNN Forward",
+      "prompt": "입력을 RNN에 통과시키고 전 시점 출력에 fc를 적용하세요.",
+      "answer": "out, _ = self.rnn(x)\n      return self.fc(out)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-34"
+    },
+    {
+      "id": "data-026",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Encoder 구성",
+      "prompt": "Encoder의 부모 클래스와 batch-first RNN을 초기화하세요.",
+      "answer": "super(EncoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-43"
+    },
+    {
+      "id": "data-027",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Encoder Forward",
+      "prompt": "Encoder에서 최종 hidden state를 반환하세요.",
+      "answer": "_, h = self.rnn(x)\n    return h",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-43"
+    },
+    {
+      "id": "data-028",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Decoder 구성",
+      "prompt": "Decoder RNN과 출력 선형층을 초기화하세요.",
+      "answer": "super(DecoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n    self.fc = nn.Linear(hidden_size, input_size)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-43"
+    },
+    {
+      "id": "data-029",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Decoder Forward",
+      "prompt": "이전 hidden state로 Decoder를 실행하고 출력을 변환하세요.",
+      "answer": "out, h = self.rnn(x, h)\n    out = self.fc(out)\n    return out, h",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-43"
+    },
+    {
+      "id": "data-030",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Message 정규화",
+      "prompt": "아이템 방향 edge message에 degree 정규화 계수를 곱하세요.",
+      "answer": "edge_messages_for_dst *= norm.unsqueeze(1)",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-13"
+    },
+    {
+      "id": "data-031",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Self Message",
+      "prompt": "아이템 노드 자신의 특징을 집계 메시지에 더하세요.",
+      "answer": "aggregated_messages[user_num:] += self.W1(node_features[user_num:])",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-13"
+    },
+    {
+      "id": "data-032",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "User Feature",
+      "prompt": "최종 feature에서 사용자 구간을 선택하세요.",
+      "answer": "final_features[:self.num_users]",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
+      "id": "data-033",
+      "subject": "Data",
+      "chapterId": "data-gcf",
+      "chapterNumber": "GCF",
+      "chapterTitle": "Graph Collaborative Filtering",
+      "file": "RecSys_GCF_practice.ipynb",
+      "topic": "Item Feature",
+      "prompt": "최종 feature에서 아이템 구간을 선택하세요.",
+      "answer": "final_features[self.num_users:]",
+      "occurrence": 0,
+      "sourceId": "data-gcf-cell-14"
+    },
+    {
       "id": "vision-001",
       "subject": "Vision",
       "chapterId": "vision-resnet",
@@ -1756,6 +2946,552 @@
       "answer": "ln.weight.div_(scale)",
       "occurrence": 0,
       "sourceId": "ondevice-llm-quant-cell-50"
+    },
+    {
+      "id": "ondevice-019",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Magnitude Importance",
+      "prompt": "가중치의 절댓값으로 importance를 계산하세요.",
+      "answer": "importance = torch.abs(weight)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-29"
+    },
+    {
+      "id": "ondevice-020",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Layer-wise Sparsity",
+      "prompt": "각 CNN layer에 강의 답안의 sparsity 값을 설정하세요.",
+      "answer": "    'backbone.conv0.weight': 0.5,\n    'backbone.conv1.weight': 0.8,\n    'backbone.conv2.weight': 0.8,\n    'backbone.conv3.weight': 0.7,\n    'backbone.conv4.weight': 0.7,\n    'backbone.conv5.weight': 0.8,\n    'backbone.conv6.weight': 0.8,\n    'backbone.conv7.weight': 0.9,\n    'classifier.weight': 0.9",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-48"
+    },
+    {
+      "id": "ondevice-021",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Global Weight 결합",
+      "prompt": "pruning 대상 가중치를 하나의 tensor로 결합하세요.",
+      "answer": "all_weights = torch.cat(parameters_to_prune)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-54"
+    },
+    {
+      "id": "ondevice-022",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Global 원소 수",
+      "prompt": "결합한 가중치의 전체 원소 수를 구하세요.",
+      "answer": "num_elements = all_weights.numel()",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-54"
+    },
+    {
+      "id": "ondevice-023",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Global Pruning 개수",
+      "prompt": "global sparsity로 0으로 만들 원소 수를 계산하세요.",
+      "answer": "num_zeros = round(num_elements * sparsity)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-54"
+    },
+    {
+      "id": "ondevice-024",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Global Importance",
+      "prompt": "결합한 가중치의 절댓값 importance를 계산하세요.",
+      "answer": "importance = torch.abs(all_weights)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-54"
+    },
+    {
+      "id": "ondevice-025",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Global Threshold",
+      "prompt": "global pruning에 사용할 k번째 threshold를 구하세요.",
+      "answer": "threshold = torch.kthvalue(importance, num_zeros)[0]",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-54"
+    },
+    {
+      "id": "ondevice-026",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Sparsity Schedule",
+      "prompt": "pruning 시작 전에는 sparsity를 0으로 설정하세요.",
+      "answer": "sparsity = 0",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-65"
+    },
+    {
+      "id": "ondevice-027",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Sparsity Schedule",
+      "prompt": "pruning 종료 이후에는 최종 sparsity를 사용하세요.",
+      "answer": "sparsity = sparsity_end",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-65"
+    },
+    {
+      "id": "ondevice-028",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "Sparsity Schedule",
+      "prompt": "pruning 구간의 cubic sparsity schedule을 완성하세요.",
+      "answer": "sparsity = sparsity_end + (sparsity_start - sparsity_end) * (1 - (epoch - epoch_start) / (epoch_end - epoch_start)) ** exponent",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-65"
+    },
+    {
+      "id": "ondevice-029",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Linear Quantization",
+      "prompt": "scale된 부동소수 tensor를 정수값으로 rounding하세요.",
+      "answer": "rounded_tensor = torch.round(scaled_tensor)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-24"
+    },
+    {
+      "id": "ondevice-030",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Output Zero Point",
+      "prompt": "requantization 결과에 output zero point를 더하세요.",
+      "answer": "output = output + output_zero_point",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-55"
+    },
+    {
+      "id": "ondevice-031",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Conv Requantization",
+      "prompt": "convolution 정수 출력을 input·weight·output scale로 재조정하세요.",
+      "answer": "output = output*(input_scale * weight_scale / output_scale)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-63"
+    },
+    {
+      "id": "ondevice-032",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Conv Zero Point",
+      "prompt": "convolution requantization 결과에 output zero point를 더하세요.",
+      "answer": "output = output + output_zero_point",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-63"
+    },
+    {
+      "id": "ondevice-033",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Codebook 크기",
+      "prompt": "bitwidth에 따른 클러스터 수를 계산하세요.",
+      "answer": "n_clusters = 2**bitwidth",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-85"
+    },
+    {
+      "id": "ondevice-034",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-quant",
+      "chapterNumber": "02",
+      "chapterTitle": "Quantization for CNN",
+      "file": "2. Quantization for CNN.ipynb",
+      "topic": "Centroid 갱신",
+      "prompt": "k번 클러스터에 할당된 값의 평균으로 centroid를 갱신하세요.",
+      "answer": "codebook.centroids[k] = torch.mean(fp32_tensor[codebook.labels==k])",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-quant-cell-96"
+    },
+    {
+      "id": "ondevice-035",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Student Forward",
+      "prompt": "Student 모델의 logits을 계산하세요.",
+      "answer": "student_logits = student(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-036",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Student Probability",
+      "prompt": "temperature를 적용한 Student logits을 확률분포로 변환하세요.",
+      "answer": "student_prob = nn.functional.softmax(student_logits / T, dim=-1)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-037",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Label Loss",
+      "prompt": "Student logits과 정답 label의 cross-entropy loss를 계산하세요.",
+      "answer": "label_loss = ce_loss(student_logits, labels)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-26"
+    },
+    {
+      "id": "ondevice-038",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Teacher Representation",
+      "prompt": "gradient 없이 Teacher의 hidden representation을 구하세요.",
+      "answer": "_, teacher_hidden_representation = teacher(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-39"
+    },
+    {
+      "id": "ondevice-039",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Student Representation",
+      "prompt": "Student의 logits과 hidden representation을 구하세요.",
+      "answer": "student_logits, student_hidden_representation = student(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-39"
+    },
+    {
+      "id": "ondevice-040",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Cosine Distillation",
+      "prompt": "Student와 Teacher hidden representation의 cosine loss를 계산하세요.",
+      "answer": "hidden_rep_loss = cosine_loss(student_hidden_representation, teacher_hidden_representation,\n                                          target=torch.ones(inputs.size(0)).cuda())",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-39"
+    },
+    {
+      "id": "ondevice-041",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Label Loss",
+      "prompt": "Student logits과 label의 cross-entropy loss를 계산하세요.",
+      "answer": "label_loss = ce_loss(student_logits, labels)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-39"
+    },
+    {
+      "id": "ondevice-042",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Representation Loss 결합",
+      "prompt": "hidden representation loss와 label loss를 가중합하세요.",
+      "answer": "loss = hidden_rep_loss_weight * hidden_rep_loss + ce_loss_weight * label_loss",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-39"
+    },
+    {
+      "id": "ondevice-043",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Teacher Feature Map",
+      "prompt": "gradient 없이 Teacher feature map을 구하세요.",
+      "answer": "_, teacher_feature_map = teacher(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-52"
+    },
+    {
+      "id": "ondevice-044",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Student Feature Map",
+      "prompt": "Student logits과 regressor feature map을 구하세요.",
+      "answer": "student_logits, regressor_feature_map = student(inputs)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-52"
+    },
+    {
+      "id": "ondevice-045",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Feature-map Loss",
+      "prompt": "Student regressor와 Teacher feature map의 MSE를 계산하세요.",
+      "answer": "hidden_rep_loss = mse_loss(regressor_feature_map, teacher_feature_map)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-52"
+    },
+    {
+      "id": "ondevice-046",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Label Loss",
+      "prompt": "Student logits과 label의 cross-entropy loss를 계산하세요.",
+      "answer": "label_loss = ce_loss(student_logits, labels)",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-52"
+    },
+    {
+      "id": "ondevice-047",
+      "subject": "On-device",
+      "chapterId": "ondevice-kd",
+      "chapterNumber": "03",
+      "chapterTitle": "Knowledge Distillation",
+      "file": "3. Knowledge Distillation.ipynb",
+      "topic": "Feature-map Loss 결합",
+      "prompt": "feature-map loss와 label loss를 가중합하세요.",
+      "answer": "loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss",
+      "occurrence": 0,
+      "sourceId": "ondevice-kd-cell-52"
+    },
+    {
+      "id": "ondevice-048",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Weight 원소 수",
+      "prompt": "LLM 가중치 tensor의 전체 원소 수를 구하세요.",
+      "answer": "num_elements = W.numel()",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-10"
+    },
+    {
+      "id": "ondevice-049",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Pruning 개수",
+      "prompt": "sparsity로 제거할 LLM 가중치 개수를 계산하세요.",
+      "answer": "num_zeros = round(num_elements * sparsity)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-10"
+    },
+    {
+      "id": "ondevice-050",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Weight Importance",
+      "prompt": "LLM 가중치의 절댓값 importance를 계산하세요.",
+      "answer": "importance = torch.abs(W)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-10"
+    },
+    {
+      "id": "ondevice-051",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Weight Threshold",
+      "prompt": "제거 개수에 해당하는 magnitude threshold를 구하세요.",
+      "answer": "threshold = torch.kthvalue(importance.flatten(), num_zeros)[0]",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-10"
+    },
+    {
+      "id": "ondevice-052",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Weight Mask",
+      "prompt": "threshold보다 큰 가중치만 남기는 mask를 만드세요.",
+      "answer": "mask = importance > threshold",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-10"
+    },
+    {
+      "id": "ondevice-053",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Weight Shape",
+      "prompt": "WANDA mask 계산을 위해 가중치의 행과 열을 구하세요.",
+      "answer": "row, col = W.shape",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-19"
+    },
+    {
+      "id": "ondevice-054",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Row Pruning 개수",
+      "prompt": "각 행에서 제거할 열 개수를 계산하세요.",
+      "answer": "num_zeros_per_row = round(col * sparsity)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-19"
+    },
+    {
+      "id": "ondevice-055",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-pruning",
+      "chapterNumber": "04",
+      "chapterTitle": "Pruning for LLM",
+      "file": "4. Pruning for LLM.ipynb",
+      "topic": "Row Threshold",
+      "prompt": "각 행별 WANDA importance threshold를 구하세요.",
+      "answer": "threshold = torch.kthvalue(importance, num_zeros_per_row, dim=1)[0]",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-pruning-cell-19"
+    },
+    {
+      "id": "ondevice-056",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "AWQ Scale",
+      "prompt": "activation scale에 ratio를 거듭제곱해 AWQ scale을 계산하세요.",
+      "answer": "scales = s_x ** ratio",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-34"
+    },
+    {
+      "id": "ondevice-057",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "LayerNorm Bias",
+      "prompt": "LayerNorm bias를 smoothing scale로 나누세요.",
+      "answer": "ln.bias.div_(scale)",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-50"
+    },
+    {
+      "id": "ondevice-058",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "Embedding Rotation",
+      "prompt": "Embedding 가중치의 오른쪽에 rotation 행렬을 곱하세요.",
+      "answer": "m.weight.data = W_ @ R1",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-67"
+    },
+    {
+      "id": "ondevice-059",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "Output Rotation",
+      "prompt": "o_proj와 down_proj 가중치의 왼쪽에 전치 rotation을 곱하세요.",
+      "answer": "m.weight.data = R1.T @ W_",
+      "occurrence": 0,
+      "sourceId": "ondevice-llm-quant-cell-67"
+    },
+    {
+      "id": "ondevice-060",
+      "subject": "On-device",
+      "chapterId": "ondevice-llm-quant",
+      "chapterNumber": "05",
+      "chapterTitle": "Quantization for LLM",
+      "file": "5. Quantization for LLM.ipynb",
+      "topic": "Input Rotation",
+      "prompt": "Q/K/V와 FFN 가중치의 오른쪽에 rotation 행렬을 곱하세요.",
+      "answer": "m.weight.data = W_ @ R1",
+      "occurrence": 1,
+      "sourceId": "ondevice-llm-quant-cell-67"
     }
   ]
 }

@@ -79,9 +79,30 @@ add("data-ncf", "ncf", 8, "Stratified Split", "평점 분포를 유지하며 데
 add("data-ncf", "ncf", 10, "Embedding 결합", "사용자와 영화 embedding을 입력 feature로 연결하세요.", "torch.cat([user_embedding, movie_embedding], dim = 1)")
 add("data-ncf", "ncf", 18, "평가 Metric", "sklearn으로 실제 평점과 모델 출력의 MSE를 계산하세요.", "mean_squared_error(target_rating_list, model_output_list)")
 
+# Remaining explicit TODO/fill-this-part completions. These follow the compact
+# exam-focused set above so the existing question IDs remain stable.
+add("data-ts", "ts", 23, "평가 Device 이동", "평가 입력과 정답을 실행 장치로 이동하세요.", "test_x, test_y = test_x.to(device), test_y.to(device)")
+add("data-ts", "ts", 23, "평가 예측", "평가 배치의 마지막 시점 예측값을 선택하세요.", "model(test_x)[:, -1, 0]")
+add("data-ts", "ts", 23, "평가 손실", "평가 예측과 정답으로 test loss를 계산하세요.", "loss_fn(test_pred, test_y)")
 
-if len(SPECS) > 20:
-    raise ValueError("Focused Data bank must stay at 20 questions or fewer.")
+add("data-ts", "ts", 29, "Conv1D Layer", "입력 채널과 은닉 채널로 1D convolution을 선언하세요.", "nn.Conv1d(in_channels=input_size, \\\n                            out_channels=hidden_size, \\\n                            kernel_size=2, stride=1)")
+add("data-ts", "ts", 29, "Conv1D 출력층", "은닉 채널을 하나의 예측값으로 변환하세요.", "nn.Linear(hidden_size, 1)")
+
+add("data-ts", "ts", 34, "RNN 출력층", "RNN 은닉 상태를 하나의 예측값으로 변환하세요.", "nn.Linear(hidden_size, 1)")
+add("data-ts", "ts", 34, "RNN Forward", "입력을 RNN에 통과시키고 전 시점 출력에 fc를 적용하세요.", "out, _ = self.rnn(x)\n      return self.fc(out)")
+
+add("data-ts", "ts", 43, "Encoder 구성", "Encoder의 부모 클래스와 batch-first RNN을 초기화하세요.", "super(EncoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)")
+add("data-ts", "ts", 43, "Encoder Forward", "Encoder에서 최종 hidden state를 반환하세요.", "_, h = self.rnn(x)\n    return h")
+add("data-ts", "ts", 43, "Decoder 구성", "Decoder RNN과 출력 선형층을 초기화하세요.", "super(DecoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n    self.fc = nn.Linear(hidden_size, input_size)")
+add("data-ts", "ts", 43, "Decoder Forward", "이전 hidden state로 Decoder를 실행하고 출력을 변환하세요.", "out, h = self.rnn(x, h)\n    out = self.fc(out)\n    return out, h")
+
+add("data-gcf", "gcf", 13, "Message 정규화", "아이템 방향 edge message에 degree 정규화 계수를 곱하세요.", "edge_messages_for_dst *= norm.unsqueeze(1)")
+add("data-gcf", "gcf", 13, "Self Message", "아이템 노드 자신의 특징을 집계 메시지에 더하세요.", "aggregated_messages[user_num:] += self.W1(node_features[user_num:])")
+add("data-gcf", "gcf", 14, "User Feature", "최종 feature에서 사용자 구간을 선택하세요.", "final_features[:self.num_users]")
+add("data-gcf", "gcf", 14, "Item Feature", "최종 feature에서 아이템 구간을 선택하세요.", "final_features[self.num_users:]")
+
+if len(SPECS) > 60:
+    raise ValueError("Unexpected Data question expansion; audit the explicit-fill list.")
 
 
 def read_cell(source_key: str, cell_index: int) -> tuple[str, str]:
