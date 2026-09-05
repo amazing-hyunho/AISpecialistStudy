@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import questionBankData from './question-bank.json';
+import { questionExplanations, type QuestionExplanation } from './explanations';
 
 type Chapter = {
   id: string;
@@ -32,7 +33,7 @@ type QuestionRecord = {
   sourceId: string;
 };
 
-type Question = QuestionRecord & Cell;
+type Question = QuestionRecord & Cell & { explanation: QuestionExplanation };
 type Screen = 'home' | 'chapters' | 'quiz' | 'wrong';
 type ResultState = 'idle' | 'correct' | 'wrong';
 
@@ -42,9 +43,23 @@ const bank = questionBankData as {
   questions: QuestionRecord[];
 };
 
+const bankQuestionIds = new Set(bank.questions.map((question) => question.id));
+const missingExplanationIds = bank.questions
+  .filter((question) => !questionExplanations[question.id])
+  .map((question) => question.id);
+const unknownExplanationIds = Object.keys(questionExplanations)
+  .filter((questionId) => !bankQuestionIds.has(questionId));
+
+if (missingExplanationIds.length || unknownExplanationIds.length) {
+  throw new Error(
+    `Question explanation mismatch. Missing: ${missingExplanationIds.join(', ') || 'none'}; Unknown: ${unknownExplanationIds.join(', ') || 'none'}`,
+  );
+}
+
 const questions: Question[] = bank.questions.map((question) => ({
   ...question,
   ...bank.cells[question.sourceId],
+  explanation: questionExplanations[question.id],
 }));
 
 const STORAGE_KEY = 'ai-exam-trainer-progress-v4';
@@ -336,12 +351,20 @@ export default function Home() {
 
             {result !== 'idle' && (
               <section className={`result-card ${result}`} aria-live="polite">
-                <div>
+                <div className="result-content">
                   <span className="result-kicker">
                     {result === 'correct' ? '정답입니다' : '오답노트에 저장했습니다'}
                   </span>
                   <p className="answer-code">{current.answer}</p>
                   {result === 'wrong' && <p className="result-note">답안지의 정확한 코드를 확인하고 다시 외워보세요.</p>}
+                  <div className="explanation-copy">
+                    <span>코드 해설</span>
+                    <p>{current.explanation.why}</p>
+                    <div className="memory-tip">
+                      <strong>암기 포인트</strong>
+                      <p>{current.explanation.memory}</p>
+                    </div>
+                  </div>
                 </div>
                 {screen === 'wrong' && result === 'correct' && (
                   <button className="resolve-button" onClick={resolveWrong}>오답 해결</button>
