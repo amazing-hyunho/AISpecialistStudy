@@ -271,6 +271,22 @@ if len(SPECS) > 120:
     raise ValueError("Unexpected LLM question expansion; audit the explicit-fill list.")
 
 
+NON_BLANK_DPO_ANSWERS = {
+    "prompt = format_input(entry)",
+    'entry["rejected"]',
+    'entry["chosen"]',
+}
+
+
+def is_source_blank(spec: dict[str, str]) -> bool:
+    source_key = spec["sourceKey"]
+    if source_key in {"lora_exercise", "dpo_notebook"}:
+        return False
+    if source_key == "dpo" and spec["answer"] in NON_BLANK_DPO_ANSWERS:
+        return False
+    return source_key in {"ch2", "ch3", "ch4", "ch5", "ch6", "ch6lora", "ch7", "dpo"}
+
+
 def read_code_cells(relative_path: str) -> list[tuple[int, str]]:
     payload = json.loads((LLM_ROOT / relative_path).read_text(encoding="utf-8"))
     return [
@@ -342,6 +358,7 @@ def build() -> None:
             "answer": spec["answer"],
             "occurrence": spec["occurrence"],
             "sourceId": source_id,
+            "isSourceBlank": is_source_blank(spec),
         })
 
     for chapter in CHAPTERS:

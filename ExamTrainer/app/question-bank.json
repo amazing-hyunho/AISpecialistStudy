@@ -683,7 +683,8 @@
       "prompt": "입력보다 한 칸 뒤로 이동한 타깃 시퀀스를 완성하세요.",
       "answer": "enc_sample[1:context_size+1]",
       "occurrence": 0,
-      "sourceId": "ch2-cell-1"
+      "sourceId": "ch2-cell-1",
+      "isSourceBlank": true
     },
     {
       "id": "llm-002",
@@ -696,7 +697,8 @@
       "prompt": "입력보다 한 칸 뒤의 타깃 청크를 만드세요.",
       "answer": "token_ids[i + 1 : i + max_length + 1]",
       "occurrence": 0,
-      "sourceId": "ch2-cell-2"
+      "sourceId": "ch2-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-003",
@@ -709,7 +711,8 @@
       "prompt": "Query와 전치한 Key의 내적을 계산하세요.",
       "answer": "queries @ keys.transpose(1, 2)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-126"
+      "sourceId": "ch3-cell-126",
+      "isSourceBlank": true
     },
     {
       "id": "llm-004",
@@ -722,7 +725,8 @@
       "prompt": "미래 토큰의 스코어를 음의 무한대로 채우세요.",
       "answer": "-torch.inf",
       "occurrence": 0,
-      "sourceId": "ch3-cell-126"
+      "sourceId": "ch3-cell-126",
+      "isSourceBlank": true
     },
     {
       "id": "llm-005",
@@ -735,7 +739,8 @@
       "prompt": "토큰 임베딩과 위치 임베딩을 더하세요.",
       "answer": "tok_embeds + pos_embeds",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-006",
@@ -748,7 +753,8 @@
       "prompt": "가장 큰 logit의 토큰을 선택하세요.",
       "answer": "torch.argmax(logits, dim=-1, keepdim=True)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-4"
+      "sourceId": "ch4-cell-4",
+      "isSourceBlank": true
     },
     {
       "id": "llm-007",
@@ -761,7 +767,8 @@
       "prompt": "평탄화한 logits와 target으로 손실을 계산하세요.",
       "answer": "torch.nn.functional.cross_entropy(logits.flatten(0, 1), target_batch.flatten())",
       "occurrence": 0,
-      "sourceId": "ch5-cell-70"
+      "sourceId": "ch5-cell-70",
+      "isSourceBlank": true
     },
     {
       "id": "llm-008",
@@ -774,7 +781,8 @@
       "prompt": "손실에서 역전파를 수행하세요.",
       "answer": "loss.backward()",
       "occurrence": 0,
-      "sourceId": "ch5-cell-76"
+      "sourceId": "ch5-cell-76",
+      "isSourceBlank": true
     },
     {
       "id": "llm-009",
@@ -787,7 +795,8 @@
       "prompt": "A 행렬을 입력 차원과 rank 크기로 생성하세요.",
       "answer": "torch.empty(in_dim, rank)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-29"
+      "sourceId": "ch6lora-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "llm-010",
@@ -800,7 +809,8 @@
       "prompt": "B 행렬을 rank와 출력 차원 크기로 생성하세요.",
       "answer": "torch.zeros(rank, out_dim)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-29"
+      "sourceId": "ch6lora-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "llm-011",
@@ -813,7 +823,8 @@
       "prompt": "LoRA의 스케일과 저랭크 행렬곱을 적용하세요.",
       "answer": "(self.alpha / self.rank) * (x @ self.A @ self.B)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-29"
+      "sourceId": "ch6lora-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "llm-012",
@@ -826,7 +837,8 @@
       "prompt": "LoRA 학습 전에 기존 파라미터를 동결하세요.",
       "answer": "param.requires_grad = False",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-37"
+      "sourceId": "ch6lora-cell-37",
+      "isSourceBlank": true
     },
     {
       "id": "llm-013",
@@ -839,7 +851,8 @@
       "prompt": "모델의 Linear 층을 LoRA 버전으로 교체하세요.",
       "answer": "replace_linear_with_lora(model, rank=16, alpha=16)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-38"
+      "sourceId": "ch6lora-cell-38",
+      "isSourceBlank": true
     },
     {
       "id": "llm-014",
@@ -852,7 +865,8 @@
       "prompt": "chosen 시퀀스에 선호 응답을 연결하세요.",
       "answer": "chosen_response",
       "occurrence": 1,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-015",
@@ -865,7 +879,8 @@
       "prompt": "rejected 시퀀스에 비선호 응답을 연결하세요.",
       "answer": "rejected_response",
       "occurrence": 1,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-016",
@@ -878,7 +893,8 @@
       "prompt": "DPO logits에 log-sigmoid 손실을 적용하세요.",
       "answer": "-F.logsigmoid(beta * logits)",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-017",
@@ -891,7 +907,8 @@
       "prompt": "강의자료에서 LoRA rank 설정값을 선언하세요.",
       "answer": "LORA_RANK = 16",
       "occurrence": 0,
-      "sourceId": "lora_exercise-cell-1"
+      "sourceId": "lora_exercise-cell-1",
+      "isSourceBlank": false
     },
     {
       "id": "llm-018",
@@ -904,7 +921,8 @@
       "prompt": "강의자료에서 LoRA alpha 설정값을 선언하세요.",
       "answer": "LORA_ALPHA = 16",
       "occurrence": 0,
-      "sourceId": "lora_exercise-cell-1"
+      "sourceId": "lora_exercise-cell-1",
+      "isSourceBlank": false
     },
     {
       "id": "llm-019",
@@ -917,7 +935,8 @@
       "prompt": "DPO 학습에 사용할 GPT-2 토크나이저를 로드하세요.",
       "answer": "tokenizer = tiktoken.get_encoding(\"gpt2\")",
       "occurrence": 0,
-      "sourceId": "dpo_notebook-cell-2"
+      "sourceId": "dpo_notebook-cell-2",
+      "isSourceBlank": false
     },
     {
       "id": "llm-020",
@@ -930,7 +949,8 @@
       "prompt": "학습 대상 Policy 모델을 생성하세요.",
       "answer": "policy_model = GPTModel(BASE_CONFIG)",
       "occurrence": 0,
-      "sourceId": "dpo_notebook-cell-2"
+      "sourceId": "dpo_notebook-cell-2",
+      "isSourceBlank": false
     },
     {
       "id": "llm-021",
@@ -943,7 +963,8 @@
       "prompt": "Policy 모델에 SFT 가중치를 로드하세요.",
       "answer": "policy_model.load_state_dict(torch.load(model_path, map_location=\"cpu\", weights_only=True))",
       "occurrence": 0,
-      "sourceId": "dpo_notebook-cell-2"
+      "sourceId": "dpo_notebook-cell-2",
+      "isSourceBlank": false
     },
     {
       "id": "llm-022",
@@ -956,7 +977,8 @@
       "prompt": "고정 기준점으로 사용할 Reference 모델을 생성하세요.",
       "answer": "reference_model = GPTModel(BASE_CONFIG)",
       "occurrence": 0,
-      "sourceId": "dpo_notebook-cell-2"
+      "sourceId": "dpo_notebook-cell-2",
+      "isSourceBlank": false
     },
     {
       "id": "llm-023",
@@ -969,7 +991,8 @@
       "prompt": "데이터 항목을 학습 프롬프트 형식으로 변환하세요.",
       "answer": "prompt = format_input(entry)",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": false
     },
     {
       "id": "llm-024",
@@ -982,7 +1005,8 @@
       "prompt": "dataset 항목에서 rejected 응답을 가져오세요.",
       "answer": "entry[\"rejected\"]",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": false
     },
     {
       "id": "llm-025",
@@ -995,7 +1019,8 @@
       "prompt": "dataset 항목에서 chosen 응답을 가져오세요.",
       "answer": "entry[\"chosen\"]",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": false
     },
     {
       "id": "llm-026",
@@ -1008,7 +1033,8 @@
       "prompt": "특수 토큰을 허용하며 문자열을 토큰 ID로 변환하세요.",
       "answer": "tokenizer.encode(text, allowed_special={\"<|endoftext|>\"})",
       "occurrence": 0,
-      "sourceId": "ch2-cell-0"
+      "sourceId": "ch2-cell-0",
+      "isSourceBlank": true
     },
     {
       "id": "llm-027",
@@ -1021,7 +1047,8 @@
       "prompt": "토큰 ID를 다시 문자열로 복원하세요.",
       "answer": "tokenizer.decode(integers)",
       "occurrence": 0,
-      "sourceId": "ch2-cell-0"
+      "sourceId": "ch2-cell-0",
+      "isSourceBlank": true
     },
     {
       "id": "llm-028",
@@ -1034,7 +1061,8 @@
       "prompt": "현재 위치부터 max_length만큼 입력 청크를 자르세요.",
       "answer": "token_ids[i:i+max_length]",
       "occurrence": 0,
-      "sourceId": "ch2-cell-2"
+      "sourceId": "ch2-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-029",
@@ -1047,7 +1075,8 @@
       "prompt": "같은 인덱스의 입력과 타깃을 반환하세요.",
       "answer": "self.input_ids[idx], self.target_ids[idx]",
       "occurrence": 0,
-      "sourceId": "ch2-cell-2"
+      "sourceId": "ch2-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-030",
@@ -1060,7 +1089,8 @@
       "prompt": "DataLoader에 학습 데이터셋을 전달하세요.",
       "answer": "dataset",
       "occurrence": 1,
-      "sourceId": "ch2-cell-3"
+      "sourceId": "ch2-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-031",
@@ -1073,7 +1103,8 @@
       "prompt": "단어장 크기와 출력 차원으로 임베딩 레이어를 만드세요.",
       "answer": "torch.nn.Embedding(vocab_size, output_dim)",
       "occurrence": 0,
-      "sourceId": "ch2-cell-5"
+      "sourceId": "ch2-cell-5",
+      "isSourceBlank": true
     },
     {
       "id": "llm-032",
@@ -1086,7 +1117,8 @@
       "prompt": "정수 토큰 ID에 임베딩 레이어를 적용하세요.",
       "answer": "embedding_layer(input_ids)",
       "occurrence": 0,
-      "sourceId": "ch2-cell-5"
+      "sourceId": "ch2-cell-5",
+      "isSourceBlank": true
     },
     {
       "id": "llm-033",
@@ -1099,7 +1131,8 @@
       "prompt": "Query를 만드는 선형 투영 레이어를 완성하세요.",
       "answer": "self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-034",
@@ -1112,7 +1145,8 @@
       "prompt": "Key를 만드는 선형 투영 레이어를 완성하세요.",
       "answer": "self.W_key   = nn.Linear(d_in, d_out, bias=qkv_bias)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-035",
@@ -1125,7 +1159,8 @@
       "prompt": "Value를 만드는 선형 투영 레이어를 완성하세요.",
       "answer": "self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-036",
@@ -1138,7 +1173,8 @@
       "prompt": "입력에서 Key 벡터를 계산하세요.",
       "answer": "keys = self.W_key(x)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-037",
@@ -1151,7 +1187,8 @@
       "prompt": "입력에서 Query 벡터를 계산하세요.",
       "answer": "queries = self.W_query(x)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-038",
@@ -1164,7 +1201,8 @@
       "prompt": "입력에 Value 투영 레이어를 적용하세요.",
       "answer": "values = self.W_value(x)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-039",
@@ -1177,7 +1215,8 @@
       "prompt": "스케일된 어텐션 점수에 softmax를 적용하세요.",
       "answer": "torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-101"
+      "sourceId": "ch3-cell-101",
+      "isSourceBlank": true
     },
     {
       "id": "llm-040",
@@ -1190,7 +1229,8 @@
       "prompt": "어텐션 가중치와 Value로 문맥 벡터를 계산하세요.",
       "answer": "attn_weights @ values",
       "occurrence": 0,
-      "sourceId": "ch3-cell-92"
+      "sourceId": "ch3-cell-92",
+      "isSourceBlank": true
     },
     {
       "id": "llm-041",
@@ -1203,7 +1243,8 @@
       "prompt": "생성한 CausalAttention 인스턴스에 batch를 전달하세요.",
       "answer": "ca(batch)",
       "occurrence": 0,
-      "sourceId": "ch3-cell-126"
+      "sourceId": "ch3-cell-126",
+      "isSourceBlank": true
     },
     {
       "id": "llm-042",
@@ -1216,7 +1257,8 @@
       "prompt": "평균과 분산으로 입력을 정규화하세요.",
       "answer": "(x - mean) / torch.sqrt(var + self.eps)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-043",
@@ -1229,7 +1271,8 @@
       "prompt": "학습 가능한 scale과 shift를 적용하세요.",
       "answer": "self.scale * norm_x + self.shift",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-044",
@@ -1242,7 +1285,8 @@
       "prompt": "임베딩 차원을 4배로 확장하는 Linear 층을 만드세요.",
       "answer": "nn.Linear(cfg[\"emb_dim\"], 4 * cfg[\"emb_dim\"])",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-045",
@@ -1255,7 +1299,8 @@
       "prompt": "FeedForward 블록의 활성화 함수를 채우세요.",
       "answer": "GELU()",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-046",
@@ -1268,7 +1313,8 @@
       "prompt": "4배로 확장한 은닉 차원을 다시 임베딩 차원으로 줄이세요.",
       "answer": "nn.Linear(4 * cfg[\"emb_dim\"], cfg[\"emb_dim\"])",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-047",
@@ -1281,7 +1327,8 @@
       "prompt": "정규화된 입력에 Attention을 적용하세요.",
       "answer": "x = self.att(x)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-048",
@@ -1294,7 +1341,8 @@
       "prompt": "두 번째 정규화 뒤에 FeedForward를 적용하세요.",
       "answer": "x = self.ff(x)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-2"
+      "sourceId": "ch4-cell-2",
+      "isSourceBlank": true
     },
     {
       "id": "llm-049",
@@ -1307,7 +1355,8 @@
       "prompt": "GPT의 토큰 임베딩 레이어를 완성하세요.",
       "answer": "nn.Embedding(cfg[\"vocab_size\"], cfg[\"emb_dim\"])",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-050",
@@ -1320,7 +1369,8 @@
       "prompt": "GPT의 위치 임베딩 레이어를 완성하세요.",
       "answer": "nn.Embedding(cfg[\"context_length\"], cfg[\"emb_dim\"])",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-051",
@@ -1333,7 +1383,8 @@
       "prompt": "임베딩을 어휘 점수로 변환하는 출력 헤드를 만드세요.",
       "answer": "nn.Linear(cfg[\"emb_dim\"], cfg[\"vocab_size\"], bias=False)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-052",
@@ -1346,7 +1397,8 @@
       "prompt": "입력을 쌓인 Transformer block에 통과시키세요.",
       "answer": "self.trf_blocks(x)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-053",
@@ -1359,7 +1411,8 @@
       "prompt": "최종 정규화 결과에 어휘 출력 헤드를 적용하세요.",
       "answer": "self.out_head(x)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-3"
+      "sourceId": "ch4-cell-3",
+      "isSourceBlank": true
     },
     {
       "id": "llm-054",
@@ -1372,7 +1425,8 @@
       "prompt": "토큰 생성 추론에서 gradient 계산을 끄세요.",
       "answer": "with torch.no_grad():",
       "occurrence": 0,
-      "sourceId": "ch4-cell-4"
+      "sourceId": "ch4-cell-4",
+      "isSourceBlank": true
     },
     {
       "id": "llm-055",
@@ -1385,7 +1439,8 @@
       "prompt": "다음 토큰 예측에 마지막 시점 logits만 선택하세요.",
       "answer": "logits[:, -1, :]",
       "occurrence": 0,
-      "sourceId": "ch4-cell-4"
+      "sourceId": "ch4-cell-4",
+      "isSourceBlank": true
     },
     {
       "id": "llm-056",
@@ -1398,7 +1453,8 @@
       "prompt": "예측 토큰을 기존 시퀀스 뒤에 붙이세요.",
       "answer": "torch.cat((idx, idx_next), dim=1)",
       "occurrence": 0,
-      "sourceId": "ch4-cell-4"
+      "sourceId": "ch4-cell-4",
+      "isSourceBlank": true
     },
     {
       "id": "llm-057",
@@ -1411,7 +1467,8 @@
       "prompt": "학습 루프 전에 모델을 train 모드로 전환하세요.",
       "answer": "model.train()",
       "occurrence": 0,
-      "sourceId": "ch5-cell-123"
+      "sourceId": "ch5-cell-123",
+      "isSourceBlank": true
     },
     {
       "id": "llm-058",
@@ -1424,7 +1481,8 @@
       "prompt": "이전 배치의 gradient를 초기화하세요.",
       "answer": "optimizer.zero_grad()",
       "occurrence": 0,
-      "sourceId": "ch5-cell-76"
+      "sourceId": "ch5-cell-76",
+      "isSourceBlank": true
     },
     {
       "id": "llm-059",
@@ -1437,7 +1495,8 @@
       "prompt": "현재 입력과 타깃 배치의 손실을 계산하세요.",
       "answer": "calc_loss_batch(input_batch, target_batch, model, device)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-70"
+      "sourceId": "ch5-cell-70",
+      "isSourceBlank": true
     },
     {
       "id": "llm-060",
@@ -1450,7 +1509,8 @@
       "prompt": "계산된 gradient로 파라미터를 갱신하세요.",
       "answer": "optimizer.step()",
       "occurrence": 0,
-      "sourceId": "ch5-cell-76"
+      "sourceId": "ch5-cell-76",
+      "isSourceBlank": true
     },
     {
       "id": "llm-061",
@@ -1463,7 +1523,8 @@
       "prompt": "마지막 위치의 최대 logit 토큰을 선택하세요.",
       "answer": "torch.argmax(logits, dim=-1, keepdim=True)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-113"
+      "sourceId": "ch5-cell-113",
+      "isSourceBlank": true
     },
     {
       "id": "llm-062",
@@ -1476,7 +1537,8 @@
       "prompt": "다음 토큰 생성을 위해 마지막 시점 logits만 선택하세요.",
       "answer": "logits[:, -1, :]",
       "occurrence": 0,
-      "sourceId": "ch5-cell-113"
+      "sourceId": "ch5-cell-113",
+      "isSourceBlank": true
     },
     {
       "id": "llm-063",
@@ -1489,7 +1551,8 @@
       "prompt": "선택한 idx_next를 기존 토큰 시퀀스 뒤에 붙이세요.",
       "answer": "torch.cat((idx, idx_next), dim=1)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-113"
+      "sourceId": "ch5-cell-113",
+      "isSourceBlank": true
     },
     {
       "id": "llm-064",
@@ -1502,7 +1565,8 @@
       "prompt": "단일 토큰 시퀀스에 배치 차원을 추가하세요.",
       "answer": "unsqueeze(0)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-16"
+      "sourceId": "ch5-cell-16",
+      "isSourceBlank": true
     },
     {
       "id": "llm-065",
@@ -1515,7 +1579,8 @@
       "prompt": "디코딩 전에 배치 차원을 제거하세요.",
       "answer": "token_ids.squeeze(0)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-16"
+      "sourceId": "ch5-cell-16",
+      "isSourceBlank": true
     },
     {
       "id": "llm-066",
@@ -1528,7 +1593,8 @@
       "prompt": "모델 파라미터로 AdamW optimizer를 생성하세요.",
       "answer": "torch.optim.AdamW(model.parameters(), lr=0.0004, weight_decay=0.1)",
       "occurrence": 0,
-      "sourceId": "ch5-cell-78"
+      "sourceId": "ch5-cell-78",
+      "isSourceBlank": true
     },
     {
       "id": "llm-067",
@@ -1541,7 +1607,8 @@
       "prompt": "토큰 시퀀스를 설정된 최대 길이로 자르세요.",
       "answer": "encoded_text[:self.max_length]",
       "occurrence": 0,
-      "sourceId": "ch6-cell-30"
+      "sourceId": "ch6-cell-30",
+      "isSourceBlank": true
     },
     {
       "id": "llm-068",
@@ -1554,7 +1621,8 @@
       "prompt": "부족한 길이를 pad token으로 채우세요.",
       "answer": "encoded_text + [pad_token_id] * (self.max_length - len(encoded_text))",
       "occurrence": 0,
-      "sourceId": "ch6-cell-30"
+      "sourceId": "ch6-cell-30",
+      "isSourceBlank": true
     },
     {
       "id": "llm-069",
@@ -1567,7 +1635,8 @@
       "prompt": "DataFrame에서 분류 정답 Label을 가져오세요.",
       "answer": "self.data.iloc[index][\"Label\"]",
       "occurrence": 0,
-      "sourceId": "ch6-cell-30"
+      "sourceId": "ch6-cell-30",
+      "isSourceBlank": true
     },
     {
       "id": "llm-070",
@@ -1580,7 +1649,8 @@
       "prompt": "마지막 토큰의 출력만 분류에 사용하세요.",
       "answer": "logits[:, -1, :]",
       "occurrence": 0,
-      "sourceId": "ch6-cell-88"
+      "sourceId": "ch6-cell-88",
+      "isSourceBlank": true
     },
     {
       "id": "llm-071",
@@ -1593,7 +1663,8 @@
       "prompt": "기존 모델의 모든 파라미터를 동결하세요.",
       "answer": "param.requires_grad = False",
       "occurrence": 0,
-      "sourceId": "ch6-cell-54"
+      "sourceId": "ch6-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "llm-072",
@@ -1606,7 +1677,8 @@
       "prompt": "이진 분류용 출력 헤드로 교체하세요.",
       "answer": "torch.nn.Linear(in_features=BASE_CONFIG[\"emb_dim\"], out_features=num_classes)",
       "occurrence": 0,
-      "sourceId": "ch6-cell-56"
+      "sourceId": "ch6-cell-56",
+      "isSourceBlank": true
     },
     {
       "id": "llm-073",
@@ -1619,7 +1691,8 @@
       "prompt": "마지막 Transformer block만 선택하세요.",
       "answer": "model.trf_blocks[-1].parameters()",
       "occurrence": 0,
-      "sourceId": "ch6-cell-62"
+      "sourceId": "ch6-cell-62",
+      "isSourceBlank": true
     },
     {
       "id": "llm-074",
@@ -1632,7 +1705,8 @@
       "prompt": "선택한 층의 학습을 다시 허용하세요.",
       "answer": "param.requires_grad = True",
       "occurrence": 0,
-      "sourceId": "ch6-cell-62"
+      "sourceId": "ch6-cell-62",
+      "isSourceBlank": true
     },
     {
       "id": "llm-075",
@@ -1645,7 +1719,8 @@
       "prompt": "최종 LayerNorm 파라미터의 학습을 허용하세요.",
       "answer": "param.requires_grad = True",
       "occurrence": 1,
-      "sourceId": "ch6-cell-62"
+      "sourceId": "ch6-cell-62",
+      "isSourceBlank": true
     },
     {
       "id": "llm-076",
@@ -1658,7 +1733,8 @@
       "prompt": "기존 Linear 출력에 LoRA 출력을 더하세요.",
       "answer": "self.linear(x) + self.lora(x)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-32"
+      "sourceId": "ch6lora-cell-32",
+      "isSourceBlank": true
     },
     {
       "id": "llm-077",
@@ -1671,7 +1747,8 @@
       "prompt": "교체할 모듈이 Linear 층인지 확인하세요.",
       "answer": "isinstance(module, torch.nn.Linear)",
       "occurrence": 0,
-      "sourceId": "ch6lora-cell-35"
+      "sourceId": "ch6lora-cell-35",
+      "isSourceBlank": true
     },
     {
       "id": "llm-078",
@@ -1684,7 +1761,8 @@
       "prompt": "각 학습 시퀀스 끝에 구분 토큰을 추가하세요.",
       "answer": "pad_token_id",
       "occurrence": 1,
-      "sourceId": "ch7-cell-41"
+      "sourceId": "ch7-cell-41",
+      "isSourceBlank": true
     },
     {
       "id": "llm-079",
@@ -1697,7 +1775,8 @@
       "prompt": "배치의 최대 길이까지 pad token으로 채우세요.",
       "answer": "pad_token_id",
       "occurrence": 2,
-      "sourceId": "ch7-cell-41"
+      "sourceId": "ch7-cell-41",
+      "isSourceBlank": true
     },
     {
       "id": "llm-080",
@@ -1710,7 +1789,8 @@
       "prompt": "입력에서 마지막 토큰을 제외하세요.",
       "answer": "torch.tensor(padded[:-1])",
       "occurrence": 0,
-      "sourceId": "ch7-cell-41"
+      "sourceId": "ch7-cell-41",
+      "isSourceBlank": true
     },
     {
       "id": "llm-081",
@@ -1723,7 +1803,8 @@
       "prompt": "타깃에서 첫 번째 토큰을 제외하세요.",
       "answer": "torch.tensor(padded[1:])",
       "occurrence": 0,
-      "sourceId": "ch7-cell-41"
+      "sourceId": "ch7-cell-41",
+      "isSourceBlank": true
     },
     {
       "id": "llm-082",
@@ -1736,7 +1817,8 @@
       "prompt": "첫 pad token 뒤의 나머지 padding을 무시하세요.",
       "answer": "targets[indices[1:]] = ignore_index",
       "occurrence": 0,
-      "sourceId": "ch7-cell-46"
+      "sourceId": "ch7-cell-46",
+      "isSourceBlank": true
     },
     {
       "id": "llm-083",
@@ -1749,7 +1831,8 @@
       "prompt": "레이블을 한 칸 앞당겨 logits와 정렬하세요.",
       "answer": "labels[:, 1:].clone()",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-084",
@@ -1762,7 +1845,8 @@
       "prompt": "logits의 마지막 시점을 제외하세요.",
       "answer": "logits[:, :-1, :]",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-085",
@@ -1775,7 +1859,8 @@
       "prompt": "정답 레이블 위치의 log probability를 모으세요.",
       "answer": "input=log_probs",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-086",
@@ -1788,7 +1873,8 @@
       "prompt": "Policy 모델의 chosen-rejected 로그확률 차이를 구하세요.",
       "answer": "model_chosen_logprobs - model_rejected_logprobs",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-087",
@@ -1801,7 +1887,8 @@
       "prompt": "Reference 모델의 chosen-rejected 로그확률 차이를 구하세요.",
       "answer": "reference_chosen_logprobs - reference_rejected_logprobs",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "llm-088",
@@ -1814,7 +1901,8 @@
       "prompt": "Policy 비율에서 Reference 비율을 빼세요.",
       "answer": "model_logratios - reference_logratios",
       "occurrence": 0,
-      "sourceId": "dpo-completions"
+      "sourceId": "dpo-completions",
+      "isSourceBlank": true
     },
     {
       "id": "rag-001",
@@ -1827,7 +1915,8 @@
       "prompt": "문서 목록으로 VectorStoreIndex를 생성하세요.",
       "answer": "VectorStoreIndex.from_documents(documents)",
       "occurrence": 0,
-      "sourceId": "d1_llama-cell-15"
+      "sourceId": "d1_llama-cell-15",
+      "isSourceBlank": false
     },
     {
       "id": "rag-002",
@@ -1840,7 +1929,8 @@
       "prompt": "인덱스를 retriever로 변환하세요.",
       "answer": "index.as_retriever()",
       "occurrence": 0,
-      "sourceId": "d1_llama-cell-49"
+      "sourceId": "d1_llama-cell-49",
+      "isSourceBlank": false
     },
     {
       "id": "rag-003",
@@ -1853,7 +1943,8 @@
       "prompt": "retriever에서 관련 passage를 검색하세요.",
       "answer": "retriever.retrieve(\"Who is the author?\")",
       "occurrence": 0,
-      "sourceId": "d1_llama-cell-49"
+      "sourceId": "d1_llama-cell-49",
+      "isSourceBlank": false
     },
     {
       "id": "rag-004",
@@ -1866,7 +1957,8 @@
       "prompt": "문서와 parser 변환으로 벡터 인덱스를 만드세요.",
       "answer": "VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-16"
+      "sourceId": "d2_task1-cell-16",
+      "isSourceBlank": false
     },
     {
       "id": "rag-005",
@@ -1879,7 +1971,8 @@
       "prompt": "요청된 topk를 similarity_top_k로 전달하세요.",
       "answer": "base_index.as_retriever(similarity_top_k=topk)",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-16"
+      "sourceId": "d2_task1-cell-16",
+      "isSourceBlank": false
     },
     {
       "id": "rag-006",
@@ -1892,7 +1985,8 @@
       "prompt": "참조 문맥을 모델 입력 최대 길이로 제한하세요.",
       "answer": "references[:MAX_CONTEXT_REFERENCES_LENGTH]",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-23"
+      "sourceId": "d2_task1-cell-23",
+      "isSourceBlank": false
     },
     {
       "id": "rag-007",
@@ -1905,7 +1999,8 @@
       "prompt": "검색된 chunk를 순회하며 프롬프트의 reference를 구성하세요.",
       "answer": "for chunk_id, chunk in enumerate(top_k_chunks):",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-23"
+      "sourceId": "d2_task1-cell-23",
+      "isSourceBlank": false
     },
     {
       "id": "rag-008",
@@ -1918,7 +2013,8 @@
       "prompt": "system prompt를 chat completion 입력 메시지에 넣으세요.",
       "answer": "{\"role\": \"system\", \"content\": system_prompt}",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-23"
+      "sourceId": "d2_task1-cell-23",
+      "isSourceBlank": false
     },
     {
       "id": "rag-009",
@@ -1931,7 +2027,8 @@
       "prompt": "검색 문맥으로 ChatGPT 응답을 생성하는 호출을 완성하세요.",
       "answer": "oai_client.chat.completions.create(",
       "occurrence": 0,
-      "sourceId": "d2_task1-cell-25"
+      "sourceId": "d2_task1-cell-25",
+      "isSourceBlank": false
     },
     {
       "id": "rag-010",
@@ -1944,7 +2041,8 @@
       "prompt": "금융 질의일 때 금융 KG 결과를 가져오세요.",
       "answer": "self.get_finance_kg_results(generated_query)",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-25"
+      "sourceId": "d2_task2-cell-25",
+      "isSourceBlank": false
     },
     {
       "id": "rag-011",
@@ -1957,7 +2055,8 @@
       "prompt": "KG 검색 결과를 Reader에 전달해 답을 생성하세요.",
       "answer": "self.reader.generate_response(query, [kg_results])",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-31"
+      "sourceId": "d2_task2-cell-31",
+      "isSourceBlank": false
     },
     {
       "id": "rag-012",
@@ -1970,7 +2069,8 @@
       "prompt": "금융 질문이면 KG 결과만 선택하세요.",
       "answer": "combined_results = [kg_results]",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-36"
+      "sourceId": "d2_task2-cell-36",
+      "isSourceBlank": false
     },
     {
       "id": "rag-013",
@@ -1983,7 +2083,8 @@
       "prompt": "금융 질문이 아니면 검색 결과를 선택하세요.",
       "answer": "combined_results = retrieved_results",
       "occurrence": 0,
-      "sourceId": "d2_task2-cell-36"
+      "sourceId": "d2_task2-cell-36",
+      "isSourceBlank": false
     },
     {
       "id": "rag-014",
@@ -1996,7 +2097,8 @@
       "prompt": "LlamaIndex의 MCP 클라이언트와 도구 명세를 불러오세요.",
       "answer": "from llama_index.tools.mcp import BasicMCPClient, McpToolSpec",
       "occurrence": 0,
-      "sourceId": "d2_mcp-cell-37"
+      "sourceId": "d2_mcp-cell-37",
+      "isSourceBlank": false
     },
     {
       "id": "rag-015",
@@ -2009,7 +2111,8 @@
       "prompt": "외부 SSE 주소로 MCP client를 생성하세요.",
       "answer": "BasicMCPClient(external_mcp_server)",
       "occurrence": 0,
-      "sourceId": "d2_mcp-cell-42"
+      "sourceId": "d2_mcp-cell-42",
+      "isSourceBlank": false
     },
     {
       "id": "rag-016",
@@ -2022,7 +2125,8 @@
       "prompt": "MCP 서버의 도구 목록을 비동기로 가져오세요.",
       "answer": "await mcp_tool.to_tool_list_async()",
       "occurrence": 0,
-      "sourceId": "d2_mcp-cell-42"
+      "sourceId": "d2_mcp-cell-42",
+      "isSourceBlank": false
     },
     {
       "id": "rag-017",
@@ -2035,7 +2139,8 @@
       "prompt": "가져온 tools와 LLM으로 FunctionAgent를 만드세요.",
       "answer": "self.agent = FunctionAgent(",
       "occurrence": 0,
-      "sourceId": "d2_mcp-cell-46"
+      "sourceId": "d2_mcp-cell-46",
+      "isSourceBlank": false
     },
     {
       "id": "rag-018",
@@ -2048,7 +2153,8 @@
       "prompt": "시간 정보가 포함된 질의를 MCP application에 보내세요.",
       "answer": "await self.mcp_application.query(full_query, verbose=False)",
       "occurrence": 0,
-      "sourceId": "d2_mcp-cell-55"
+      "sourceId": "d2_mcp-cell-55",
+      "isSourceBlank": false
     },
     {
       "id": "data-001",
@@ -2061,7 +2167,8 @@
       "prompt": "학습 입력과 정답을 실행 장치로 이동하세요.",
       "answer": "batch_x, batch_y = batch_x.to(device), batch_y.to(device)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-002",
@@ -2074,7 +2181,8 @@
       "prompt": "시퀀스의 마지막 시점 예측값을 선택하세요.",
       "answer": "model(batch_x)[:, -1, 0]",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-003",
@@ -2087,7 +2195,8 @@
       "prompt": "예측값과 정답으로 학습 손실을 계산하세요.",
       "answer": "loss_fn(pred, batch_y)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-004",
@@ -2100,7 +2209,8 @@
       "prompt": "이전 학습 단계의 gradient를 초기화하세요.",
       "answer": "optimizer.zero_grad()",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-005",
@@ -2113,7 +2223,8 @@
       "prompt": "현재 손실을 역전파하세요.",
       "answer": "loss.backward()",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-006",
@@ -2126,7 +2237,8 @@
       "prompt": "계산된 gradient로 모델 파라미터를 갱신하세요.",
       "answer": "optimizer.step()",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-007",
@@ -2139,7 +2251,8 @@
       "prompt": "시계열 정답과 예측값의 RMSE를 계산하세요.",
       "answer": "root_mean_squared_error(y_test, test_predictions)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-27"
+      "sourceId": "data-ts-cell-27",
+      "isSourceBlank": true
     },
     {
       "id": "data-008",
@@ -2152,7 +2265,8 @@
       "prompt": "시계열 정답과 예측값의 MAPE를 계산하세요.",
       "answer": "mean_absolute_percentage_error(y_test, test_predictions)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-27"
+      "sourceId": "data-ts-cell-27",
+      "isSourceBlank": true
     },
     {
       "id": "data-009",
@@ -2165,7 +2279,8 @@
       "prompt": "입력·은닉 차원과 층 수로 batch-first RNN을 선언하세요.",
       "answer": "nn.RNN(input_size, hidden_size, num_layers, batch_first=True)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-34"
+      "sourceId": "data-ts-cell-34",
+      "isSourceBlank": true
     },
     {
       "id": "data-010",
@@ -2178,7 +2293,8 @@
       "prompt": "사용자와 아이템 degree로 edge 정규화 계수를 계산하세요.",
       "answer": "1.0/torch.sqrt(deg[src]*deg[dst])",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-13"
+      "sourceId": "data-gcf-cell-13",
+      "isSourceBlank": true
     },
     {
       "id": "data-011",
@@ -2191,7 +2307,8 @@
       "prompt": "아이템 노드로 전달할 edge message를 계산하세요.",
       "answer": "self.W1(src_feat) + self.W2(src_feat*dst_feat)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-13"
+      "sourceId": "data-gcf-cell-13",
+      "isSourceBlank": true
     },
     {
       "id": "data-012",
@@ -2204,7 +2321,8 @@
       "prompt": "아이템 목적지 인덱스에 edge message를 누적하세요.",
       "answer": "aggregated_messages.index_add_(0, dst, edge_messages_for_dst)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-13"
+      "sourceId": "data-gcf-cell-13",
+      "isSourceBlank": true
     },
     {
       "id": "data-013",
@@ -2217,7 +2335,8 @@
       "prompt": "각 NGCF layer에 edge와 현재 node feature를 전달하세요.",
       "answer": "layer(edge_index, node_features,self.num_users, self.num_items)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-gcf-cell-14",
+      "isSourceBlank": true
     },
     {
       "id": "data-014",
@@ -2230,7 +2349,8 @@
       "prompt": "모든 layer의 feature를 마지막 차원으로 연결하세요.",
       "answer": "torch.concat(layer_outputs,dim=-1)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-gcf-cell-14",
+      "isSourceBlank": true
     },
     {
       "id": "data-015",
@@ -2243,7 +2363,8 @@
       "prompt": "학습 데이터에서 범위를 학습하며 Min-Max 정규화를 적용하세요.",
       "answer": "scaler.fit_transform(train_data.values)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-13"
+      "sourceId": "data-ts-cell-13",
+      "isSourceBlank": false
     },
     {
       "id": "data-016",
@@ -2256,7 +2377,8 @@
       "prompt": "평점 분포를 유지하며 데이터를 9:1 학습·평가 세트로 나누세요.",
       "answer": "model_selection.train_test_split(df, test_size=0.1, random_state=42, stratify=df.rating.values)",
       "occurrence": 0,
-      "sourceId": "data-ncf-cell-8"
+      "sourceId": "data-ncf-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "data-017",
@@ -2269,7 +2391,8 @@
       "prompt": "사용자와 영화 embedding을 입력 feature로 연결하세요.",
       "answer": "torch.cat([user_embedding, movie_embedding], dim = 1)",
       "occurrence": 0,
-      "sourceId": "data-ncf-cell-10"
+      "sourceId": "data-ncf-cell-10",
+      "isSourceBlank": false
     },
     {
       "id": "data-018",
@@ -2282,7 +2405,8 @@
       "prompt": "sklearn으로 실제 평점과 모델 출력의 MSE를 계산하세요.",
       "answer": "mean_squared_error(target_rating_list, model_output_list)",
       "occurrence": 0,
-      "sourceId": "data-ncf-cell-18"
+      "sourceId": "data-ncf-cell-18",
+      "isSourceBlank": false
     },
     {
       "id": "data-019",
@@ -2295,7 +2419,8 @@
       "prompt": "평가 입력과 정답을 실행 장치로 이동하세요.",
       "answer": "test_x, test_y = test_x.to(device), test_y.to(device)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-020",
@@ -2308,7 +2433,8 @@
       "prompt": "평가 배치의 마지막 시점 예측값을 선택하세요.",
       "answer": "model(test_x)[:, -1, 0]",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-021",
@@ -2321,7 +2447,8 @@
       "prompt": "평가 예측과 정답으로 test loss를 계산하세요.",
       "answer": "loss_fn(test_pred, test_y)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-23"
+      "sourceId": "data-ts-cell-23",
+      "isSourceBlank": true
     },
     {
       "id": "data-022",
@@ -2334,7 +2461,8 @@
       "prompt": "입력 채널과 은닉 채널로 1D convolution을 선언하세요.",
       "answer": "nn.Conv1d(in_channels=input_size, \\\n                            out_channels=hidden_size, \\\n                            kernel_size=2, stride=1)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-29"
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "data-023",
@@ -2347,7 +2475,8 @@
       "prompt": "은닉 채널을 하나의 예측값으로 변환하세요.",
       "answer": "nn.Linear(hidden_size, 1)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-29"
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "data-024",
@@ -2360,7 +2489,8 @@
       "prompt": "RNN 은닉 상태를 하나의 예측값으로 변환하세요.",
       "answer": "nn.Linear(hidden_size, 1)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-34"
+      "sourceId": "data-ts-cell-34",
+      "isSourceBlank": true
     },
     {
       "id": "data-025",
@@ -2373,7 +2503,8 @@
       "prompt": "입력을 RNN에 통과시키고 전 시점 출력에 fc를 적용하세요.",
       "answer": "out, _ = self.rnn(x)\n      return self.fc(out)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-34"
+      "sourceId": "data-ts-cell-34",
+      "isSourceBlank": true
     },
     {
       "id": "data-026",
@@ -2386,7 +2517,8 @@
       "prompt": "Encoder의 부모 클래스와 batch-first RNN을 초기화하세요.",
       "answer": "super(EncoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-43"
+      "sourceId": "data-ts-cell-43",
+      "isSourceBlank": true
     },
     {
       "id": "data-027",
@@ -2399,7 +2531,8 @@
       "prompt": "Encoder에서 최종 hidden state를 반환하세요.",
       "answer": "_, h = self.rnn(x)\n    return h",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-43"
+      "sourceId": "data-ts-cell-43",
+      "isSourceBlank": true
     },
     {
       "id": "data-028",
@@ -2412,7 +2545,8 @@
       "prompt": "Decoder RNN과 출력 선형층을 초기화하세요.",
       "answer": "super(DecoderRNN, self).__init__()\n    self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)\n    self.fc = nn.Linear(hidden_size, input_size)",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-43"
+      "sourceId": "data-ts-cell-43",
+      "isSourceBlank": true
     },
     {
       "id": "data-029",
@@ -2425,7 +2559,8 @@
       "prompt": "이전 hidden state로 Decoder를 실행하고 출력을 변환하세요.",
       "answer": "out, h = self.rnn(x, h)\n    out = self.fc(out)\n    return out, h",
       "occurrence": 0,
-      "sourceId": "data-ts-cell-43"
+      "sourceId": "data-ts-cell-43",
+      "isSourceBlank": true
     },
     {
       "id": "data-030",
@@ -2438,7 +2573,8 @@
       "prompt": "아이템 방향 edge message에 degree 정규화 계수를 곱하세요.",
       "answer": "edge_messages_for_dst *= norm.unsqueeze(1)",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-13"
+      "sourceId": "data-gcf-cell-13",
+      "isSourceBlank": true
     },
     {
       "id": "data-031",
@@ -2451,7 +2587,8 @@
       "prompt": "아이템 노드 자신의 특징을 집계 메시지에 더하세요.",
       "answer": "aggregated_messages[user_num:] += self.W1(node_features[user_num:])",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-13"
+      "sourceId": "data-gcf-cell-13",
+      "isSourceBlank": true
     },
     {
       "id": "data-032",
@@ -2464,7 +2601,8 @@
       "prompt": "최종 feature에서 사용자 구간을 선택하세요.",
       "answer": "final_features[:self.num_users]",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-gcf-cell-14",
+      "isSourceBlank": true
     },
     {
       "id": "data-033",
@@ -2477,7 +2615,8 @@
       "prompt": "최종 feature에서 아이템 구간을 선택하세요.",
       "answer": "final_features[self.num_users:]",
       "occurrence": 0,
-      "sourceId": "data-gcf-cell-14"
+      "sourceId": "data-gcf-cell-14",
+      "isSourceBlank": true
     },
     {
       "id": "vision-001",
@@ -2490,7 +2629,8 @@
       "prompt": "패딩 후 32×32 영역을 무작위로 잘라내는 transform을 완성하세요.",
       "answer": "T.RandomCrop(32, padding=4)",
       "occurrence": 0,
-      "sourceId": "vision-resnet-cell-5"
+      "sourceId": "vision-resnet-cell-5",
+      "isSourceBlank": false
     },
     {
       "id": "vision-002",
@@ -2503,7 +2643,8 @@
       "prompt": "CIFAR-10 해상도에 맞춘 ResNet18의 첫 convolution layer를 선언하세요.",
       "answer": "nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)",
       "occurrence": 0,
-      "sourceId": "vision-resnet-cell-8"
+      "sourceId": "vision-resnet-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "vision-003",
@@ -2516,7 +2657,8 @@
       "prompt": "작은 입력에서 초기 해상도를 보존하도록 기존 maxpool을 대체하세요.",
       "answer": "nn.Identity()",
       "occurrence": 0,
-      "sourceId": "vision-resnet-cell-8"
+      "sourceId": "vision-resnet-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "vision-004",
@@ -2529,7 +2671,8 @@
       "prompt": "입력 토큰에서 Q·K·V를 한 번에 만드는 선형 layer를 선언하세요.",
       "answer": "nn.Linear(dim, inner_dim * 3, bias = False)",
       "occurrence": 0,
-      "sourceId": "vision-vit-cell-8"
+      "sourceId": "vision-vit-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "vision-005",
@@ -2542,7 +2685,8 @@
       "prompt": "Q와 K의 유사도를 구하고 attention scale을 적용하세요.",
       "answer": "einsum('b h i d, b h j d -> b h i j', q, k) * self.scale",
       "occurrence": 0,
-      "sourceId": "vision-vit-cell-8"
+      "sourceId": "vision-vit-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "vision-006",
@@ -2555,7 +2699,8 @@
       "prompt": "복제한 CLS 토큰을 patch token 시퀀스 앞에 연결하세요.",
       "answer": "torch.cat((cls_tokens, x), dim=1)",
       "occurrence": 0,
-      "sourceId": "vision-vit-cell-10"
+      "sourceId": "vision-vit-cell-10",
+      "isSourceBlank": false
     },
     {
       "id": "vision-007",
@@ -2568,7 +2713,8 @@
       "prompt": "사전학습 backbone 분포에 맞춰 입력 이미지를 정규화하세요.",
       "answer": "T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])",
       "occurrence": 0,
-      "sourceId": "vision-detr-cell-7"
+      "sourceId": "vision-detr-cell-7",
+      "isSourceBlank": false
     },
     {
       "id": "vision-008",
@@ -2581,7 +2727,8 @@
       "prompt": "torch.hub에서 사전학습된 DETR-ResNet50 모델을 불러오세요.",
       "answer": "torch.hub.load('facebookresearch/detr', 'detr_resnet50', pretrained=True)",
       "occurrence": 0,
-      "sourceId": "vision-detr-cell-11"
+      "sourceId": "vision-detr-cell-11",
+      "isSourceBlank": false
     },
     {
       "id": "vision-009",
@@ -2594,7 +2741,8 @@
       "prompt": "DETR 로짓을 확률로 바꾸고 마지막 no-object 클래스를 제외하세요.",
       "answer": "outputs['pred_logits'].softmax(-1)[0, :, :-1]",
       "occurrence": 0,
-      "sourceId": "vision-detr-cell-17"
+      "sourceId": "vision-detr-cell-17",
+      "isSourceBlank": false
     },
     {
       "id": "vision-010",
@@ -2607,7 +2755,8 @@
       "prompt": "encoder와 decoder feature를 채널 축으로 연결하세요.",
       "answer": "torch.cat([x2, x1], dim=1)",
       "occurrence": 0,
-      "sourceId": "vision-unet-cell-6"
+      "sourceId": "vision-unet-cell-6",
+      "isSourceBlank": false
     },
     {
       "id": "vision-011",
@@ -2620,7 +2769,8 @@
       "prompt": "binary segmentation의 logits에 사용할 손실 함수를 선언하세요.",
       "answer": "nn.BCEWithLogitsLoss()",
       "occurrence": 0,
-      "sourceId": "vision-unet-cell-8"
+      "sourceId": "vision-unet-cell-8",
+      "isSourceBlank": false
     },
     {
       "id": "vision-012",
@@ -2633,7 +2783,8 @@
       "prompt": "sigmoid 확률을 0.5 기준의 binary mask로 변환하세요.",
       "answer": "(probs > 0.5).float()",
       "occurrence": 0,
-      "sourceId": "vision-unet-cell-14"
+      "sourceId": "vision-unet-cell-14",
+      "isSourceBlank": false
     },
     {
       "id": "vision-013",
@@ -2646,7 +2797,8 @@
       "prompt": "x₀와 Gaussian noise를 이용해 임의 시점 xₜ를 계산하세요.",
       "answer": "sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumprod_t * noise",
       "occurrence": 0,
-      "sourceId": "vision-ddpm-cell-15"
+      "sourceId": "vision-ddpm-cell-15",
+      "isSourceBlank": false
     },
     {
       "id": "vision-014",
@@ -2659,7 +2811,8 @@
       "prompt": "학습 시 정답 noise를 사용해 xₜ를 생성하세요.",
       "answer": "q_sample(x_start=x_start, t=t, noise=noise)",
       "occurrence": 0,
-      "sourceId": "vision-ddpm-cell-17"
+      "sourceId": "vision-ddpm-cell-17",
+      "isSourceBlank": false
     },
     {
       "id": "vision-015",
@@ -2672,7 +2825,8 @@
       "prompt": "역과정 평균에서 모델이 예측한 noise를 제거하는 항을 완성하세요.",
       "answer": "x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t",
       "occurrence": 0,
-      "sourceId": "vision-ddpm-cell-21"
+      "sourceId": "vision-ddpm-cell-21",
+      "isSourceBlank": false
     },
     {
       "id": "vision-016",
@@ -2685,7 +2839,8 @@
       "prompt": "예측 class와 정답이 일치하는 비율을 scalar accuracy로 계산하세요.",
       "answer": "(preds == targets).float().mean().item()",
       "occurrence": 0,
-      "sourceId": "vision-resnet-cell-10"
+      "sourceId": "vision-resnet-cell-10",
+      "isSourceBlank": false
     },
     {
       "id": "vision-017",
@@ -2698,7 +2853,8 @@
       "prompt": "프롬프트 조건을 따르는 강도를 강의자료 값으로 설정하세요.",
       "answer": "guidance_scale = 7.5",
       "occurrence": 0,
-      "sourceId": "vision-sd-cell-9"
+      "sourceId": "vision-sd-cell-9",
+      "isSourceBlank": false
     },
     {
       "id": "vision-018",
@@ -2711,7 +2867,8 @@
       "prompt": "전체 정답과 예측 class로 confusion matrix를 계산하세요.",
       "answer": "confusion_matrix(all_labels, all_preds)",
       "occurrence": 0,
-      "sourceId": "vision-vit-cell-26"
+      "sourceId": "vision-vit-cell-26",
+      "isSourceBlank": false
     },
     {
       "id": "ondevice-001",
@@ -2724,7 +2881,8 @@
       "prompt": "목표 sparsity로 제거할 가중치 원소 수를 계산하세요.",
       "answer": "round(weight.numel() * sparsity)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-29"
+      "sourceId": "ondevice-cnn-pruning-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-002",
@@ -2737,7 +2895,8 @@
       "prompt": "절댓값 importance에서 pruning 기준값을 구하세요.",
       "answer": "torch.kthvalue(importance.flatten(), num_pruned_elements)[0]",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-29"
+      "sourceId": "ondevice-cnn-pruning-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-003",
@@ -2750,7 +2909,8 @@
       "prompt": "threshold보다 중요한 가중치만 유지하는 mask를 만드세요.",
       "answer": "importance > threshold",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-29"
+      "sourceId": "ondevice-cnn-pruning-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-004",
@@ -2763,7 +2923,8 @@
       "prompt": "부동소수점 tensor를 quantization scale로 나누세요.",
       "answer": "fp_tensor/scale",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-24"
+      "sourceId": "ondevice-cnn-quant-cell-24",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-005",
@@ -2776,7 +2937,8 @@
       "prompt": "부동소수점 범위와 정수 범위로 scale을 계산하세요.",
       "answer": "(fp_max - fp_min) / (quantized_max - quantized_min)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-33"
+      "sourceId": "ondevice-cnn-quant-cell-33",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-006",
@@ -2789,7 +2951,8 @@
       "prompt": "최솟값을 기준으로 zero point를 계산하세요.",
       "answer": "round(quantized_min - fp_min/scale)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-33"
+      "sourceId": "ondevice-cnn-quant-cell-33",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-007",
@@ -2802,7 +2965,8 @@
       "prompt": "누적된 정수 출력을 input·weight·output scale로 재조정하세요.",
       "answer": "output*(input_scale * weight_scale / output_scale)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-55"
+      "sourceId": "ondevice-cnn-quant-cell-55",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-008",
@@ -2815,7 +2979,8 @@
       "prompt": "Teacher의 가중치를 갱신하지 않고 logits을 얻으세요.",
       "answer": "teacher_logits = teacher(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-009",
@@ -2828,7 +2993,8 @@
       "prompt": "temperature를 적용한 Teacher logits을 확률분포로 변환하세요.",
       "answer": "nn.functional.softmax(teacher_logits / T, dim=-1)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-010",
@@ -2841,7 +3007,8 @@
       "prompt": "Teacher와 Student 확률분포의 soft-target loss를 계산하세요.",
       "answer": "torch.sum(soft_targets * (soft_targets.log() - student_prob.log())) / student_prob.size(0) * (T**2)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-011",
@@ -2854,7 +3021,8 @@
       "prompt": "soft-target loss와 정답 label loss를 가중합하세요.",
       "answer": "soft_target_loss_weight * soft_targets_loss + ce_loss_weight * label_loss",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-012",
@@ -2867,7 +3035,8 @@
       "prompt": "입력 activation의 채널별 L2 norm 제곱을 계산하세요.",
       "answer": "torch.norm(x, p=2, dim=1) ** 2",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-16"
+      "sourceId": "ondevice-llm-pruning-cell-16",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-013",
@@ -2880,7 +3049,8 @@
       "prompt": "가중치 크기와 입력 feature를 결합해 importance를 계산하세요.",
       "answer": "torch.abs(W) * input_feat[n]",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-19"
+      "sourceId": "ondevice-llm-pruning-cell-19",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-014",
@@ -2893,7 +3063,8 @@
       "prompt": "각 행의 threshold를 broadcast하여 pruning mask를 만드세요.",
       "answer": "importance > threshold.reshape(row, 1)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-19"
+      "sourceId": "ondevice-llm-pruning-cell-19",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-015",
@@ -2906,7 +3077,8 @@
       "prompt": "importance 상위 1% 채널의 index를 선택하세요.",
       "answer": "torch.topk(importance, int(len(importance) * 0.01))[1]",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-27"
+      "sourceId": "ondevice-llm-quant-cell-27",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-016",
@@ -2919,7 +3091,8 @@
       "prompt": "pseudo quantization 후 중요 채널의 임시 확대를 되돌리세요.",
       "answer": "m.weight.data[:, outlier_mask] /= scale_factor",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-27"
+      "sourceId": "ondevice-llm-quant-cell-27",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-017",
@@ -2932,7 +3105,8 @@
       "prompt": "activation과 weight scale에 alpha를 적용해 smoothing scale을 계산하세요.",
       "answer": "act_scales.pow(alpha) / weight_scales.pow(1 - alpha)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-55"
+      "sourceId": "ondevice-llm-quant-cell-55",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-018",
@@ -2945,7 +3119,8 @@
       "prompt": "연결된 FC와 상쇄되도록 LayerNorm weight를 scale로 나누세요.",
       "answer": "ln.weight.div_(scale)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-50"
+      "sourceId": "ondevice-llm-quant-cell-50",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-019",
@@ -2958,7 +3133,8 @@
       "prompt": "가중치의 절댓값으로 importance를 계산하세요.",
       "answer": "importance = torch.abs(weight)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-29"
+      "sourceId": "ondevice-cnn-pruning-cell-29",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-020",
@@ -2971,7 +3147,8 @@
       "prompt": "각 CNN layer에 강의 답안의 sparsity 값을 설정하세요.",
       "answer": "    'backbone.conv0.weight': 0.5,\n    'backbone.conv1.weight': 0.8,\n    'backbone.conv2.weight': 0.8,\n    'backbone.conv3.weight': 0.7,\n    'backbone.conv4.weight': 0.7,\n    'backbone.conv5.weight': 0.8,\n    'backbone.conv6.weight': 0.8,\n    'backbone.conv7.weight': 0.9,\n    'classifier.weight': 0.9",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-48"
+      "sourceId": "ondevice-cnn-pruning-cell-48",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-021",
@@ -2984,7 +3161,8 @@
       "prompt": "pruning 대상 가중치를 하나의 tensor로 결합하세요.",
       "answer": "all_weights = torch.cat(parameters_to_prune)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-54"
+      "sourceId": "ondevice-cnn-pruning-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-022",
@@ -2997,7 +3175,8 @@
       "prompt": "결합한 가중치의 전체 원소 수를 구하세요.",
       "answer": "num_elements = all_weights.numel()",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-54"
+      "sourceId": "ondevice-cnn-pruning-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-023",
@@ -3010,7 +3189,8 @@
       "prompt": "global sparsity로 0으로 만들 원소 수를 계산하세요.",
       "answer": "num_zeros = round(num_elements * sparsity)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-54"
+      "sourceId": "ondevice-cnn-pruning-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-024",
@@ -3023,7 +3203,8 @@
       "prompt": "결합한 가중치의 절댓값 importance를 계산하세요.",
       "answer": "importance = torch.abs(all_weights)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-54"
+      "sourceId": "ondevice-cnn-pruning-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-025",
@@ -3036,7 +3217,8 @@
       "prompt": "global pruning에 사용할 k번째 threshold를 구하세요.",
       "answer": "threshold = torch.kthvalue(importance, num_zeros)[0]",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-54"
+      "sourceId": "ondevice-cnn-pruning-cell-54",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-026",
@@ -3049,7 +3231,8 @@
       "prompt": "pruning 시작 전에는 sparsity를 0으로 설정하세요.",
       "answer": "sparsity = 0",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-65"
+      "sourceId": "ondevice-cnn-pruning-cell-65",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-027",
@@ -3062,7 +3245,8 @@
       "prompt": "pruning 종료 이후에는 최종 sparsity를 사용하세요.",
       "answer": "sparsity = sparsity_end",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-65"
+      "sourceId": "ondevice-cnn-pruning-cell-65",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-028",
@@ -3075,7 +3259,8 @@
       "prompt": "pruning 구간의 cubic sparsity schedule을 완성하세요.",
       "answer": "sparsity = sparsity_end + (sparsity_start - sparsity_end) * (1 - (epoch - epoch_start) / (epoch_end - epoch_start)) ** exponent",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-pruning-cell-65"
+      "sourceId": "ondevice-cnn-pruning-cell-65",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-029",
@@ -3088,7 +3273,8 @@
       "prompt": "scale된 부동소수 tensor를 정수값으로 rounding하세요.",
       "answer": "rounded_tensor = torch.round(scaled_tensor)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-24"
+      "sourceId": "ondevice-cnn-quant-cell-24",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-030",
@@ -3101,7 +3287,8 @@
       "prompt": "requantization 결과에 output zero point를 더하세요.",
       "answer": "output = output + output_zero_point",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-55"
+      "sourceId": "ondevice-cnn-quant-cell-55",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-031",
@@ -3114,7 +3301,8 @@
       "prompt": "convolution 정수 출력을 input·weight·output scale로 재조정하세요.",
       "answer": "output = output*(input_scale * weight_scale / output_scale)",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-63"
+      "sourceId": "ondevice-cnn-quant-cell-63",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-032",
@@ -3127,7 +3315,8 @@
       "prompt": "convolution requantization 결과에 output zero point를 더하세요.",
       "answer": "output = output + output_zero_point",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-63"
+      "sourceId": "ondevice-cnn-quant-cell-63",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-033",
@@ -3140,7 +3329,8 @@
       "prompt": "bitwidth에 따른 클러스터 수를 계산하세요.",
       "answer": "n_clusters = 2**bitwidth",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-85"
+      "sourceId": "ondevice-cnn-quant-cell-85",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-034",
@@ -3153,7 +3343,8 @@
       "prompt": "k번 클러스터에 할당된 값의 평균으로 centroid를 갱신하세요.",
       "answer": "codebook.centroids[k] = torch.mean(fp32_tensor[codebook.labels==k])",
       "occurrence": 0,
-      "sourceId": "ondevice-cnn-quant-cell-96"
+      "sourceId": "ondevice-cnn-quant-cell-96",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-035",
@@ -3166,7 +3357,8 @@
       "prompt": "Student 모델의 logits을 계산하세요.",
       "answer": "student_logits = student(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-036",
@@ -3179,7 +3371,8 @@
       "prompt": "temperature를 적용한 Student logits을 확률분포로 변환하세요.",
       "answer": "student_prob = nn.functional.softmax(student_logits / T, dim=-1)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-037",
@@ -3192,7 +3385,8 @@
       "prompt": "Student logits과 정답 label의 cross-entropy loss를 계산하세요.",
       "answer": "label_loss = ce_loss(student_logits, labels)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-26"
+      "sourceId": "ondevice-kd-cell-26",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-038",
@@ -3205,7 +3399,8 @@
       "prompt": "gradient 없이 Teacher의 hidden representation을 구하세요.",
       "answer": "_, teacher_hidden_representation = teacher(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-39"
+      "sourceId": "ondevice-kd-cell-39",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-039",
@@ -3218,7 +3413,8 @@
       "prompt": "Student의 logits과 hidden representation을 구하세요.",
       "answer": "student_logits, student_hidden_representation = student(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-39"
+      "sourceId": "ondevice-kd-cell-39",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-040",
@@ -3231,7 +3427,8 @@
       "prompt": "Student와 Teacher hidden representation의 cosine loss를 계산하세요.",
       "answer": "hidden_rep_loss = cosine_loss(student_hidden_representation, teacher_hidden_representation,\n                                          target=torch.ones(inputs.size(0)).cuda())",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-39"
+      "sourceId": "ondevice-kd-cell-39",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-041",
@@ -3244,7 +3441,8 @@
       "prompt": "Student logits과 label의 cross-entropy loss를 계산하세요.",
       "answer": "label_loss = ce_loss(student_logits, labels)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-39"
+      "sourceId": "ondevice-kd-cell-39",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-042",
@@ -3257,7 +3455,8 @@
       "prompt": "hidden representation loss와 label loss를 가중합하세요.",
       "answer": "loss = hidden_rep_loss_weight * hidden_rep_loss + ce_loss_weight * label_loss",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-39"
+      "sourceId": "ondevice-kd-cell-39",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-043",
@@ -3270,7 +3469,8 @@
       "prompt": "gradient 없이 Teacher feature map을 구하세요.",
       "answer": "_, teacher_feature_map = teacher(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-52"
+      "sourceId": "ondevice-kd-cell-52",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-044",
@@ -3283,7 +3483,8 @@
       "prompt": "Student logits과 regressor feature map을 구하세요.",
       "answer": "student_logits, regressor_feature_map = student(inputs)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-52"
+      "sourceId": "ondevice-kd-cell-52",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-045",
@@ -3296,7 +3497,8 @@
       "prompt": "Student regressor와 Teacher feature map의 MSE를 계산하세요.",
       "answer": "hidden_rep_loss = mse_loss(regressor_feature_map, teacher_feature_map)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-52"
+      "sourceId": "ondevice-kd-cell-52",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-046",
@@ -3309,7 +3511,8 @@
       "prompt": "Student logits과 label의 cross-entropy loss를 계산하세요.",
       "answer": "label_loss = ce_loss(student_logits, labels)",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-52"
+      "sourceId": "ondevice-kd-cell-52",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-047",
@@ -3322,7 +3525,8 @@
       "prompt": "feature-map loss와 label loss를 가중합하세요.",
       "answer": "loss = feature_map_weight * hidden_rep_loss + ce_loss_weight * label_loss",
       "occurrence": 0,
-      "sourceId": "ondevice-kd-cell-52"
+      "sourceId": "ondevice-kd-cell-52",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-048",
@@ -3335,7 +3539,8 @@
       "prompt": "LLM 가중치 tensor의 전체 원소 수를 구하세요.",
       "answer": "num_elements = W.numel()",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-10"
+      "sourceId": "ondevice-llm-pruning-cell-10",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-049",
@@ -3348,7 +3553,8 @@
       "prompt": "sparsity로 제거할 LLM 가중치 개수를 계산하세요.",
       "answer": "num_zeros = round(num_elements * sparsity)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-10"
+      "sourceId": "ondevice-llm-pruning-cell-10",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-050",
@@ -3361,7 +3567,8 @@
       "prompt": "LLM 가중치의 절댓값 importance를 계산하세요.",
       "answer": "importance = torch.abs(W)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-10"
+      "sourceId": "ondevice-llm-pruning-cell-10",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-051",
@@ -3374,7 +3581,8 @@
       "prompt": "제거 개수에 해당하는 magnitude threshold를 구하세요.",
       "answer": "threshold = torch.kthvalue(importance.flatten(), num_zeros)[0]",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-10"
+      "sourceId": "ondevice-llm-pruning-cell-10",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-052",
@@ -3387,7 +3595,8 @@
       "prompt": "threshold보다 큰 가중치만 남기는 mask를 만드세요.",
       "answer": "mask = importance > threshold",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-10"
+      "sourceId": "ondevice-llm-pruning-cell-10",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-053",
@@ -3400,7 +3609,8 @@
       "prompt": "WANDA mask 계산을 위해 가중치의 행과 열을 구하세요.",
       "answer": "row, col = W.shape",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-19"
+      "sourceId": "ondevice-llm-pruning-cell-19",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-054",
@@ -3413,7 +3623,8 @@
       "prompt": "각 행에서 제거할 열 개수를 계산하세요.",
       "answer": "num_zeros_per_row = round(col * sparsity)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-19"
+      "sourceId": "ondevice-llm-pruning-cell-19",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-055",
@@ -3426,7 +3637,8 @@
       "prompt": "각 행별 WANDA importance threshold를 구하세요.",
       "answer": "threshold = torch.kthvalue(importance, num_zeros_per_row, dim=1)[0]",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-pruning-cell-19"
+      "sourceId": "ondevice-llm-pruning-cell-19",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-056",
@@ -3439,7 +3651,8 @@
       "prompt": "activation scale에 ratio를 거듭제곱해 AWQ scale을 계산하세요.",
       "answer": "scales = s_x ** ratio",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-34"
+      "sourceId": "ondevice-llm-quant-cell-34",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-057",
@@ -3452,7 +3665,8 @@
       "prompt": "LayerNorm bias를 smoothing scale로 나누세요.",
       "answer": "ln.bias.div_(scale)",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-50"
+      "sourceId": "ondevice-llm-quant-cell-50",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-058",
@@ -3465,7 +3679,8 @@
       "prompt": "Embedding 가중치의 오른쪽에 rotation 행렬을 곱하세요.",
       "answer": "m.weight.data = W_ @ R1",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-67"
+      "sourceId": "ondevice-llm-quant-cell-67",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-059",
@@ -3478,7 +3693,8 @@
       "prompt": "o_proj와 down_proj 가중치의 왼쪽에 전치 rotation을 곱하세요.",
       "answer": "m.weight.data = R1.T @ W_",
       "occurrence": 0,
-      "sourceId": "ondevice-llm-quant-cell-67"
+      "sourceId": "ondevice-llm-quant-cell-67",
+      "isSourceBlank": true
     },
     {
       "id": "ondevice-060",
@@ -3491,7 +3707,8 @@
       "prompt": "Q/K/V와 FFN 가중치의 오른쪽에 rotation 행렬을 곱하세요.",
       "answer": "m.weight.data = W_ @ R1",
       "occurrence": 1,
-      "sourceId": "ondevice-llm-quant-cell-67"
+      "sourceId": "ondevice-llm-quant-cell-67",
+      "isSourceBlank": true
     }
   ]
 }

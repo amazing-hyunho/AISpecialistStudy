@@ -151,6 +151,9 @@ def build() -> None:
         source_id = f"data-{spec['sourceKey']}-cell-{spec['cell']}"
         cells[source_id] = {"source": source, "cell": spec["cell"], "answerSource": answer_source}
         chapter = chapter_lookup[str(spec["chapterId"])]
+        source_key = str(spec["sourceKey"])
+        source_cell = int(spec["cell"])
+        is_source_blank = source_key == "gcf" or (source_key == "ts" and source_cell in {23, 27, 29, 34, 43})
         data_questions.append({
             "id": f"data-{index:03d}",
             "subject": "Data",
@@ -163,6 +166,7 @@ def build() -> None:
             "answer": answer,
             "occurrence": occurrence,
             "sourceId": source_id,
+            "isSourceBlank": is_source_blank,
         })
 
     for chapter in CHAPTERS:

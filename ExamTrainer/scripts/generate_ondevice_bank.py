@@ -220,6 +220,7 @@ def build() -> None:
             "answer": answer,
             "occurrence": occurrence,
             "sourceId": source_id,
+            "isSourceBlank": True,
         })
 
     public_chapters = []

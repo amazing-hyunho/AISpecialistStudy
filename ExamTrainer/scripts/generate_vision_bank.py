@@ -128,6 +128,7 @@ def build() -> None:
             "answer": answer,
             "occurrence": occurrence,
             "sourceId": source_id,
+            "isSourceBlank": False,
         })
 
     for chapter in CHAPTERS:

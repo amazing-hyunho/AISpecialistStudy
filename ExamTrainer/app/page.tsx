@@ -31,6 +31,7 @@ type QuestionRecord = {
   answer: string;
   occurrence: number;
   sourceId: string;
+  isSourceBlank: boolean;
 };
 
 type Question = QuestionRecord & Cell & { explanation: QuestionExplanation };
@@ -343,7 +344,9 @@ export default function Home() {
           <article className="question-panel">
             <div className="question-heading">
               <div>
-                <span className="topic-pill">{current.topic}</span>
+                <span className="topic-pill">
+                  {current.isSourceBlank ? '★ ' : ''}{current.topic}
+                </span>
                 <h1>{current.prompt}</h1>
               </div>
               <span className="question-number">{String(currentIndex + 1).padStart(2, '0')}</span>
@@ -472,7 +475,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer><span>Source locked</span><p>강의자료와 답안지의 코드만 사용합니다.</p></footer>
+      <footer><span>★ 원본 빈칸</span><p>별표는 강의 실습본에서 실제로 비어 있던 코드입니다.</p></footer>
     </main>
   );
 }
