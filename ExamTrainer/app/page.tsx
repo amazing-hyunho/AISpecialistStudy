@@ -209,6 +209,13 @@ export default function Home() {
   }, [chapterId, screen, wrongIds]);
 
   const current = activeQuestions[currentIndex] ?? questions[0];
+  const activeCellIds = [...new Set(activeQuestions.map((question) => question.sourceId))];
+  const currentCellQuestions = activeQuestions.filter((question) => question.sourceId === current.sourceId);
+  const currentCellPosition = Math.max(activeCellIds.indexOf(current.sourceId), 0) + 1;
+  const currentBlankPosition = Math.max(
+    currentCellQuestions.findIndex((question) => question.id === current.id),
+    0,
+  ) + 1;
   const completion = Math.round((solvedIds.length / questions.length) * 100);
 
   function resetQuestion() {
@@ -334,7 +341,8 @@ export default function Home() {
             <div className="source-meta">
               <span>출제 노트북</span>
               <strong>{current.file}</strong>
-              <span>정답 코드 셀 {current.cell}</span>
+              <span>Notebook Cell {current.cell}</span>
+              <strong>현재 셀 {currentCellPosition} / {activeCellIds.length}</strong>
             </div>
             <button className="text-button" onClick={() => setScreen(screen === 'wrong' ? 'home' : 'chapters')}>
               ← {screen === 'wrong' ? '학습 홈' : '챕터 선택'}
@@ -349,14 +357,15 @@ export default function Home() {
                 </span>
                 <h1>{current.prompt}</h1>
               </div>
-              <span className="question-number">{String(currentIndex + 1).padStart(2, '0')}</span>
+              <span className="question-number cell-number">Cell {current.cell}</span>
             </div>
 
             <div className="question-progress-row">
-              <span>{currentIndex + 1} / {activeQuestions.length}</span>
+              <span>Cell {current.cell} · 빈칸 {currentBlankPosition}/{currentCellQuestions.length}</span>
               <div className="progress-track question-track">
                 <span style={{ width: `${((currentIndex + 1) / activeQuestions.length) * 100}%` }} />
               </div>
+              <span>전체 {currentIndex + 1}/{activeQuestions.length}</span>
             </div>
 
             <div className="code-window">
