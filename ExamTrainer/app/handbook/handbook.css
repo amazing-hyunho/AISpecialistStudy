@@ -13,6 +13,12 @@
 .hb-controls input { accent-color: #20694f; }
 .hb-flow { padding: 20px; border-radius: 16px; background: #e6efe5; }
 .hb-flow p { margin: 6px 0 0; }
+.hb-concepts { margin: 20px 0; padding: 20px; border: 1px solid #cbd4ca; border-radius: 16px; background: #f1f5ed; }
+.hb-concepts h3 { margin: 0 0 14px; }
+.hb-concepts dt { color: #20694f; font-weight: 700; margin-top: 16px; }
+.hb-concepts dd { margin: 4px 0 0; font-size: 15px; overflow-wrap: anywhere; }
+.hb-concepts dl { margin: 0; }
+.hb-why { background: #edf2e9; border-radius: 8px; padding: 12px; }
 .hb-index a { padding: 6px 12px; border: 1px solid #cbd4ca; border-radius: 8px; text-decoration: none; }
 .hb-cell { margin: 24px 0; padding: 24px; border: 1px solid #d4dcd1; border-radius: 18px; background: #fffefa; scroll-margin-top: 20px; }
 .hb-cell h3 { margin: 0; font-size: 24px; }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import bank from '../question-bank.json';
 import { questionExplanations } from '../explanations';
+import { chapterConcepts } from './concepts';
 import './handbook.css';
 
 const flows: Record<string, string> = {
@@ -31,6 +32,7 @@ export default function Handbook() {
   const [starOnly, setStarOnly] = useState(false);
   const chapters = bank.chapters.filter(c => c.subject === subject);
   const chapter = chapters.find(c => c.id === chapterId) ?? chapters[0];
+  const concept = chapterConcepts[chapter.id];
   const entries = bank.questions.filter(q => q.chapterId === chapter.id && (!starOnly || q.isSourceBlank));
   const groups = [...new Set(entries.map(q => q.sourceId))]
     .sort((a, b) => cells[a].cell - cells[b].cell)
@@ -39,7 +41,7 @@ export default function Handbook() {
   return <main className="handbook">
     <header className="hb-top"><Link href="/">← 문제은행</Link><button onClick={() => window.print()}>인쇄 / PDF 저장</button></header>
     <h1>읽는 암기 핸드북</h1>
-    <p className="hb-intro">이동 중에도 입력 없이 읽어보세요. 셀마다 핵심 코드와 암기 포인트를 순서대로 모았습니다.</p>
+    <p className="hb-intro">이동 중에도 입력 없이 읽어보세요. 챕터의 개념과 흐름을 이해한 뒤, 셀별 코드와 암기 포인트를 읽으면 됩니다.</p>
     <nav className="hb-subjects" aria-label="핸드북 과목">
       {Object.keys(flows).map(name => <button key={name} aria-pressed={subject === name} onClick={() => {
         setSubject(name); setChapterId(bank.chapters.find(c => c.subject === name)!.id);
@@ -53,6 +55,15 @@ export default function Handbook() {
     </div>
     <aside className="hb-flow"><strong>{subject} 큰 흐름</strong><p>{flows[subject]}</p></aside>
     <h2>{chapter.title}</h2>
+    {concept && <section className="hb-concepts" aria-label="챕터 개념 설명">
+      <h3>먼저 이해하기</h3>
+      <dl>
+        <dt>핵심 개념</dt><dd>{concept.concept}</dd>
+        <dt>코드 흐름</dt><dd>{concept.flow}</dd>
+        <dt>헷갈리지 않기</dt><dd>{concept.caution}</dd>
+      </dl>
+      <p className="hb-meta">이해를 돕는 개념 요약입니다. 정답은 아래 강의자료 코드 기준으로 외우세요.</p>
+    </section>}
     <p className="hb-meta">{chapter.file} · {groups.length}개 셀 · {entries.length}개 암기 포인트</p>
     <p className="hb-meta">★는 현재 실습본의 빈칸 표시입니다. 셀 번호는 아래 정답 출처 기준이며 실행 번호와 다를 수 있습니다.</p>
     <nav className="hb-index" aria-label="셀 목차">{groups.map(g => <a key={g.id} href={`#${g.id}`}>Cell {g.cell}</a>)}</nav>
@@ -65,6 +76,7 @@ export default function Handbook() {
         <h4>{q.isSourceBlank ? '★ ' : ''}{q.topic}</h4>
         <p>{q.prompt}</p>
         <pre><code>{q.answer}</code></pre>
+        {questionExplanations[q.id] && <p className="hb-why"><strong>왜 이 코드인가요?</strong> {questionExplanations[q.id].why}</p>}
         {questionExplanations[q.id] && <p className="hb-memory"><strong>기억하기</strong> {questionExplanations[q.id].memory}</p>}
       </li>)}</ol>
       <details><summary>전체 코드 셀 펼쳐 보기</summary><pre><code>{g.source}</code></pre></details>
