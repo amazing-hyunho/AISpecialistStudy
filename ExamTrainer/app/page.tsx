@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
@@ -129,27 +129,13 @@ const subjects = [
 ];
 
 function normalized(value: string) {
-  return value.replace(/\r\n/g, '\n').trim();
-}
-
-function maskedSource(question: Question) {
-  let index = -1;
-  let fromIndex = 0;
-  for (let count = 0; count <= question.occurrence; count += 1) {
-    index = question.source.indexOf(question.answer, fromIndex);
-    if (index === -1) break;
-    fromIndex = index + question.answer.length;
-  }
-  if (index === -1) return question.source;
-  const marker = `▰ 빈칸 ${'━'.repeat(
-    Math.min(24, Math.max(8, question.answer.length)),
-  )}▰`;
-  return `${question.source.slice(0, index)}${marker}${question.source.slice(
-    index + question.answer.length,
-  )}`;
+  // Ignore layout while preserving strings, identifiers and compound operators.
+  return JSON.stringify(value.match(/"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\p{L}_][\p{L}\p{N}_]*|\d+(?:\.\d+)?|\*\*|\/\/|==|!=|<=|>=|:=|->|\+=|-=|\*=|\/=|\S/gu) ?? []);
 }
 
 export default function Home() {
+  const answerRef = useRef<HTMLTextAreaElement>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedSubject, setSelectedSubject] = useState('LLM');
   const [chapterId, setChapterId] = useState(bank.chapters[0].id);
@@ -262,11 +248,18 @@ export default function Home() {
   }
 
   function nextQuestion() {
-    setCurrentIndex((index) =>
-      index + 1 >= activeQuestions.length ? 0 : index + 1,
-    );
-    setAnswer('');
+    selectQuestion((currentIndex + 1) % activeQuestions.length);
+  }
+
+  function selectQuestion(index: number) {
+    setDrafts(previous => ({ ...previous, [current.id]: answer }));
+    setCurrentIndex(index);
+    setAnswer(drafts[activeQuestions[index].id] ?? '');
     setResult('idle');
+    requestAnimationFrame(() => {
+      answerRef.current?.focus();
+      answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
   }
 
   function resolveWrong() {
@@ -332,7 +325,13 @@ export default function Home() {
     }
 
     return (
-      <main className="app-shell quiz-shell">
+      <main className="app-shell quiz-shell" onKeyDown={event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault();
+          if (result === 'correct') nextQuestion();
+          else grade();
+        }
+      }}>
         <Header onHome={() => setScreen('home')} compact />
         <section className="quiz-layout">
           <aside className="question-rail">
@@ -369,27 +368,41 @@ export default function Home() {
               <span>전체 {currentIndex + 1}/{activeQuestions.length}</span>
             </div>
 
-            <div className="code-window">
-              <div className="code-toolbar">
-                <span className="code-dot coral" />
-                <span className="code-dot amber" />
-                <span className="code-dot mint" />
-                <span className="code-label">Python · Code Cell</span>
-              </div>
-              <pre><code>{maskedSource(current)}</code></pre>
-            </div>
+            <nav className="blank-picker" aria-label="챕터 전체 빈칸">
+              {activeQuestions.map((q, i) => <button key={q.id} aria-current={q.id === current.id ? 'step' : undefined} onClick={() => selectQuestion(i)}>
+                {solvedIds.includes(q.id) ? '✓ ' : ''}{i + 1}. Cell {q.cell} · {q.topic}
+              </button>)}
+            </nav>
+            {activeCellIds.map(sourceId => {
+              const cellQuestions = activeQuestions.filter(q => q.sourceId === sourceId).sort((a, b) => answerOffset(a) - answerOffset(b));
+              const source = bank.cells[sourceId].source;
+              const pieces = [];
+              let cursor = 0;
+              for (const q of cellQuestions) {
+                const start = answerOffset(q);
+                if (start < cursor || start >= source.length) continue;
+                pieces.push(<span key={`${q.id}-text`}>{source.slice(cursor, start)}</span>);
+                pieces.push(<button className="inline-blank" aria-current={q.id === current.id ? 'step' : undefined} key={q.id} onClick={() => selectQuestion(activeQuestions.findIndex(item => item.id === q.id))}>
+                  {solvedIds.includes(q.id) ? '✓ ' : ''}빈칸 {activeQuestions.findIndex(item => item.id === q.id) + 1}
+                </button>);
+                cursor = start + q.answer.length;
+              }
+              pieces.push(<span key="tail">{source.slice(cursor)}</span>);
+              return <details className="code-window chapter-code" key={sourceId} open={sourceId === current.sourceId}>
+                <summary>Cell {bank.cells[sourceId].cell} · 빈칸 {cellQuestions.length}개 · 클릭해서 펼치기</summary>
+                <pre><code>{pieces}</code></pre>
+              </details>;
+            })}
 
             <label className="answer-label" htmlFor="answer">빈칸에 들어갈 코드를 입력하세요</label>
             <textarea
               id="answer"
+              ref={answerRef}
               className="answer-input"
               value={answer}
               onChange={(event) => {
                 setAnswer(event.target.value);
                 if (result !== 'idle') setResult('idle');
-              }}
-              onKeyDown={(event) => {
-                if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') grade();
               }}
               placeholder="답안지의 코드를 떠올려 입력"
               spellCheck={false}
@@ -420,7 +433,7 @@ export default function Home() {
             )}
 
             <div className="quiz-actions">
-              <span>Ctrl + Enter로 채점</span>
+              <span>{result === 'correct' ? 'Ctrl + Enter로 다음 빈칸' : 'Ctrl + Enter로 채점 · 공백·들여쓰기 무시'}</span>
               {result === 'idle' ? (
                 <button className="primary-button" onClick={grade} disabled={!answer.trim()}>정답 확인</button>
               ) : (

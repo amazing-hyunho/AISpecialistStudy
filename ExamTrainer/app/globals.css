@@ -229,6 +229,13 @@ footer p { margin: 0; }
 .question-heading h1 { margin: 13px 0 0; font-size: clamp(22px, 3vw, 34px); line-height: 1.28; letter-spacing: -.045em; }
 .question-number { color: #b4bab6; font: 700 42px/1 var(--font-geist-mono), monospace; letter-spacing: -.08em; }
 .question-number.cell-number { flex: none; font-size: 24px; letter-spacing: -.055em; }
+.blank-picker { display: flex; flex-wrap: wrap; gap: 6px; max-height: 180px; overflow: auto; margin: 16px 0; }
+.blank-picker button { border: 1px solid #b5cbbd; border-radius: 8px; background: #f4f8f2; padding: 8px; cursor: pointer; color: #254a34; }
+.blank-picker button[aria-current=step] { background: #20694f; color: white; }
+.chapter-code { margin: 12px 0; }
+.chapter-code summary { padding: 14px; cursor: pointer; font-size: 12px; }
+.inline-blank { border: 1px solid #91cda6; border-radius: 5px; background: #2d533a; color: white; padding: 3px 12px; cursor: pointer; font: inherit; }
+.inline-blank[aria-current=step] { background: #f1cc72; color: #18251b; }
 .question-progress-row { display: flex; align-items: center; gap: 14px; margin: -8px 0 16px; color: var(--muted); font: 10px var(--font-geist-mono), monospace; }
 .question-track { flex: 1; height: 4px; margin: 0; }
 
