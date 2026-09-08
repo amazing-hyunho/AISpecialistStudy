@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
 
@@ -441,6 +442,7 @@ export default function Home() {
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
           <p>LLM·RAG·Data·Vision·On-device 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
+            <Link className="primary-button large" href="/handbook/">읽는 암기 핸드북 →</Link>
             <button className="primary-button large" onClick={() => openSubject('On-device')}>
               On-device 챕터 선택 <span>→</span>
             </button>

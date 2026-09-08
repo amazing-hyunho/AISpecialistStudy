@@ -1,0 +1,31 @@
+.handbook { max-width: 900px; margin: auto; padding: 28px 22px 80px; line-height: 1.7; }
+.hb-top,.hb-cell-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.handbook a { color: #20694f; }
+.handbook button,.handbook select { padding: 10px 14px; border: 1px solid #cbd4ca; border-radius: 12px; background: white; color: #243c2e; cursor: pointer; font: inherit; }
+.handbook h1 { font-size: clamp(28px,5vw,40px); margin: 32px 0 8px; }
+.hb-intro,.hb-meta { color: #5d6c61; }
+.hb-meta { font-size: 12px; overflow-wrap: anywhere; }
+.hb-subjects,.hb-controls,.hb-index { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+.hb-subjects button[aria-pressed=true] { background: #20694f; color: white; }
+.hb-controls { align-items: center; justify-content: space-between; }
+.hb-controls select { max-width: 100%; display: block; }
+.hb-controls label { min-width: 0; max-width: 100%; }
+.hb-controls input { accent-color: #20694f; }
+.hb-flow { padding: 20px; border-radius: 16px; background: #e6efe5; }
+.hb-flow p { margin: 6px 0 0; }
+.hb-index a { padding: 6px 12px; border: 1px solid #cbd4ca; border-radius: 8px; text-decoration: none; }
+.hb-cell { margin: 24px 0; padding: 24px; border: 1px solid #d4dcd1; border-radius: 18px; background: #fffefa; scroll-margin-top: 20px; }
+.hb-cell h3 { margin: 0; font-size: 24px; }
+.hb-cell-heading span { font-size: 12px; color: #5d6c61; }
+.hb-sequence { color: #20694f; font-size: 14px; }
+.hb-steps { padding-left: 24px; }
+.hb-steps li { padding: 0 0 16px 4px; }
+.hb-steps h4 { margin-bottom: 0; }
+.hb-steps p { font-size: 14px; margin: 8px 0; }
+.handbook pre { background: #16261d; color: #e1ede4; padding: 18px; border-radius: 10px; overflow-x: auto; font: 13px/1.7 Consolas,monospace; white-space: pre; }
+.hb-memory { border-left: 3px solid #85ab91; padding-left: 12px; }
+.handbook summary { cursor: pointer; color: #20694f; padding: 12px 0; }
+.hb-back { display: inline-block; margin-top: 16px; font-size: 12px; }
+.hb-footer,.hb-empty { padding: 24px 0; color: #5d6c61; font-size: 13px; }
+@media(max-width: 540px) { .handbook { padding: 20px 14px 50px; } .hb-cell { padding: 18px 14px; } .hb-controls { align-items: start; flex-direction: column; } }
+@media print { .hb-top,.hb-subjects,.hb-controls,.hb-index,.hb-back,details { display: none; } .handbook { max-width: none; padding: 0; } .handbook pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f1f3ef; color: #111; } .hb-steps li { break-inside: avoid; } .hb-cell { border: 0; } }
