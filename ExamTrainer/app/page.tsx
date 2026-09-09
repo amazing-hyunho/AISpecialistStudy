@@ -382,12 +382,13 @@ export default function Home() {
                 if (start < cursor || start >= source.length) continue;
                 pieces.push(<span key={`${q.id}-text`}>{source.slice(cursor, start)}</span>);
                 const value = drafts[q.id] ?? '';
-                pieces.push(<textarea
+                pieces.push(<span className="inline-answer-group" key={q.id}><textarea
                   key={q.id}
                   ref={element => { answerRefs.current[q.id] = element; }}
                   className="inline-code-input"
                   aria-label={`Cell ${q.cell} · ${q.topic} · 빈칸 ${activeQuestions.findIndex(item => item.id === q.id) + 1}`}
                   aria-current={q.id === current.id ? 'step' : undefined}
+                  aria-describedby={q.id === current.id && result !== 'idle' ? `feedback-${q.id}` : undefined}
                   placeholder="### 공개 제한 ###"
                   value={value}
                   rows={Math.max(1, value.split('\n').length)}
@@ -410,7 +411,24 @@ export default function Home() {
                     setResult('idle');
                     requestAnimationFrame(() => input.setSelectionRange(start + 4, start + 4));
                   }}
-                />);
+                />
+                  {q.id === current.id && result !== 'idle' && <span
+                    id={`feedback-${q.id}`}
+                    className={`result-card inline-feedback ${result}`}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    <strong>{result === 'correct' ? '✓ 정답입니다!' : '오답 · 오답노트에 저장했어요'}</strong>
+                    <span className="feedback-label">정답 코드</span>
+                    <span className="answer-code">{q.answer}</span>
+                    <span className="feedback-label">코드 해설</span>
+                    <span>{q.explanation.why}</span>
+                    <span className="feedback-label">암기 포인트</span>
+                    <span>{q.explanation.memory}</span>
+                    <span className="feedback-hint">{result === 'correct' ? 'Ctrl + Enter → 다음 빈칸' : '수정 후 Ctrl + Enter → 다시 채점'}</span>
+                    {screen === 'wrong' && result === 'correct' && <button className="resolve-button" onClick={resolveWrong}>오답 해결</button>}
+                  </span>}
+                </span>);
                 cursor = start + q.answer.length;
               }
               pieces.push(<span key="tail">{source.slice(cursor)}</span>);
@@ -419,29 +437,6 @@ export default function Home() {
                 <pre><code>{pieces}</code></pre>
               </section>;
             })}
-
-            {result !== 'idle' && (
-              <section className={`result-card ${result}`} aria-live="polite">
-                <div className="result-content">
-                  <span className="result-kicker">
-                    {result === 'correct' ? '정답입니다' : '오답노트에 저장했습니다'}
-                  </span>
-                  <p className="answer-code">{current.answer}</p>
-                  {result === 'wrong' && <p className="result-note">답안지의 정확한 코드를 확인하고 다시 외워보세요.</p>}
-                  <div className="explanation-copy">
-                    <span>코드 해설</span>
-                    <p>{current.explanation.why}</p>
-                    <div className="memory-tip">
-                      <strong>암기 포인트</strong>
-                      <p>{current.explanation.memory}</p>
-                    </div>
-                  </div>
-                </div>
-                {screen === 'wrong' && result === 'correct' && (
-                  <button className="resolve-button" onClick={resolveWrong}>오답 해결</button>
-                )}
-              </section>
-            )}
 
             <div className="quiz-actions">
               <span aria-live="polite">Cell {current.cell} · {current.topic}<br />{result === 'correct' ? '✓ 정답! Ctrl + Enter로 다음 빈칸' : result === 'wrong' ? '오답노트에 저장했어요. 수정 후 Ctrl + Enter로 재채점' : 'Ctrl + Enter로 채점 · 공백·들여쓰기 무시'}<br />Tab: 들여쓰기 · Shift + Tab: 입력칸 밖으로 이동</span>

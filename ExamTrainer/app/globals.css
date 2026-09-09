@@ -261,6 +261,11 @@ footer p { margin: 0; }
 .result-card { margin-top: 14px; padding: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; border-radius: 13px; }
 .result-card.correct { background: var(--green-soft); color: var(--green-dark); }
 .result-card.wrong { background: #f9e7e0; color: #7c3e2d; }
+.inline-answer-group { display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: top; }
+.result-card.inline-feedback { display: flex; flex-direction: column; gap: 6px; box-sizing: border-box; width: min(420px, 65vw); margin: 8px 0 12px; padding: 14px; white-space: normal; overflow-wrap: anywhere; font: 13px/1.6 Arial, sans-serif; }
+.inline-feedback .answer-code { display: block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.feedback-label { font-weight: 700; margin-top: 6px; font-size: 12px; }
+.feedback-hint { border-top: 1px solid currentColor; padding-top: 8px; margin-top: 6px; font-size: 11px; }
 .result-content { flex: 1; min-width: 0; }
 .result-kicker { font-size: 11px; font-weight: 800; }
 .answer-code { margin: 7px 0 0; font: 13px/1.5 var(--font-geist-mono), monospace; white-space: pre-wrap; }
