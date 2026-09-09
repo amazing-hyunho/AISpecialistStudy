@@ -134,13 +134,12 @@ function normalized(value: string) {
 }
 
 export default function Home() {
-  const answerRef = useRef<HTMLTextAreaElement>(null);
+  const answerRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedSubject, setSelectedSubject] = useState('LLM');
   const [chapterId, setChapterId] = useState(bank.chapters[0].id);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answer, setAnswer] = useState('');
   const [result, setResult] = useState<ResultState>('idle');
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
@@ -196,6 +195,7 @@ export default function Home() {
   }, [chapterId, screen, wrongIds]);
 
   const current = activeQuestions[currentIndex] ?? questions[0];
+  const answer = drafts[current.id] ?? '';
   const activeCellIds = [...new Set(activeQuestions.map((question) => question.sourceId))];
   const currentCellQuestions = activeQuestions.filter((question) => question.sourceId === current.sourceId);
   const currentCellPosition = Math.max(activeCellIds.indexOf(current.sourceId), 0) + 1;
@@ -207,7 +207,6 @@ export default function Home() {
 
   function resetQuestion() {
     setCurrentIndex(0);
-    setAnswer('');
     setResult('idle');
   }
 
@@ -251,14 +250,14 @@ export default function Home() {
     selectQuestion((currentIndex + 1) % activeQuestions.length);
   }
 
-  function selectQuestion(index: number) {
-    setDrafts(previous => ({ ...previous, [current.id]: answer }));
+  function selectQuestion(index: number, focus = true) {
     setCurrentIndex(index);
-    setAnswer(drafts[activeQuestions[index].id] ?? '');
     setResult('idle');
+    if (!focus) return;
     requestAnimationFrame(() => {
-      answerRef.current?.focus();
-      answerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const input = answerRefs.current[activeQuestions[index].id];
+      input?.focus();
+      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 
@@ -337,7 +336,7 @@ export default function Home() {
           <aside className="question-rail">
             <span className="eyebrow">{current.subject} · Chapter {current.chapterNumber}</span>
             <h2>{screen === 'wrong' ? '오답 복습' : current.chapterTitle}</h2>
-            <p>강의자료의 원문 코드에서 중요한 한 부분을 가렸습니다.</p>
+            <p>전체 코드 셀 안에서 공개 제한 부분을 직접 채우세요. 여러 줄 답안도 입력할 수 있습니다.</p>
             <div className="source-meta">
               <span>출제 노트북</span>
               <strong>{current.file}</strong>
@@ -382,32 +381,44 @@ export default function Home() {
                 const start = answerOffset(q);
                 if (start < cursor || start >= source.length) continue;
                 pieces.push(<span key={`${q.id}-text`}>{source.slice(cursor, start)}</span>);
-                pieces.push(<button className="inline-blank" aria-current={q.id === current.id ? 'step' : undefined} key={q.id} onClick={() => selectQuestion(activeQuestions.findIndex(item => item.id === q.id))}>
-                  {solvedIds.includes(q.id) ? '✓ ' : ''}빈칸 {activeQuestions.findIndex(item => item.id === q.id) + 1}
-                </button>);
+                const value = drafts[q.id] ?? '';
+                pieces.push(<textarea
+                  key={q.id}
+                  ref={element => { answerRefs.current[q.id] = element; }}
+                  className="inline-code-input"
+                  aria-label={`Cell ${q.cell} · ${q.topic} · 빈칸 ${activeQuestions.findIndex(item => item.id === q.id) + 1}`}
+                  aria-current={q.id === current.id ? 'step' : undefined}
+                  placeholder="### 공개 제한 ###"
+                  value={value}
+                  rows={Math.max(1, value.split('\n').length)}
+                  style={{ width: `${Math.min(90, Math.max(23, ...value.split('\n').map(line => line.length + 2)))}ch` }}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoComplete="off"
+                  onFocus={() => { if (q.id !== current.id) selectQuestion(activeQuestions.findIndex(item => item.id === q.id), false); }}
+                  onChange={event => {
+                    setDrafts(previous => ({ ...previous, [q.id]: event.target.value }));
+                    setResult('idle');
+                  }}
+                  onKeyDown={event => {
+                    if (event.key !== 'Tab' || event.shiftKey) return;
+                    event.preventDefault();
+                    const input = event.currentTarget;
+                    const start = input.selectionStart;
+                    const end = input.selectionEnd;
+                    setDrafts(previous => ({ ...previous, [q.id]: value.slice(0, start) + '    ' + value.slice(end) }));
+                    setResult('idle');
+                    requestAnimationFrame(() => input.setSelectionRange(start + 4, start + 4));
+                  }}
+                />);
                 cursor = start + q.answer.length;
               }
               pieces.push(<span key="tail">{source.slice(cursor)}</span>);
-              return <details className="code-window chapter-code" key={sourceId} open={sourceId === current.sourceId}>
-                <summary>Cell {bank.cells[sourceId].cell} · 빈칸 {cellQuestions.length}개 · 클릭해서 펼치기</summary>
+              return <section className="code-window chapter-code" key={sourceId} aria-label={`코드 셀 ${bank.cells[sourceId].cell}`}>
+                <div className="code-cell-title">Cell {bank.cells[sourceId].cell} · 빈칸 {cellQuestions.length}개</div>
                 <pre><code>{pieces}</code></pre>
-              </details>;
+              </section>;
             })}
-
-            <label className="answer-label" htmlFor="answer">빈칸에 들어갈 코드를 입력하세요</label>
-            <textarea
-              id="answer"
-              ref={answerRef}
-              className="answer-input"
-              value={answer}
-              onChange={(event) => {
-                setAnswer(event.target.value);
-                if (result !== 'idle') setResult('idle');
-              }}
-              placeholder="답안지의 코드를 떠올려 입력"
-              spellCheck={false}
-              autoFocus
-            />
 
             {result !== 'idle' && (
               <section className={`result-card ${result}`} aria-live="polite">
@@ -433,7 +444,7 @@ export default function Home() {
             )}
 
             <div className="quiz-actions">
-              <span>{result === 'correct' ? 'Ctrl + Enter로 다음 빈칸' : 'Ctrl + Enter로 채점 · 공백·들여쓰기 무시'}</span>
+              <span aria-live="polite">Cell {current.cell} · {current.topic}<br />{result === 'correct' ? '✓ 정답! Ctrl + Enter로 다음 빈칸' : result === 'wrong' ? '오답노트에 저장했어요. 수정 후 Ctrl + Enter로 재채점' : 'Ctrl + Enter로 채점 · 공백·들여쓰기 무시'}<br />Tab: 들여쓰기 · Shift + Tab: 입력칸 밖으로 이동</span>
               {result === 'idle' ? (
                 <button className="primary-button" onClick={grade} disabled={!answer.trim()}>정답 확인</button>
               ) : (

@@ -233,6 +233,12 @@ footer p { margin: 0; }
 .blank-picker button { border: 1px solid #b5cbbd; border-radius: 8px; background: #f4f8f2; padding: 8px; cursor: pointer; color: #254a34; }
 .blank-picker button[aria-current=step] { background: #20694f; color: white; }
 .chapter-code { margin: 12px 0; }
+.code-cell-title { padding: 14px 20px; border-bottom: 1px solid #394c3e; font-size: 12px; }
+.inline-code-input { display: inline-block; vertical-align: middle; box-sizing: content-box; min-height: 1.75em; padding: 2px 7px; border: 1px solid #91cda6; border-radius: 5px; background: #243e2e; color: #fff; font: inherit; line-height: inherit; resize: both; white-space: pre; }
+.inline-code-input::placeholder { color: #d7e8db; opacity: 1; }
+.inline-code-input[aria-current=step] { border-color: #f1cc72; background: #3e3a24; }
+.inline-code-input:focus { outline: 2px solid #f1cc72; outline-offset: 2px; }
+.code-window.chapter-code pre { max-height: none; }
 .chapter-code summary { padding: 14px; cursor: pointer; font-size: 12px; }
 .inline-blank { border: 1px solid #91cda6; border-radius: 5px; background: #2d533a; color: white; padding: 3px 12px; cursor: pointer; font: inherit; }
 .inline-blank[aria-current=step] { background: #f1cc72; color: #18251b; }
@@ -266,7 +272,7 @@ footer p { margin: 0; }
 .memory-tip strong { font-size: 10px; white-space: nowrap; }
 .memory-tip p { margin: 0; font: 12px/1.55 var(--font-geist-mono), monospace; }
 .resolve-button { flex: 0 0 auto; border: 1px solid rgb(31 107 79 / 25%); border-radius: 9px; background: white; color: var(--green-dark); padding: 9px 12px; cursor: pointer; font-size: 11px; font-weight: 750; }
-.quiz-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; }
+.quiz-actions { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; position: sticky; bottom: 0; background: #fffefa; padding: 14px; border: 1px solid #d4dcd1; border-radius: 12px; z-index: 2; }
 .quiz-actions > span { color: #8b928e; font-size: 10px; }
 .empty-state { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--paper); }
 .empty-card { max-width: 480px; padding: 44px; border: 1px solid var(--line); border-radius: 26px; background: var(--card); text-align: center; box-shadow: var(--shadow); }
