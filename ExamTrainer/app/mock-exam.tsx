@@ -5,7 +5,7 @@ import bank from './question-bank.json';
 import { questionExplanations } from './explanations';
 import { normalized } from './grading';
 
-type Props = { cellIds: string[]; onHome: () => void; onRetry: () => void; onComplete: (correct: string[], wrong: string[]) => void };
+type Props = { cellIds: string[]; title?: string; focus?: string; onNext?: () => void; onHome: () => void; onRetry: () => void; onComplete: (correct: string[], wrong: string[]) => void };
 type Question = typeof bank.questions[number];
 const cells = bank.cells as Record<string, { source: string; cell: number; answerSource: string }>;
 function offset(q: Question) {
@@ -18,7 +18,7 @@ function offset(q: Question) {
   return found;
 }
 
-export default function MockExam({ cellIds, onHome, onRetry, onComplete }: Props) {
+export default function MockExam({ cellIds, title, focus, onNext, onHome, onRetry, onComplete }: Props) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const inputs = useRef<Record<string, HTMLTextAreaElement | null>>({});
@@ -41,17 +41,19 @@ export default function MockExam({ cellIds, onHome, onRetry, onComplete }: Props
   }
 
   return <main className="app-shell mock-exam">
-    <header className="topbar"><button className="text-button" onClick={() => leave(onHome)}>← 학습 홈</button><strong>10셀 랜덤 모의고사</strong></header>
+    <header className="topbar"><button className="text-button" onClick={() => leave(onHome)}>← 학습 홈</button><strong>{title ?? '10셀 랜덤 모의고사'}</strong></header>
     <section className="mock-summary" ref={summary} tabIndex={-1} aria-label="모의고사 현황">
       <h1>{submitted ? '모의고사 결과' : '코드 흐름을 떠올리며 빈칸을 채워보세요.'}</h1>
-      <p>5과목 최소 1셀씩 · 중복 없는 10셀 · 총 {questions.length}개 빈칸 · 매회 새 난수 추첨</p>
+      <p>{title ? '과목별 2셀 · 고정 구성으로 반복 암기' : '5과목 최소 1셀씩 · 매회 새 난수 추첨'} · 중복 없는 10셀 · 총 {questions.length}개 빈칸</p>
+      {focus && <p><strong>이번 회차의 목표</strong> {focus}</p>}
       <p>셀 안의 검증된 빈칸을 모두 풉니다. 시간 제한은 없으며 제출 전에는 정답·해설을 표시하지 않습니다.</p>
       <p>Ctrl + Enter: 다음 빈칸 · Tab: 들여쓰기 · Shift + Tab: 입력칸 밖으로 이동. 새로고침하면 진행 중인 답안은 사라집니다.</p>
       <p>강의 답안 코드 기준 채점이며 공백·들여쓰기는 무시합니다. 같은 의미의 다른 구현까지 판별하지는 않습니다.</p>
       {submitted && <div role="status">
         <h2>셀 {correctCells}/10 · 빈칸 {correctCount}/{questions.length}</h2>
         <p>한 셀의 모든 빈칸이 맞아야 해당 셀 정답입니다. 오답·미입력 빈칸은 오답노트에 저장했습니다.</p>
-        <button className="primary-button" onClick={onRetry}>새 랜덤 10셀 시작</button>
+        <button className="primary-button" onClick={onRetry}>{title ? '같은 회차 다시 풀기' : '새 랜덤 10셀 시작'}</button>
+        {onNext && <button className="primary-button" onClick={onNext}>다음 회차 →</button>}
       </div>}
     </section>
     <nav className="blank-picker" aria-label="모의고사 셀 목차">{groups.map((g, i) => <a key={g.id} href={`#mock-${g.id}`}>{i + 1}. {g.questions[0].subject} · Cell {g.cell}</a>)}</nav>

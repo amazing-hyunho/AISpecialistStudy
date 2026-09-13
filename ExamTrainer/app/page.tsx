@@ -5,6 +5,7 @@ import Link from 'next/link';
 import MockExam from './mock-exam';
 import { drawExamCells } from './mock-selection';
 import { normalized } from './grading';
+import { fixedExams } from './fixed-exams';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
 
@@ -145,11 +146,21 @@ export default function Home() {
   const [hydrated, setHydrated] = useState(false);
   const [examCells, setExamCells] = useState<string[]>([]);
   const [examRound, setExamRound] = useState(0);
+  const [fixedExamIndex, setFixedExamIndex] = useState<number | null>(null);
 
   function startExam() {
+    setFixedExamIndex(null);
     setExamCells(drawExamCells(questions.filter(q => q.sourceKind !== 'reconstructed')));
     setExamRound(round => round + 1);
     setScreen('mock');
+  }
+
+  function startFixedExam(index: number) {
+    setFixedExamIndex(index);
+    setExamCells(fixedExams[index].cellIds);
+    setExamRound(round => round + 1);
+    setScreen('mock');
+    window.scrollTo({ top: 0 });
   }
 
   useEffect(() => {
@@ -276,7 +287,11 @@ export default function Home() {
     nextQuestion();
   }
 
-  if (screen === 'mock') return <MockExam key={examRound} cellIds={examCells} onHome={() => setScreen('home')} onRetry={startExam} onComplete={(correct, wrong) => {
+  if (screen === 'mock') return <MockExam key={examRound} cellIds={examCells}
+    title={fixedExamIndex === null ? undefined : `${fixedExamIndex + 1}회 · ${fixedExams[fixedExamIndex].title}`}
+    focus={fixedExamIndex === null ? undefined : fixedExams[fixedExamIndex].focus}
+    onNext={fixedExamIndex !== null && fixedExamIndex < 9 ? () => startFixedExam(fixedExamIndex + 1) : undefined}
+    onHome={() => setScreen('home')} onRetry={() => fixedExamIndex === null ? startExam() : startFixedExam(fixedExamIndex)} onComplete={(correct, wrong) => {
     setSolvedIds(ids => [...new Set([...ids, ...correct])]);
     setWrongIds(ids => [...new Set([...ids, ...wrong])]);
   }} />;
@@ -495,6 +510,16 @@ export default function Home() {
             <p><strong>오늘의 목표</strong>한 챕터를 골라 끝까지 복습하세요.</p>
           </div>
         </div>
+      </section>
+
+      <section className="subject-section" id="fixed-exams">
+        <div className="section-heading"><div><span className="eyebrow">PDF 기준 · 반복 암기</span><h2>시험 대비 고정 모의고사 10회분</h2></div></div>
+        <p>각 회차 10셀, 과목별 2셀입니다. 1회부터 순서대로 풀고 틀린 회차를 다시 풀어보세요. 중요한 셀은 여러 회차에 반복됩니다.</p>
+        <p>강의 원문에서 선별한 연습 세트이며 실제 출제를 보장하지 않습니다. 제출 후 정답·해설이 표시됩니다.</p>
+        <div className="chapter-grid">{fixedExams.map((exam, index) => <button className="chapter-card fixed-exam-card" key={exam.number} onClick={() => startFixedExam(index)}>
+          <div className="chapter-card-top"><span>{exam.number}회</span><strong>10셀 · {exam.blankCount}빈칸</strong></div>
+          <h3>{exam.title}</h3><p>{exam.focus}</p><span>고정 문제 풀기 →</span>
+        </button>)}</div>
       </section>
 
       <section className="subject-section">

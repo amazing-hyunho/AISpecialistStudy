@@ -29,12 +29,13 @@ function load(relative) {
   const code = ts.transpileModule(fs.readFileSync(path.join(root, relative), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true, target: ts.ScriptTarget.ES2020 },
   }).outputText;
-  const context = { exports: {}, crypto: require('node:crypto').webcrypto, requestAnimationFrame: fn => fn(), require(name) {
+  const context = { exports: {}, window: { scrollTo() {} }, crypto: require('node:crypto').webcrypto, requestAnimationFrame: fn => fn(), require(name) {
     if (name === 'react') return hooks;
     if (name === 'next/link') return () => null;
     if (name === './question-bank.json') return bank;
     if (name === './explanations') return load('app/explanations.ts');
     if (name === './grading') return load('app/grading.ts');
+    if (name === './fixed-exams') return load('app/fixed-exams.ts');
     if (name === './mock-selection') return load('app/mock-selection.ts');
     if (name === './mock-exam') return load('app/mock-exam.tsx');
     return require(name);
@@ -145,3 +146,35 @@ assert.equal(saved.correct.length, examQuestions.length);
 assert.equal(saved.wrong.length, 0);
 assert(byClass(tree, 'inline-feedback').every(n => n.props.className.includes('correct')));
 console.log('PASS: 500 random exams cover all subjects with 10 unique cells; delayed grading, blank answers, score callback, read-only review and fresh drafts');
+
+const { fixedExams } = load('app/fixed-exams.ts');
+assert.equal(fixedExams.length, 10);
+assert.equal(new Set(fixedExams.map(e => e.cellIds.join('|'))).size, 10);
+for (const [index, exam] of fixedExams.entries()) {
+  assert.equal(exam.cellIds.length, 10);
+  assert.equal(new Set(exam.cellIds).size, 10);
+  assert(!exam.cellIds.includes('dpo-completions'));
+  assert.equal(exam.blankCount, bank.questions.filter(q => exam.cellIds.includes(q.sourceId)).length);
+  for (const subject of ['LLM', 'RAG', 'Data', 'Vision', 'On-device']) {
+    assert.equal(exam.cellIds.filter(id => bank.questions.find(q => q.sourceId === id).subject === subject).length, 2);
+  }
+  slots.length = 0;
+  tree = render();
+  assert.equal(byClass(tree, 'fixed-exam-card').length, 10);
+  byClass(tree, 'fixed-exam-card')[index].props.onClick();
+  tree = render();
+  assert.equal(JSON.stringify(tree.props.cellIds), JSON.stringify(exam.cellIds));
+  assert(tree.props.title.startsWith(`${index + 1}회`));
+  const oldKey = tree.key;
+  tree.props.onRetry();
+  tree = render();
+  assert.notEqual(tree.key, oldKey);
+  assert.equal(JSON.stringify(tree.props.cellIds), JSON.stringify(exam.cellIds));
+  if (index < 9) {
+    tree.props.onNext();
+    tree = render();
+    assert.equal(JSON.stringify(tree.props.cellIds), JSON.stringify(fixedExams[index + 1].cellIds));
+  } else assert.equal(tree.props.onNext, undefined);
+}
+console.log('PASS: all 10 fixed rounds, 2 cells per subject, no reconstructed cells, exact counts, repeat and next-round navigation');
+console.log('Fixed round blanks:', fixedExams.map(e => `${e.number}: ${e.blankCount}`).join(', '));
