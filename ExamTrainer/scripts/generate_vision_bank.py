@@ -64,8 +64,33 @@ add("vision-sd", 9, "Classifier-free Guidance", "프롬프트 조건을 따르�
 add("vision-vit", 26, "Confusion Matrix", "전체 정답과 예측 class로 confusion matrix를 계산하세요.", "confusion_matrix(all_labels, all_preds)")
 
 
-if len(SPECS) > 20:
-    raise ValueError("Focused Vision bank must stay at 20 questions or fewer.")
+# Additions are appended so previously saved question IDs retain their meaning.
+# PDF: data construction and torchvision transforms (19–22).
+add("vision-resnet", 5, "좌우 반전 증강", "학습 이미지의 좌우를 무작위로 뒤집는 transform을 완성하세요.", "T.RandomHorizontalFlip()")
+add("vision-resnet", 5, "이미지 Tensor 변환", "학습용 PIL 이미지를 채널 우선 Tensor로 바꾸는 transform을 완성하세요.", "T.ToTensor()")
+add("vision-resnet", 5, "평가 전처리 구성", "무작위 증강을 하지 않는 평가 전처리에서, 학습 때와 같은 채널 통계로 정규화하세요.", "T.Normalize(CIFAR10_MEAN, CIFAR10_STD)", occurrence=1)
+add("vision-resnet", 5, "학습 배치 구성", "학습 데이터셋을 배치로 묶고 매 epoch 순서를 섞는 DataLoader를 구성하세요.", "DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)")
+
+# PDF: meaning and construction of main layers (23–24).
+add("vision-vit", 10, "Patch Embedding 투영", "펼친 이미지 패치를 Transformer의 토큰 차원으로 투영하는 layer를 선언하세요.", "nn.Linear(patch_dim, cfg.dim)")
+add("vision-vit", 8, "Attention Residual", "Attention 출력에 입력을 더하는 residual 연결을 완성하세요.", "attn(x) + x")
+
+# PDF: connect predictions and targets to training (25–31).
+add("vision-vit", 18, "분류 로그확률", "클래스 축을 따라 logits를 NLLLoss에 필요한 로그확률로 변환하세요.", "F.log_softmax(model(data), dim=1)")
+add("vision-vit", 18, "분류 손실 연결", "예측 로그확률과 정답 클래스 인덱스로 NLL 손실을 계산하세요.", "F.nll_loss(output, target)")
+add("vision-vit", 18, "역전파와 갱신", "손실의 기울기를 계산하고 optimizer로 가중치를 갱신하는 두 줄을 작성하세요.", "loss.backward()\n        optimizer.step()")
+add("vision-unet", 4, "정답 Mask 채널", "2차원 정답 mask에 채널 축을 추가해 이미지와 같은 (1, H, W) 형태로 만드세요.", "np.expand_dims(mask, axis=0)")
+add("vision-unet", 10, "픽셀 정답과 손실", "학습 루프에서 픽셀별 logits와 정답 mask를 손실 함수에 연결하세요.", "criterion(logits, masks)")
+add("vision-ddpm", 17, "노이즈 예측 모델", "noisy image와 시점 t를 모델에 전달해 주입된 noise를 예측하세요.", "denoise_model(x_noisy, t)")
+add("vision-ddpm", 17, "노이즈 정답 손실", "L2 학습 분기에서 실제로 주입한 noise와 예측 noise의 평균제곱오차를 계산하세요.", "F.mse_loss(noise, predicted_noise)")
+
+# PDF: metric calculation, not just a metric library call (32–34).
+add("vision-resnet", 10, "예측 클래스 선택", "(B, C) logits에서 샘플별 최대 점수의 클래스 인덱스를 선택하세요.", "logits.argmax(dim=1)")
+add("vision-vit", 19, "평가 정답 개수", "한 배치의 예측과 정답을 비교해 맞힌 샘플 수를 Python 정수로 계산하세요.", "int(pred.eq(target).sum().item())")
+add("vision-vit", 19, "전체 Accuracy", "누적 정답 개수를 전체 평가 샘플 수로 나누어 accuracy를 계산하세요.", "correct_samples / total_samples")
+
+if len(SPECS) > 34:
+    raise ValueError("Reviewed Vision scope is capped at 34 questions; review coverage before adding more.")
 
 
 def read_cell(chapter_id: str, cell_index: int) -> tuple[str, str]:
@@ -134,10 +159,15 @@ def build() -> None:
     for chapter in CHAPTERS:
         chapter["questionCount"] = sum(question["chapterId"] == chapter["id"] for question in vision_questions)
 
+    # Keep the existing chapter/question order and IDs, including other subjects.
+    updated_chapters = {chapter["id"]: chapter for chapter in chapters + CHAPTERS}
+    chapter_order = list(dict.fromkeys([chapter["id"] for chapter in bank["chapters"]] + list(updated_chapters)))
+    updated_questions = {question["id"]: question for question in questions + vision_questions}
+    question_order = list(dict.fromkeys([question["id"] for question in bank["questions"]] + list(updated_questions)))
     OUTPUT.write_text(json.dumps({
-        "chapters": chapters + CHAPTERS,
+        "chapters": [updated_chapters[key] for key in chapter_order if key in updated_chapters],
         "cells": cells,
-        "questions": questions + vision_questions,
+        "questions": [updated_questions[key] for key in question_order if key in updated_questions],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Generated {len(vision_questions)} focused Vision questions across {len(CHAPTERS)} notebooks -> {OUTPUT}")
 

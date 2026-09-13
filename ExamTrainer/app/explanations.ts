@@ -392,6 +392,70 @@ export const questionExplanations: Record<string, QuestionExplanation> = {
     why: 'activation scale은 alpha만큼, weight scale은 1-alpha만큼 반대로 적용해 두 tensor의 outlier 부담을 균형 있게 재분배합니다.',
     memory: 'SmoothQuant scale = act^alpha / weight^(1-alpha).',
   },
+  'vision-019': {
+    why: 'RandomHorizontalFlip은 학습 이미지를 확률적으로 좌우 반전해 위치 변화에 대한 다양한 예제를 만듭니다. 이 실습의 평가 전처리에는 무작위 증강을 넣지 않아 같은 입력을 일관되게 평가합니다.',
+    memory: '학습에는 무작위 반전, 평가에는 Tensor 변환과 정규화만.',
+  },
+  'vision-020': {
+    why: '이 CIFAR-10 실습의 PIL 이미지는 ToTensor를 거쳐 (C, H, W) 형태의 실수 Tensor가 되고 픽셀값은 0~1로 변환됩니다. 그다음 Normalize가 채널별 평균과 표준편차를 적용합니다.',
+    memory: 'PIL → ToTensor → Normalize. 배치가 되면 (B, C, H, W).',
+  },
+  'vision-021': {
+    why: '평가에서도 학습 때와 같은 평균·표준편차를 사용해야 모델이 기대하는 입력 분포에 맞습니다. 무작위 crop·flip은 생략하지만 정규화까지 생략하는 것은 아닙니다.',
+    memory: '평가: 증강은 빼고, 학습과 같은 Normalize는 유지.',
+  },
+  'vision-022': {
+    why: 'DataLoader는 Dataset 샘플을 batch_size만큼 묶고 shuffle=True로 학습 샘플 순서를 섞습니다. num_workers는 데이터 로딩 작업 수, pin_memory는 호스트 메모리 설정이며 GPU 이동 자체를 수행하지는 않습니다.',
+    memory: '학습 loader는 train_set + shuffle=True. GPU 이동은 별도 .to(device).',
+  },
+  'vision-023': {
+    why: 'Rearrange로 펼친 각 패치는 채널 수×패치 높이×패치 너비 길이의 벡터입니다. Linear는 이 patch_dim을 Transformer가 사용하는 cfg.dim으로 투영하고 패치 개수 축은 유지합니다.',
+    memory: '(B, N, patch_dim) → Linear → (B, N, cfg.dim).',
+  },
+  'vision-024': {
+    why: 'Attention으로 토큰 간 정보를 섞은 결과에 원래 입력을 더해 잔차 경로를 만듭니다. 두 Tensor의 형태가 같아야 하며, U-Net에서 채널 수를 늘리는 concat과는 다릅니다.',
+    memory: 'Residual은 attn(x) + x. concat이 아니다.',
+  },
+  'vision-025': {
+    why: '이 실습은 NLL 손실을 사용하므로 모델의 raw logits를 log_softmax로 로그확률로 바꿉니다. dim=1은 (B, C) 출력의 클래스 축입니다. 일반 softmax만 적용한 확률은 NLL의 입력 형식과 다릅니다.',
+    memory: 'NLL 앞에는 log_softmax, 클래스 축은 dim=1.',
+  },
+  'vision-026': {
+    why: 'nll_loss는 각 샘플의 정답 클래스 인덱스로 해당 로그확률을 선택해 음의 로그우도를 계산합니다. 정답 클래스의 확률이 높아질수록 손실이 작아집니다. output은 로그확률이고 target은 클래스 인덱스입니다.',
+    memory: 'log_softmax 출력 + 정답 인덱스 → nll_loss.',
+  },
+  'vision-027': {
+    why: 'backward는 손실에서 학습 파라미터까지 기울기를 계산하고 optimizer.step은 그 기울기로 파라미터를 갱신합니다. 앞의 zero_grad는 이전 배치의 기울기를 초기화합니다.',
+    memory: 'zero_grad → forward·loss → backward → step.',
+  },
+  'vision-028': {
+    why: '이진 분할의 정답은 이미지 하나당 숫자 하나가 아니라 픽셀별 mask입니다. (H, W)에 채널 축을 추가하면 (1, H, W), 배치로 묶으면 (B, 1, H, W)가 되어 모델 출력과 맞습니다.',
+    memory: '분류 정답은 클래스 인덱스, 분할 정답은 채널이 있는 픽셀 mask.',
+  },
+  'vision-029': {
+    why: 'criterion은 앞 셀에서 선언한 BCEWithLogitsLoss입니다. sigmoid 전의 픽셀 logits와 같은 형태의 실수 mask를 비교해 학습 손실을 만듭니다. threshold로 이진화한 예측은 학습 손실에 넣지 않습니다.',
+    memory: '학습은 logits + masks. sigmoid·0.5 threshold는 예측 시각화 단계.',
+  },
+  'vision-030': {
+    why: '노이즈 제거 모델은 noisy image뿐 아니라 현재 시점 t도 받아야 어느 정도 노이즈가 섞였는지 조건으로 사용할 수 있습니다. 이 실습의 모델 출력은 원본 이미지가 아니라 주입된 노이즈의 예측입니다.',
+    memory: 'denoise_model(x_noisy, t) → predicted_noise.',
+  },
+  'vision-031': {
+    why: 'L2 분기의 정답은 q_sample에 실제로 주입한 noise이고 모델 출력은 predicted_noise입니다. 두 값의 평균제곱오차를 줄이며 노이즈 예측을 학습합니다. 실습에는 L1·Huber 분기도 있으므로 L2에 해당하는 함수를 구분하세요.',
+    memory: '확산 모델의 L2 정답 연결: 실제 noise ↔ predicted_noise.',
+  },
+  'vision-032': {
+    why: 'logits의 각 행은 이미지 하나의 클래스별 점수입니다. argmax(dim=1)은 각 이미지에서 점수가 가장 큰 클래스 인덱스를 반환합니다. softmax는 점수 순서를 유지하므로 Top-1 선택만 할 때 필수는 아닙니다.',
+    memory: '(B, C) → argmax(dim=1) → (B,) 예측 인덱스.',
+  },
+  'vision-033': {
+    why: 'pred.eq(target)은 샘플별 정답 여부를 Boolean으로 만들고 sum은 True 개수를 셉니다. item과 int는 그 값을 누적 가능한 Python 정수로 꺼냅니다. 배치별 정확도 대신 정답 개수를 누적합니다.',
+    memory: '예측 == 정답 → sum → 배치 정답 수.',
+  },
+  'vision-034': {
+    why: '전체 정답 수를 전체 샘플 수로 나누면 마지막 배치 크기가 작아도 각 샘플에 같은 비중을 주는 정확도가 됩니다. 크기가 다른 배치들의 정확도를 단순 평균하면 결과가 달라질 수 있습니다.',
+    memory: '전체 accuracy = 모든 배치의 정답 수 합 / 전체 샘플 수.',
+  },
   'ondevice-018': {
     why: 'LayerNorm 파라미터를 scale로 나누고 다음 FC weight를 같은 scale로 곱하면 전체 출력은 유지하면서 내부 분포만 평탄해집니다.',
     memory: 'LN은 divide, 연결된 FC는 multiply.',
