@@ -392,6 +392,46 @@ export const questionExplanations: Record<string, QuestionExplanation> = {
     why: 'activation scale은 alpha만큼, weight scale은 1-alpha만큼 반대로 적용해 두 tensor의 outlier 부담을 균형 있게 재분배합니다.',
     memory: 'SmoothQuant scale = act^alpha / weight^(1-alpha).',
   },
+  'rag-019': {
+    why: 'SimpleDirectoryReader는 폴더의 파일을 읽고 load_data는 LlamaIndex가 다룰 Document 목록을 반환합니다. 파일을 읽는 단계이지 아직 검색 인덱스를 만들거나 질문의 답을 생성한 것은 아닙니다.',
+    memory: '파일 → Reader.load_data → Document → 분할·인덱싱.',
+  },
+  'rag-020': {
+    why: 'SentenceSplitter는 문장 경계를 고려해 문서를 chunk로 나눕니다. chunk_size는 목표 최대 토큰 크기, chunk_overlap은 인접 chunk 사이에서 겹치게 둘 토큰 크기 설정입니다. 1024·200은 이 강의 예시의 설정이며 모든 RAG의 최적값은 아닙니다.',
+    memory: '크기로 검색 단위를 정하고 overlap으로 경계의 문맥 단절을 줄인다.',
+  },
+  'rag-021': {
+    why: 'Document는 읽어 온 문서이고 Node는 분할 후 검색에 사용할 단위입니다. get_nodes_from_documents는 준비한 parser의 설정을 적용해 문서 목록에서 노드를 만듭니다. 이후 벡터 인덱싱과 검색으로 연결할 수 있습니다.',
+    memory: 'parser 설정 → get_nodes_from_documents(documents) → nodes.',
+  },
+  'rag-022': {
+    why: 'Settings.embed_model에 설정하는 모델은 문서와 질문을 비교할 벡터를 만드는 임베딩 모델입니다. 최종 자연어 답변을 작성하는 채팅 모델과 역할이 다릅니다. 검색할 문서와 질문은 호환되는 임베딩 공간에서 비교해야 합니다.',
+    memory: 'embed_model은 검색용 벡터, 채팅 LLM은 답변 생성.',
+  },
+  'rag-023': {
+    why: 'retrieve 결과에는 노드와 점수 같은 검색 정보가 들어 있습니다. 각 결과의 node에서 get_content로 본문을 꺼내고 strip으로 가장자리 공백을 제거해, prompt_generator가 사용할 문자열 목록으로 바꿉니다.',
+    memory: '검색 결과 객체 → .node.get_content().strip() → 본문 목록.',
+  },
+  'rag-024': {
+    why: '앞에서 만든 user_message에는 검색 references와 사용자의 질문이 함께 들어 있습니다. 이를 role=user 메시지로 전달하고 role=system에는 답변 지침을 넣습니다. 검색만 하고 이 본문을 모델 입력에 넣지 않으면 검색 근거가 생성 단계에 전달되지 않습니다.',
+    memory: 'system은 지침, user는 검색 근거 + 질문.',
+  },
+  'rag-025': {
+    why: 'retriever가 가져온 chunk 목록을 질문과 함께 Reader에 전달하는 연결 지점입니다. Reader 내부에서 프롬프트를 구성하고 Chat Completion으로 답변을 만듭니다. 검색 결과 목록 자체와 최종 답변 문자열을 구분하세요.',
+    memory: 'retrieve → retrieved_results → reader.generate_response(query, results).',
+  },
+  'rag-026': {
+    why: 'BasicMCPClient가 서버 연결을 담당한다면 McpToolSpec은 그 클라이언트의 도구를 LlamaIndex에서 사용할 수 있게 연결합니다. 다음 to_tool_list_async 호출로 가져온 도구 목록을 FunctionAgent의 tools에 전달합니다.',
+    memory: 'Client → McpToolSpec → await 도구 목록 → Agent.tools.',
+  },
+  'rag-027': {
+    why: 'Context(self.agent)는 이 Agent workflow의 실행 상태를 관리할 context를 만듭니다. query에서 같은 context를 run에 전달합니다. 검색 문서 본문을 뜻하는 RAG context와 workflow 상태 객체는 서로 다른 개념입니다.',
+    memory: 'Context는 Agent 상태, references는 검색 문서 내용.',
+  },
+  'rag-028': {
+    why: 'agent.run은 질문과 workflow context를 받아 실행 handler를 반환합니다. 강의에서는 handler.stream_events로 도구 호출 이벤트를 관찰하고 await handler로 최종 응답을 받습니다. run 호출 자체를 이미 완성된 답변 문자열로 취급하면 안 됩니다.',
+    memory: 'run(question, ctx=...) → handler → 이벤트 관찰 → await handler.',
+  },
   'vision-019': {
     why: 'RandomHorizontalFlip은 학습 이미지를 확률적으로 좌우 반전해 위치 변화에 대한 다양한 예제를 만듭니다. 이 실습의 평가 전처리에는 무작위 증강을 넣지 않아 같은 입력을 일관되게 평가합니다.',
     memory: '학습에는 무작위 반전, 평가에는 Tensor 변환과 정규화만.',

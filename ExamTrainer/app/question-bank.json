@@ -70,7 +70,7 @@
       "number": "D1-01",
       "title": "LlamaIndex Basics",
       "file": "1. Llama_index.ipynb",
-      "questionCount": 3
+      "questionCount": 6
     },
     {
       "id": "rag-d2-02",
@@ -78,7 +78,7 @@
       "number": "D2-02",
       "title": "Search Retrieval",
       "file": "2. Task_1.ipynb",
-      "questionCount": 6
+      "questionCount": 10
     },
     {
       "id": "rag-d2-03",
@@ -94,7 +94,7 @@
       "number": "D2-04",
       "title": "MCP RAG",
       "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
-      "questionCount": 5
+      "questionCount": 8
     },
     {
       "id": "data-ts",
@@ -370,66 +370,6 @@
       "cell": 46,
       "answerSource": "llm_from_scratch/Chapter_7_Finetuning_to_Follow_Instructions_KR.ipynb"
     },
-    "d1_llama-cell-15": {
-      "source": "index = VectorStoreIndex.from_documents(documents)",
-      "cell": 15,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d1_llama-cell-49": {
-      "source": "retriever = index.as_retriever()\n\nret_passages = retriever.retrieve(\"Who is the author?\")\n\nfor i in range(len(ret_passages)):\n  print(\"###Retrieved Passage\\n\", ret_passages[i].text)\n  print(\"\\n\\n\\n\")",
-      "cell": 49,
-      "answerSource": "1. Llama_index.ipynb"
-    },
-    "d2_task1-cell-16": {
-      "source": "from llama_index.core.schema import Document\nfrom llama_index.core.node_parser import SentenceSplitter\nfrom llama_index.core import VectorStoreIndex, Settings\nfrom llama_index.embeddings.openai import OpenAIEmbedding\n\nSettings.embed_model = OpenAIEmbedding(model=\"text-embedding-3-small\")\n\nclass LlamaIndexRetriever:\n  def __init__(self):\n      self.parser = SentenceSplitter(chunk_size=512, chunk_overlap=0)\n\n  def retrieve(self, query, search_results, topk):\n      documents = []\n\n      for document in parse_htmls(search_results):\n        if not document:\n            # If no text is extracted, add an empty string as a placeholder.\n            documents.append(Document(text=\"\"))\n        else:\n            documents.append(Document(text=document))\n\n      # Split documents into chunks & Create vector index\n      base_index = VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])\n\n      # Execute query\n      base_retriever = base_index.as_retriever(similarity_top_k=topk)\n\n      retrieved_nodes = base_retriever.retrieve(query)\n\n      retrieved_results = [retrieved_node.node.get_content().strip() for retrieved_node in retrieved_nodes]\n\n      return retrieved_results",
-      "cell": 16,
-      "answerSource": "2. Task_1.ipynb"
-    },
-    "d2_task1-cell-23": {
-      "source": "def prompt_generator(query, top_k_chunks, system_prompt):\n    user_message = \"\"\n    references = \"\"\n\n    if len(top_k_chunks) > 0:\n        references += \"# References \\n\"\n        # Format the top sentences as references in the model's prompt template.\n        for chunk_id, chunk in enumerate(top_k_chunks):\n            references += f\"- {chunk.strip()}\\n\"\n\n    references = references[:MAX_CONTEXT_REFERENCES_LENGTH]\n    # Limit the length of references to fit the model's input size.\n\n    user_message += f\"{references}\\n------\\n\\n\"\n    user_message += f\"Using only the references listed above, answer the following question: \\n\"\n    user_message += f\"Question: {query}\\n\"\n\n    llm_input = [\n      {\"role\": \"system\", \"content\": system_prompt},\n      {\"role\": \"user\", \"content\": user_message},\n    ]\n\n    return llm_input",
-      "cell": 23,
-      "answerSource": "2. Task_1.ipynb"
-    },
-    "d2_task1-cell-25": {
-      "source": "from openai import OpenAI\n\noai_client = OpenAI()\n\nclass Reader:\n  def __init__(self):\n\n    self.system_prompt = \"\"\"\n    You are provided with a question and various references.\n    Your task is to answer the question succinctly, using the fewest words possible.\n    If the references do not contain the necessary information to answer the question, respond with 'I don't know'.\n    There is no need to explain the reasoning behind your answers.\n    \"\"\"\n\n  def generate_response(self, query: str, top_k_chunks: list) -> str:\n      \"\"\"\n      Generate answer from context.\n      \"\"\"\n      llm_input = self.prompt_generator(query, top_k_chunks)\n      completion = oai_client.chat.completions.create(\n      model=\"gpt-3.5-turbo\",\n      temperature=0,\n      messages=\n      llm_input\n      ).choices[0].message.content\n      return completion\n\n  def prompt_generator(self, query, top_k_chunks):\n      user_message = \"\"\n      references = \"\"\n\n      if len(top_k_chunks) > 0:\n          references += \"# References \\n\"\n          # Format the top sentences as references in the model's prompt template.\n          for chunk_id, chunk in enumerate(top_k_chunks):\n              references += f\"- {chunk.strip()}\\n\"\n\n      references = references[:MAX_CONTEXT_REFERENCES_LENGTH]\n      # Limit the length of references to fit the model's input size.\n\n      user_message += f\"{references}\\n------\\n\\n\"\n      user_message\n      user_message += f\"Using only the references listed above, answer the following question: \\n\"\n      user_message += f\"Question: {query}\\n\"\n\n      llm_input = [\n        {\"role\": \"system\", \"content\": self.system_prompt},\n        {\"role\": \"user\", \"content\": user_message},\n      ]\n\n      return llm_input",
-      "cell": 25,
-      "answerSource": "2. Task_1.ipynb"
-    },
-    "d2_task2-cell-25": {
-      "source": "class KGQueryEngine:\n    def query(self, query):\n        generated_query, is_finance = self.generate_query(query)\n\n        if is_finance:\n            kg_results = self.get_finance_kg_results(generated_query)\n        else:\n            kg_results = \"\"\n\n        return kg_results, is_finance\n\n    def generate_query(self, query):\n        llm_input = prompt_generator(query)\n        completion = oai_client.chat.completions.create(\n        model=\"gpt-3.5-turbo\",\n        temperature=0,\n        messages=\n        llm_input\n        ).choices[0].message.content\n\n        try:\n            completion = json.loads(completion)\n        except:\n            completion = extract_json_objects(completion)\n\n        if \"domain\" in completion.keys():\n            domain = completion[\"domain\"]\n            is_finance = domain == \"finance\"\n        else:\n            is_finance = False\n\n        return completion, is_finance\n\n    def get_finance_kg_results(self, generated_query):\n        formatted_time_list = []\n        if 'datetime' in generated_query:\n            datetime_list = generated_query['datetime'].split(' - ')\n            for datetime in datetime_list:\n                formatted_time_list.append(convert_to_standard_format(datetime.strip()))\n\n\n        kg_results = []\n        res = \"\"\n        if \"market_identifier\" in generated_query.keys() and generated_query[\"market_identifier\"] is not None:\n            if isinstance(generated_query[\"market_identifier\"], str):\n                company_names = generated_query[\"market_identifier\"].split(\",\")\n            else:\n                company_names = generated_query[\"market_identifier\"]\n\n            for company_name in company_names:\n                try:\n                    res = api.finance_get_company_name(company_name)[\"result\"]\n\n                    if res == []:\n                        ticker_name = company_name.upper()\n                    else:\n                        ticker_name = api.finance_get_ticker_by_name(res[0])[\"result\"]\n\n                    if generated_query['metric'].lower().strip() == 'price':\n                        response = api.finance_get_price_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'dividend':\n                        response = api.finance_get_dividends_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'p/e ratio':\n                        response = api.finance_get_pe_ratio(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'eps':\n                        response = api.finance_get_eps(ticker_name)[\"result\"]\n                    elif generated_query['metric'].lower().strip() == 'marketcap' :\n                        response = api.finance_get_market_capitalization(ticker_name)['result']\n                    else:\n                        response = api.finance_get_info(ticker_name)['result']\n                        metric_value = get_metric_from_response(response, generated_query['metric'])\n                        if metric_value is not None:\n                            response = metric_value\n\n                    try:\n                        for formatted_time in formatted_time_list:\n                            if formatted_time in response:\n                                filtered_response = copy.deepcopy(response[formatted_time])\n                            elif add_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[add_one_day(formatted_time)])\n                            elif subtract_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[subtract_one_day(formatted_time)])\n                            else:\n                                filtered_response = copy.deepcopy(response)\n                            kg_results.append({company_name + \" \" + generated_query[\"metric\"]: filtered_response, 'time': formatted_time})\n                    except:\n                        kg_results.append({company_name + \" \" + generated_query[\"metric\"]: response})\n\n                except Exception as e:\n                    print(\"Fail to parse the generated query\")\n                    pass\n\n        kg_results = \"<DOC>\\n\".join([str(res) for res in kg_results]) if len(kg_results) > 0 else \"\"\n        return  kg_results\n\n    def prompt_generator(self, query):\n        user_message = \"\"\n        user_message += f\"Query: {query}\\n\"\n\n        llm_input = [\n          {\"role\": \"system\", \"content\": entity_extract_template},\n          {\"role\": \"user\", \"content\": user_message},\n        ]\n\n        return llm_input",
-      "cell": 25,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-31": {
-      "source": "class RAGWithKG:\n    def __init__(self):\n        self.kg_query_engine = KGQueryEngine()\n        self.reader = Reader()\n\n    def inference(self, query):\n        # 1. retrieve relevant kg results\n        kg_results, is_finance = self.kg_query_engine.query(query)\n\n        # 2. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, [kg_results])\n\n        return answer, kg_results",
-      "cell": 31,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_task2-cell-36": {
-      "source": "class RAGWithSRKG:\n    def __init__(self):\n        self.retriever = LlamaIndexRetriever()\n        self.kg_query_engine = KGQueryEngine()\n        self.reader = Reader()\n\n    def inference(self, query, search_results, topk):\n        # 1. retrieve relevant chunks\n        retrieved_results = self.retriever.retrieve(query, search_results, topk)\n\n        # 2. retrieve relevant kg results\n        kg_results, is_finance = self.kg_query_engine.query(query)\n\n        # combined_results = [kg_results]\n        # combined_results.extend(retrieved_results)\n        if is_finance:\n          combined_results = [kg_results]\n        else:\n          combined_results = retrieved_results\n\n        # 3. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, combined_results)\n\n        return answer, combined_results",
-      "cell": 36,
-      "answerSource": "3. Task_2.ipynb"
-    },
-    "d2_mcp-cell-37": {
-      "source": "from llama_index.tools.mcp import BasicMCPClient, McpToolSpec\nfrom llama_index.core.agent.workflow import FunctionAgent, ToolCallResult, ToolCall\nfrom llama_index.core.workflow import Context\n\nimport dotenv",
-      "cell": 37,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-42": {
-      "source": "mcp_client = BasicMCPClient(external_mcp_server)\nmcp_tool = McpToolSpec(client=mcp_client)\n\ntools = await mcp_tool.to_tool_list_async()\nprint(\"\\n=== Available Tools ===\\n\")\nfor tool in tools:\n    print(f\"🔧 Name       : {tool.metadata.name}\")\n    print(f\"   Description: {tool.metadata.description}\\n\")",
-      "cell": 42,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-46": {
-      "source": "from llama_index.llms.openai import OpenAI\n\nclass KGQueryEngineWithMCP:\n    def __init__(self, mcp_tool_spec: McpToolSpec, model: str, llm = None):\n        self.llm = llm or OpenAI(model=model, temperature=0)\n        self.mcp_tool_spec = mcp_tool_spec\n        self.agent: Optional[FunctionAgent] = None\n        self.agent_context: Optional[Context] = None\n\n    async def init_agent(self):\n        tools = await self.mcp_tool_spec.to_tool_list_async()\n        for tool in tools:\n            if len(tool.metadata.description) > 1000:\n                tool.metadata.description = tool.metadata.description[:1000] + \"...\"\n        self.agent = FunctionAgent(\n            name=\"Agent\",\n            description=\"An agent that can work with Our Knowledge Graph api.\",\n            tools=tools,\n            llm=self.llm,\n            system_prompt=SYSTEM_PROMPT,\n        )\n        self.agent_context = Context(self.agent)\n\n    async def query(self, question: str, verbose: bool = False) -> str:\n        if self.agent is None or self.agent_context is None:\n            raise RuntimeError(\"Agent not initialized. Call `await init_agent()` first.\")\n\n        handler = self.agent.run(question, ctx=self.agent_context)\n        async for event in handler.stream_events():\n            if verbose and type(event) == ToolCall:\n                print(f\"Calling tool {event.tool_name} with kwargs {event.tool_kwargs}\")\n            elif verbose and type(event) == ToolCallResult:\n                print(f\"Tool {event.tool_name} returned {event.tool_output}\")\n\n        response = await handler\n        return str(response)\n\nkg_engine = KGQueryEngineWithMCP(mcp_tool, model='gpt-3.5-turbo')\nawait kg_engine.init_agent()",
-      "cell": 46,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
-    "d2_mcp-cell-55": {
-      "source": "from llama_index.llms.openai import OpenAI\n\nclass RAGwithMCP:\n    def __init__(self, mcp_tool):\n        self.mcp_application = KGQueryEngineWithMCP(mcp_tool, model='gpt-4o-mini')\n        self.reader = Reader()\n\n    async def retrieve(self, query: str, query_time: str, search_results: list, topk: int):\n        await self.mcp_application.init_agent()\n\n        full_query = f\"\"\"Query: {query} When inferring time information, rely solely on the query time. Do not infer the time scope from the query itself.\nQuery time: {query_time}\"\"\"\n\n        mcp_result = await self.mcp_application.query(full_query, verbose=False)\n        return mcp_result\n\n    def generate_response(self, query: str, query_time: str, retrieved_results: str):\n        answer = self.reader.generate_response(query, query_time, retrieved_results)\n        return answer\n\n    async def inference(self, query: str, search_results: list, query_time: str, topk: int):\n        retrieved_results = await self.retrieve(query, query_time, search_results, topk)\n        answer = self.generate_response(query, query_time, retrieved_results)\n        return {\n            \"retrieved_results\": retrieved_results,\n            \"answer\": answer\n        }\n\nrag_mcp = RAGwithMCP(mcp_tool)",
-      "cell": 55,
-      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
-    },
     "data-ts-cell-23": {
       "source": "def train(model, train_loader, test_loader):\n  train_hist = []\n  test_hist = []\n  num_epochs = 10\n  loss_fn = nn.MSELoss(reduction='mean')\n  optimizer = optim.Adam(model.parameters(), lr=1e-3)\n\n  for epoch in range(num_epochs):\n    total_train_loss = 0.0\n    total_test_loss = 0.0\n\n    # train\n    model.train()\n    for batch_x, batch_y in train_loader:\n      batch_x, batch_y = batch_x.to(device), batch_y.to(device)\n      pred = model(batch_x)[:, -1, 0]\n      loss = loss_fn(pred, batch_y)\n\n      optimizer.zero_grad()\n      loss.backward()\n      optimizer.step()\n\n      total_train_loss += loss.item()\n\n    avg_loss = total_train_loss / len(train_loader)\n    train_hist.append(avg_loss)\n\n    # evaluate\n    model.eval()\n    with torch.no_grad():\n      for test_x, test_y in test_loader:\n        test_x, test_y = test_x.to(device), test_y.to(device)\n        test_pred = model(test_x)[:, -1, 0]\n        test_loss = loss_fn(test_pred, test_y)\n        total_test_loss += test_loss.item()\n\n    avg_test_loss = total_test_loss / len(test_loader)\n    test_hist.append(avg_test_loss)\n\n    print(f'Epoch {epoch + 1:2d}/{num_epochs} - Training Loss: {avg_loss:.4f}, Test Loss: {avg_test_loss:.4f}')\n\n  x = np.linspace(1, num_epochs, num_epochs)\n  plt.plot(x, train_hist, scalex=True, label=\"Training loss\")\n  plt.plot(x, test_hist, label=\"Test loss\")\n  plt.legend()\n\ntrain(model, train_loader, test_loader)\n\n# Epoch  1/10 - Training Loss: 0.1736, Test Loss: 0.4874\n# Epoch  2/10 - Training Loss: 0.0388, Test Loss: 0.0877\n# Epoch  3/10 - Training Loss: 0.0078, Test Loss: 0.0072\n# Epoch  4/10 - Training Loss: 0.0031, Test Loss: 0.0097\n# Epoch  5/10 - Training Loss: 0.0023, Test Loss: 0.0123\n# Epoch  6/10 - Training Loss: 0.0020, Test Loss: 0.0188\n# Epoch  7/10 - Training Loss: 0.0020, Test Loss: 0.0111\n# Epoch  8/10 - Training Loss: 0.0021, Test Loss: 0.0165\n# Epoch  9/10 - Training Loss: 0.0018, Test Loss: 0.0225\n# Epoch 10/10 - Training Loss: 0.0017, Test Loss: 0.0177",
       "cell": 23,
@@ -689,6 +629,81 @@
       "source": "def evaluate(model, data_loader, loss_history):\n    \"\"\"test_loader로 1회 평가하고 (loss, acc)를 반환합니다.\"\"\"\n    model.eval()\n\n    total_samples = len(data_loader.dataset)\n    correct_samples = 0\n    total_loss = 0.0\n\n    with torch.no_grad():\n        for data, target in data_loader:\n            data = data.to(device)\n            target = target.to(device)\n\n            output = F.log_softmax(model(data), dim=1)\n            loss = F.nll_loss(output, target, reduction='sum')\n            _, pred = torch.max(output, dim=1)\n\n            total_loss += float(loss.item())\n            correct_samples += int(pred.eq(target).sum().item())\n\n    avg_loss = total_loss / total_samples\n    acc = correct_samples / total_samples\n\n    loss_history.append(avg_loss)\n    print(\n        f\"Average test loss: {avg_loss:.4f}  \"\n        f\"Accuracy: {correct_samples:5d}/{total_samples:5d} ({acc*100:.2f}%)\\n\"\n    )\n    return avg_loss, acc",
       "cell": 19,
       "answerSource": "02_ViT_CIFAR10.ipynb"
+    },
+    "d1_llama-cell-15": {
+      "source": "index = VectorStoreIndex.from_documents(documents)",
+      "cell": 15,
+      "answerSource": "1. Llama_index.ipynb"
+    },
+    "d1_llama-cell-49": {
+      "source": "retriever = index.as_retriever()\n\nret_passages = retriever.retrieve(\"Who is the author?\")\n\nfor i in range(len(ret_passages)):\n  print(\"###Retrieved Passage\\n\", ret_passages[i].text)\n  print(\"\\n\\n\\n\")",
+      "cell": 49,
+      "answerSource": "1. Llama_index.ipynb"
+    },
+    "d2_task1-cell-16": {
+      "source": "from llama_index.core.schema import Document\nfrom llama_index.core.node_parser import SentenceSplitter\nfrom llama_index.core import VectorStoreIndex, Settings\nfrom llama_index.embeddings.openai import OpenAIEmbedding\n\nSettings.embed_model = OpenAIEmbedding(model=\"text-embedding-3-small\")\n\nclass LlamaIndexRetriever:\n  def __init__(self):\n      self.parser = SentenceSplitter(chunk_size=512, chunk_overlap=0)\n\n  def retrieve(self, query, search_results, topk):\n      documents = []\n\n      for document in parse_htmls(search_results):\n        if not document:\n            # If no text is extracted, add an empty string as a placeholder.\n            documents.append(Document(text=\"\"))\n        else:\n            documents.append(Document(text=document))\n\n      # Split documents into chunks & Create vector index\n      base_index = VectorStoreIndex.from_documents(documents = documents, transformations=[self.parser])\n\n      # Execute query\n      base_retriever = base_index.as_retriever(similarity_top_k=topk)\n\n      retrieved_nodes = base_retriever.retrieve(query)\n\n      retrieved_results = [retrieved_node.node.get_content().strip() for retrieved_node in retrieved_nodes]\n\n      return retrieved_results",
+      "cell": 16,
+      "answerSource": "2. Task_1.ipynb"
+    },
+    "d2_task1-cell-23": {
+      "source": "def prompt_generator(query, top_k_chunks, system_prompt):\n    user_message = \"\"\n    references = \"\"\n\n    if len(top_k_chunks) > 0:\n        references += \"# References \\n\"\n        # Format the top sentences as references in the model's prompt template.\n        for chunk_id, chunk in enumerate(top_k_chunks):\n            references += f\"- {chunk.strip()}\\n\"\n\n    references = references[:MAX_CONTEXT_REFERENCES_LENGTH]\n    # Limit the length of references to fit the model's input size.\n\n    user_message += f\"{references}\\n------\\n\\n\"\n    user_message += f\"Using only the references listed above, answer the following question: \\n\"\n    user_message += f\"Question: {query}\\n\"\n\n    llm_input = [\n      {\"role\": \"system\", \"content\": system_prompt},\n      {\"role\": \"user\", \"content\": user_message},\n    ]\n\n    return llm_input",
+      "cell": 23,
+      "answerSource": "2. Task_1.ipynb"
+    },
+    "d2_task1-cell-25": {
+      "source": "from openai import OpenAI\n\noai_client = OpenAI()\n\nclass Reader:\n  def __init__(self):\n\n    self.system_prompt = \"\"\"\n    You are provided with a question and various references.\n    Your task is to answer the question succinctly, using the fewest words possible.\n    If the references do not contain the necessary information to answer the question, respond with 'I don't know'.\n    There is no need to explain the reasoning behind your answers.\n    \"\"\"\n\n  def generate_response(self, query: str, top_k_chunks: list) -> str:\n      \"\"\"\n      Generate answer from context.\n      \"\"\"\n      llm_input = self.prompt_generator(query, top_k_chunks)\n      completion = oai_client.chat.completions.create(\n      model=\"gpt-3.5-turbo\",\n      temperature=0,\n      messages=\n      llm_input\n      ).choices[0].message.content\n      return completion\n\n  def prompt_generator(self, query, top_k_chunks):\n      user_message = \"\"\n      references = \"\"\n\n      if len(top_k_chunks) > 0:\n          references += \"# References \\n\"\n          # Format the top sentences as references in the model's prompt template.\n          for chunk_id, chunk in enumerate(top_k_chunks):\n              references += f\"- {chunk.strip()}\\n\"\n\n      references = references[:MAX_CONTEXT_REFERENCES_LENGTH]\n      # Limit the length of references to fit the model's input size.\n\n      user_message += f\"{references}\\n------\\n\\n\"\n      user_message\n      user_message += f\"Using only the references listed above, answer the following question: \\n\"\n      user_message += f\"Question: {query}\\n\"\n\n      llm_input = [\n        {\"role\": \"system\", \"content\": self.system_prompt},\n        {\"role\": \"user\", \"content\": user_message},\n      ]\n\n      return llm_input",
+      "cell": 25,
+      "answerSource": "2. Task_1.ipynb"
+    },
+    "d2_task2-cell-25": {
+      "source": "class KGQueryEngine:\n    def query(self, query):\n        generated_query, is_finance = self.generate_query(query)\n\n        if is_finance:\n            kg_results = self.get_finance_kg_results(generated_query)\n        else:\n            kg_results = \"\"\n\n        return kg_results, is_finance\n\n    def generate_query(self, query):\n        llm_input = prompt_generator(query)\n        completion = oai_client.chat.completions.create(\n        model=\"gpt-3.5-turbo\",\n        temperature=0,\n        messages=\n        llm_input\n        ).choices[0].message.content\n\n        try:\n            completion = json.loads(completion)\n        except:\n            completion = extract_json_objects(completion)\n\n        if \"domain\" in completion.keys():\n            domain = completion[\"domain\"]\n            is_finance = domain == \"finance\"\n        else:\n            is_finance = False\n\n        return completion, is_finance\n\n    def get_finance_kg_results(self, generated_query):\n        formatted_time_list = []\n        if 'datetime' in generated_query:\n            datetime_list = generated_query['datetime'].split(' - ')\n            for datetime in datetime_list:\n                formatted_time_list.append(convert_to_standard_format(datetime.strip()))\n\n\n        kg_results = []\n        res = \"\"\n        if \"market_identifier\" in generated_query.keys() and generated_query[\"market_identifier\"] is not None:\n            if isinstance(generated_query[\"market_identifier\"], str):\n                company_names = generated_query[\"market_identifier\"].split(\",\")\n            else:\n                company_names = generated_query[\"market_identifier\"]\n\n            for company_name in company_names:\n                try:\n                    res = api.finance_get_company_name(company_name)[\"result\"]\n\n                    if res == []:\n                        ticker_name = company_name.upper()\n                    else:\n                        ticker_name = api.finance_get_ticker_by_name(res[0])[\"result\"]\n\n                    if generated_query['metric'].lower().strip() == 'price':\n                        response = api.finance_get_price_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'dividend':\n                        response = api.finance_get_dividends_history(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'p/e ratio':\n                        response = api.finance_get_pe_ratio(ticker_name)['result']\n                    elif generated_query['metric'].lower().strip() == 'eps':\n                        response = api.finance_get_eps(ticker_name)[\"result\"]\n                    elif generated_query['metric'].lower().strip() == 'marketcap' :\n                        response = api.finance_get_market_capitalization(ticker_name)['result']\n                    else:\n                        response = api.finance_get_info(ticker_name)['result']\n                        metric_value = get_metric_from_response(response, generated_query['metric'])\n                        if metric_value is not None:\n                            response = metric_value\n\n                    try:\n                        for formatted_time in formatted_time_list:\n                            if formatted_time in response:\n                                filtered_response = copy.deepcopy(response[formatted_time])\n                            elif add_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[add_one_day(formatted_time)])\n                            elif subtract_one_day(formatted_time) in response:\n                                filtered_response = copy.deepcopy(response[subtract_one_day(formatted_time)])\n                            else:\n                                filtered_response = copy.deepcopy(response)\n                            kg_results.append({company_name + \" \" + generated_query[\"metric\"]: filtered_response, 'time': formatted_time})\n                    except:\n                        kg_results.append({company_name + \" \" + generated_query[\"metric\"]: response})\n\n                except Exception as e:\n                    print(\"Fail to parse the generated query\")\n                    pass\n\n        kg_results = \"<DOC>\\n\".join([str(res) for res in kg_results]) if len(kg_results) > 0 else \"\"\n        return  kg_results\n\n    def prompt_generator(self, query):\n        user_message = \"\"\n        user_message += f\"Query: {query}\\n\"\n\n        llm_input = [\n          {\"role\": \"system\", \"content\": entity_extract_template},\n          {\"role\": \"user\", \"content\": user_message},\n        ]\n\n        return llm_input",
+      "cell": 25,
+      "answerSource": "3. Task_2.ipynb"
+    },
+    "d2_task2-cell-31": {
+      "source": "class RAGWithKG:\n    def __init__(self):\n        self.kg_query_engine = KGQueryEngine()\n        self.reader = Reader()\n\n    def inference(self, query):\n        # 1. retrieve relevant kg results\n        kg_results, is_finance = self.kg_query_engine.query(query)\n\n        # 2. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, [kg_results])\n\n        return answer, kg_results",
+      "cell": 31,
+      "answerSource": "3. Task_2.ipynb"
+    },
+    "d2_task2-cell-36": {
+      "source": "class RAGWithSRKG:\n    def __init__(self):\n        self.retriever = LlamaIndexRetriever()\n        self.kg_query_engine = KGQueryEngine()\n        self.reader = Reader()\n\n    def inference(self, query, search_results, topk):\n        # 1. retrieve relevant chunks\n        retrieved_results = self.retriever.retrieve(query, search_results, topk)\n\n        # 2. retrieve relevant kg results\n        kg_results, is_finance = self.kg_query_engine.query(query)\n\n        # combined_results = [kg_results]\n        # combined_results.extend(retrieved_results)\n        if is_finance:\n          combined_results = [kg_results]\n        else:\n          combined_results = retrieved_results\n\n        # 3. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, combined_results)\n\n        return answer, combined_results",
+      "cell": 36,
+      "answerSource": "3. Task_2.ipynb"
+    },
+    "d2_mcp-cell-37": {
+      "source": "from llama_index.tools.mcp import BasicMCPClient, McpToolSpec\nfrom llama_index.core.agent.workflow import FunctionAgent, ToolCallResult, ToolCall\nfrom llama_index.core.workflow import Context\n\nimport dotenv",
+      "cell": 37,
+      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
+    },
+    "d2_mcp-cell-42": {
+      "source": "mcp_client = BasicMCPClient(external_mcp_server)\nmcp_tool = McpToolSpec(client=mcp_client)\n\ntools = await mcp_tool.to_tool_list_async()\nprint(\"\\n=== Available Tools ===\\n\")\nfor tool in tools:\n    print(f\"🔧 Name       : {tool.metadata.name}\")\n    print(f\"   Description: {tool.metadata.description}\\n\")",
+      "cell": 42,
+      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
+    },
+    "d2_mcp-cell-46": {
+      "source": "from llama_index.llms.openai import OpenAI\n\nclass KGQueryEngineWithMCP:\n    def __init__(self, mcp_tool_spec: McpToolSpec, model: str, llm = None):\n        self.llm = llm or OpenAI(model=model, temperature=0)\n        self.mcp_tool_spec = mcp_tool_spec\n        self.agent: Optional[FunctionAgent] = None\n        self.agent_context: Optional[Context] = None\n\n    async def init_agent(self):\n        tools = await self.mcp_tool_spec.to_tool_list_async()\n        for tool in tools:\n            if len(tool.metadata.description) > 1000:\n                tool.metadata.description = tool.metadata.description[:1000] + \"...\"\n        self.agent = FunctionAgent(\n            name=\"Agent\",\n            description=\"An agent that can work with Our Knowledge Graph api.\",\n            tools=tools,\n            llm=self.llm,\n            system_prompt=SYSTEM_PROMPT,\n        )\n        self.agent_context = Context(self.agent)\n\n    async def query(self, question: str, verbose: bool = False) -> str:\n        if self.agent is None or self.agent_context is None:\n            raise RuntimeError(\"Agent not initialized. Call `await init_agent()` first.\")\n\n        handler = self.agent.run(question, ctx=self.agent_context)\n        async for event in handler.stream_events():\n            if verbose and type(event) == ToolCall:\n                print(f\"Calling tool {event.tool_name} with kwargs {event.tool_kwargs}\")\n            elif verbose and type(event) == ToolCallResult:\n                print(f\"Tool {event.tool_name} returned {event.tool_output}\")\n\n        response = await handler\n        return str(response)\n\nkg_engine = KGQueryEngineWithMCP(mcp_tool, model='gpt-3.5-turbo')\nawait kg_engine.init_agent()",
+      "cell": 46,
+      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
+    },
+    "d2_mcp-cell-55": {
+      "source": "from llama_index.llms.openai import OpenAI\n\nclass RAGwithMCP:\n    def __init__(self, mcp_tool):\n        self.mcp_application = KGQueryEngineWithMCP(mcp_tool, model='gpt-4o-mini')\n        self.reader = Reader()\n\n    async def retrieve(self, query: str, query_time: str, search_results: list, topk: int):\n        await self.mcp_application.init_agent()\n\n        full_query = f\"\"\"Query: {query} When inferring time information, rely solely on the query time. Do not infer the time scope from the query itself.\nQuery time: {query_time}\"\"\"\n\n        mcp_result = await self.mcp_application.query(full_query, verbose=False)\n        return mcp_result\n\n    def generate_response(self, query: str, query_time: str, retrieved_results: str):\n        answer = self.reader.generate_response(query, query_time, retrieved_results)\n        return answer\n\n    async def inference(self, query: str, search_results: list, query_time: str, topk: int):\n        retrieved_results = await self.retrieve(query, query_time, search_results, topk)\n        answer = self.generate_response(query, query_time, retrieved_results)\n        return {\n            \"retrieved_results\": retrieved_results,\n            \"answer\": answer\n        }\n\nrag_mcp = RAGwithMCP(mcp_tool)",
+      "cell": 55,
+      "answerSource": "4_RAG_framework_evaluation_with_MCP.ipynb"
+    },
+    "d1_llama-cell-12": {
+      "source": "documents = SimpleDirectoryReader(\"data\").load_data()",
+      "cell": 12,
+      "answerSource": "1. Llama_index.ipynb"
+    },
+    "d1_llama-cell-21": {
+      "source": "from llama_index.core.node_parser import SentenceSplitter\n\nparser = SentenceSplitter(chunk_size=1024, chunk_overlap=200)\n# you can change chunk_size, chunk_overlap\n\nnodes = parser.get_nodes_from_documents(documents)\n\nprint(len(nodes))",
+      "cell": 21,
+      "answerSource": "1. Llama_index.ipynb"
+    },
+    "d2_task1-cell-29": {
+      "source": "class RAG:\n    def __init__(self):\n        self.retriever = LlamaIndexRetriever()\n        self.reader = Reader()\n\n    def inference(self, query, search_results, topk):\n        # 1. retrieve relevant chunks\n        retrieved_results = self.retriever.retrieve(query, search_results, topk)\n\n        # 2. answer the question based on the retrieved chunks\n        answer = self.reader.generate_response(query, retrieved_results)\n\n        return answer, retrieved_results",
+      "cell": 29,
+      "answerSource": "2. Task_1.ipynb"
     }
   },
   "questions": [
@@ -3952,6 +3967,146 @@
       "answer": "correct_samples / total_samples",
       "occurrence": 0,
       "sourceId": "vision-vit-cell-19",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-019",
+      "subject": "RAG",
+      "chapterId": "rag-d1-01",
+      "chapterNumber": "D1-01",
+      "chapterTitle": "LlamaIndex Basics",
+      "file": "1. Llama_index.ipynb",
+      "topic": "문서 로딩",
+      "prompt": "data 폴더에서 인덱싱할 Document 목록을 불러오세요.",
+      "answer": "SimpleDirectoryReader(\"data\").load_data()",
+      "occurrence": 0,
+      "sourceId": "d1_llama-cell-12",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-020",
+      "subject": "RAG",
+      "chapterId": "rag-d1-01",
+      "chapterNumber": "D1-01",
+      "chapterTitle": "LlamaIndex Basics",
+      "file": "1. Llama_index.ipynb",
+      "topic": "검색 단위 분할",
+      "prompt": "강의 설정대로 chunk 크기와 겹침을 지정하는 문장 분할기를 만드세요.",
+      "answer": "SentenceSplitter(chunk_size=1024, chunk_overlap=200)",
+      "occurrence": 0,
+      "sourceId": "d1_llama-cell-21",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-021",
+      "subject": "RAG",
+      "chapterId": "rag-d1-01",
+      "chapterNumber": "D1-01",
+      "chapterTitle": "LlamaIndex Basics",
+      "file": "1. Llama_index.ipynb",
+      "topic": "Document에서 Node",
+      "prompt": "분할기를 적용해 Document 목록을 검색 단위인 Node 목록으로 바꾸세요.",
+      "answer": "parser.get_nodes_from_documents(documents)",
+      "occurrence": 0,
+      "sourceId": "d1_llama-cell-21",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-022",
+      "subject": "RAG",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "임베딩 모델 설정",
+      "prompt": "벡터 검색에 사용할 LlamaIndex의 기본 임베딩 모델을 강의 설정으로 선언하세요.",
+      "answer": "OpenAIEmbedding(model=\"text-embedding-3-small\")",
+      "occurrence": 0,
+      "sourceId": "d2_task1-cell-16",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-023",
+      "subject": "RAG",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "검색 본문 추출",
+      "prompt": "검색된 각 Node의 본문을 꺼내 앞뒤 공백을 제거한 문자열 목록으로 만드세요.",
+      "answer": "[retrieved_node.node.get_content().strip() for retrieved_node in retrieved_nodes]",
+      "occurrence": 0,
+      "sourceId": "d2_task1-cell-16",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-024",
+      "subject": "RAG",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "질문과 근거 메시지",
+      "prompt": "검색 근거와 질문으로 완성한 user_message를 Chat Completion의 사용자 메시지로 넣으세요.",
+      "answer": "{\"role\": \"user\", \"content\": user_message}",
+      "occurrence": 0,
+      "sourceId": "d2_task1-cell-23",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-025",
+      "subject": "RAG",
+      "chapterId": "rag-d2-02",
+      "chapterNumber": "D2-02",
+      "chapterTitle": "Search Retrieval",
+      "file": "2. Task_1.ipynb",
+      "topic": "검색에서 생성으로",
+      "prompt": "질문과 검색된 chunk 목록을 Reader에 전달해 최종 응답을 생성하세요.",
+      "answer": "self.reader.generate_response(query, retrieved_results)",
+      "occurrence": 0,
+      "sourceId": "d2_task1-cell-29",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-026",
+      "subject": "RAG",
+      "chapterId": "rag-d2-04",
+      "chapterNumber": "D2-04",
+      "chapterTitle": "MCP RAG",
+      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
+      "topic": "MCP 도구 어댑터",
+      "prompt": "연결한 MCP client를 LlamaIndex 도구 명세로 감싸세요.",
+      "answer": "McpToolSpec(client=mcp_client)",
+      "occurrence": 0,
+      "sourceId": "d2_mcp-cell-42",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-027",
+      "subject": "RAG",
+      "chapterId": "rag-d2-04",
+      "chapterNumber": "D2-04",
+      "chapterTitle": "MCP RAG",
+      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
+      "topic": "Agent 실행 문맥",
+      "prompt": "생성한 FunctionAgent에 연결할 workflow context를 만드세요.",
+      "answer": "Context(self.agent)",
+      "occurrence": 0,
+      "sourceId": "d2_mcp-cell-46",
+      "isSourceBlank": false
+    },
+    {
+      "id": "rag-028",
+      "subject": "RAG",
+      "chapterId": "rag-d2-04",
+      "chapterNumber": "D2-04",
+      "chapterTitle": "MCP RAG",
+      "file": "4_RAG_framework_evaluation_with_MCP.ipynb",
+      "topic": "MCP Agent 실행",
+      "prompt": "질문과 유지 중인 context를 전달해 Agent 실행 handler를 생성하세요.",
+      "answer": "self.agent.run(question, ctx=self.agent_context)",
+      "occurrence": 0,
+      "sourceId": "d2_mcp-cell-46",
       "isSourceBlank": false
     }
   ]

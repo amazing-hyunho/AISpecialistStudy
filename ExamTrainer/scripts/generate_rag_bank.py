@@ -168,8 +168,20 @@ SPECS = [
     if (str(spec["sourceKey"]), int(spec["cell"]), str(spec["answer"])) in FOCUSED_SPECS
 ]
 
-if len(SPECS) > 20:
-    raise ValueError("Focused RAG bank must stay at 20 questions or fewer.")
+# Append targeted coverage gaps; preserve the 18 existing question IDs.
+add("rag-d1-01", "d1_llama", 12, "문서 로딩", "data 폴더에서 인덱싱할 Document 목록을 불러오세요.", 'SimpleDirectoryReader("data").load_data()')
+add("rag-d1-01", "d1_llama", 21, "검색 단위 분할", "강의 설정대로 chunk 크기와 겹침을 지정하는 문장 분할기를 만드세요.", "SentenceSplitter(chunk_size=1024, chunk_overlap=200)")
+add("rag-d1-01", "d1_llama", 21, "Document에서 Node", "분할기를 적용해 Document 목록을 검색 단위인 Node 목록으로 바꾸세요.", "parser.get_nodes_from_documents(documents)")
+add("rag-d2-02", "d2_task1", 16, "임베딩 모델 설정", "벡터 검색에 사용할 LlamaIndex의 기본 임베딩 모델을 강의 설정으로 선언하세요.", 'OpenAIEmbedding(model="text-embedding-3-small")')
+add("rag-d2-02", "d2_task1", 16, "검색 본문 추출", "검색된 각 Node의 본문을 꺼내 앞뒤 공백을 제거한 문자열 목록으로 만드세요.", "[retrieved_node.node.get_content().strip() for retrieved_node in retrieved_nodes]")
+add("rag-d2-02", "d2_task1", 23, "질문과 근거 메시지", "검색 근거와 질문으로 완성한 user_message를 Chat Completion의 사용자 메시지로 넣으세요.", '{"role": "user", "content": user_message}')
+add("rag-d2-02", "d2_task1", 29, "검색에서 생성으로", "질문과 검색된 chunk 목록을 Reader에 전달해 최종 응답을 생성하세요.", "self.reader.generate_response(query, retrieved_results)")
+add("rag-d2-04", "d2_mcp", 42, "MCP 도구 어댑터", "연결한 MCP client를 LlamaIndex 도구 명세로 감싸세요.", "McpToolSpec(client=mcp_client)")
+add("rag-d2-04", "d2_mcp", 46, "Agent 실행 문맥", "생성한 FunctionAgent에 연결할 workflow context를 만드세요.", "Context(self.agent)")
+add("rag-d2-04", "d2_mcp", 46, "MCP Agent 실행", "질문과 유지 중인 context를 전달해 Agent 실행 handler를 생성하세요.", "self.agent.run(question, ctx=self.agent_context)")
+
+if len(SPECS) > 28:
+    raise ValueError("Reviewed RAG scope is capped at 28 questions; review coverage before expanding.")
 
 
 def read_cell(source_key: str, cell_index: int) -> tuple[str, str]:
@@ -238,10 +250,14 @@ def build() -> None:
         chapter["questionCount"] = sum(question["chapterId"] == chapter["id"] for question in rag_questions)
     active_chapters = [chapter for chapter in CHAPTERS if chapter["questionCount"] > 0]
 
+    updated_chapters = {chapter["id"]: chapter for chapter in chapters + active_chapters}
+    chapter_order = list(dict.fromkeys([chapter["id"] for chapter in bank["chapters"]] + list(updated_chapters)))
+    updated_questions = {question["id"]: question for question in questions + rag_questions}
+    question_order = list(dict.fromkeys([question["id"] for question in bank["questions"]] + list(updated_questions)))
     OUTPUT.write_text(json.dumps({
-        "chapters": chapters + active_chapters,
+        "chapters": [updated_chapters[key] for key in chapter_order if key in updated_chapters],
         "cells": cells,
-        "questions": questions + rag_questions,
+        "questions": [updated_questions[key] for key in question_order if key in updated_questions],
     }, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Generated {len(rag_questions)} focused RAG questions across {len(active_chapters)} notebooks -> {OUTPUT}")
 
