@@ -341,6 +341,7 @@ def build() -> None:
         if spec["sourceKey"] == "dpo":
             source_id = "dpo-completions"
         cells[source_id] = {
+            **({"sourceKind": "reconstructed"} if source_id == "dpo-completions" else {}),
             "source": source,
             "cell": cell_index,
             "answerSource": answer_source,

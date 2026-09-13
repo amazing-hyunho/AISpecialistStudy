@@ -261,6 +261,7 @@
       "answerSource": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb"
     },
     "dpo-completions": {
+      "sourceKind": "reconstructed",
       "source": "prompt = format_input(entry)\nrejected_response = entry[\"rejected\"]\nchosen_response = entry[\"chosen\"]\nprompt_tokens = tokenizer.encode(prompt)\n\nchosen_full_tokens = tokenizer.encode(\n    f\"{prompt}\\n\\n### Response:\\n{chosen_response}\"\n)\nrejected_full_tokens = tokenizer.encode(\n    f\"{prompt}\\n\\n### Response:\\n{rejected_response}\"\n)\n\nlabels = labels[:, 1:].clone()\nlogits = logits[:, :-1, :]\nlog_probs = F.log_softmax(logits, dim=-1)\nselected_log_probs = torch.gather(\n    input=log_probs,\n    dim=-1,\n    index=labels.unsqueeze(-1)\n).squeeze(-1)\n\nmodel_logratios = model_chosen_logprobs - model_rejected_logprobs\nreference_logratios = reference_chosen_logprobs - reference_rejected_logprobs\nlogits = model_logratios - reference_logratios\nlosses = -F.logsigmoid(beta * logits)",
       "cell": 0,
       "answerSource": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"

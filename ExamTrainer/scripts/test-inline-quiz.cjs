@@ -29,11 +29,14 @@ function load(relative) {
   const code = ts.transpileModule(fs.readFileSync(path.join(root, relative), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true, target: ts.ScriptTarget.ES2020 },
   }).outputText;
-  const context = { exports: {}, requestAnimationFrame: fn => fn(), require(name) {
+  const context = { exports: {}, crypto: require('node:crypto').webcrypto, requestAnimationFrame: fn => fn(), require(name) {
     if (name === 'react') return hooks;
     if (name === 'next/link') return () => null;
     if (name === './question-bank.json') return bank;
     if (name === './explanations') return load('app/explanations.ts');
+    if (name === './grading') return load('app/grading.ts');
+    if (name === './mock-selection') return load('app/mock-selection.ts');
+    if (name === './mock-exam') return load('app/mock-exam.tsx');
     return require(name);
   } };
   vm.runInNewContext(code, context);
@@ -90,3 +93,55 @@ tree = render();
 assert.equal(inputs(tree)[0].props['aria-current'], 'step');
 assert.equal(inputs(tree)[1].props.value, 'line1\nline2');
 console.log('PASS: inline inputs, exam placeholders, full cells, whitespace grading, Ctrl+Enter, multiline and retained drafts');
+
+const { drawExamCells } = load('app/mock-selection.ts');
+const eligible = bank.questions.filter(q => bank.cells[q.sourceId].sourceKind !== 'reconstructed');
+const selections = new Set();
+for (let i = 0; i < 500; i++) {
+  const ids = drawExamCells(eligible);
+  assert(!ids.includes('dpo-completions'));
+  assert.equal(ids.length, 10);
+  assert.equal(new Set(ids).size, 10);
+  assert.equal(new Set(bank.questions.filter(q => ids.includes(q.sourceId)).map(q => q.subject)).size, 5);
+  selections.add(ids.join('|'));
+}
+assert(selections.size > 1);
+const { normalized } = load('app/grading.ts');
+assert.equal(normalized(' a + b '), normalized('a+b'));
+assert.notEqual(normalized('a b'), normalized('ab'));
+assert.notEqual(normalized('a >= b'), normalized('a > b'));
+assert.notEqual(normalized('"a b"'), normalized('"ab"'));
+const Mock = load('app/mock-exam.tsx').default;
+slots.length = 0;
+let saved = null;
+const ids = drawExamCells(eligible);
+const props = { cellIds: ids, onHome() {}, onRetry() {}, onComplete(correct, wrong) { saved = { correct, wrong }; } };
+function renderMock() { cursor = 0; return Mock(props); }
+tree = renderMock();
+const examQuestions = bank.questions.filter(q => ids.includes(q.sourceId));
+assert.equal(byClass(tree, 'chapter-code').length, 10);
+assert.equal(inputs(tree).length, examQuestions.length);
+assert.equal(byClass(tree, 'inline-feedback').length, 0);
+const firstGroup = byClass(tree, 'inline-answer-group')[0];
+const firstQ = bank.questions.find(q => q.id === firstGroup.key);
+inputs(firstGroup)[0].props.onChange({ target: { value: firstQ.answer } });
+tree = renderMock();
+byClass(tree, 'quiz-actions')[0].props.children[1].props.onClick();
+tree = renderMock();
+assert.equal(saved.correct.length, 1);
+assert.equal(saved.wrong.length, examQuestions.length - 1);
+assert.equal(byClass(tree, 'inline-feedback').length, examQuestions.length);
+assert(inputs(tree).every(n => n.props.readOnly));
+slots.length = 0;
+tree = renderMock();
+assert(inputs(tree).every(n => n.props.value === ''));
+for (const group of byClass(tree, 'inline-answer-group')) {
+  inputs(group)[0].props.onChange({ target: { value: bank.questions.find(q => q.id === group.key).answer } });
+}
+tree = renderMock();
+byClass(tree, 'quiz-actions')[0].props.children[1].props.onClick();
+tree = renderMock();
+assert.equal(saved.correct.length, examQuestions.length);
+assert.equal(saved.wrong.length, 0);
+assert(byClass(tree, 'inline-feedback').every(n => n.props.className.includes('correct')));
+console.log('PASS: 500 random exams cover all subjects with 10 unique cells; delayed grading, blank answers, score callback, read-only review and fresh drafts');

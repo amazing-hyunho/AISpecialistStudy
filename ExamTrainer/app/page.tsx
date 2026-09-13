@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import MockExam from './mock-exam';
+import { drawExamCells } from './mock-selection';
+import { normalized } from './grading';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
 
@@ -15,6 +18,7 @@ type Chapter = {
 };
 
 type Cell = {
+  sourceKind?: string;
   source: string;
   cell: number;
   answerSource: string;
@@ -36,7 +40,7 @@ type QuestionRecord = {
 };
 
 type Question = QuestionRecord & Cell & { explanation: QuestionExplanation };
-type Screen = 'home' | 'chapters' | 'quiz' | 'wrong';
+type Screen = 'home' | 'chapters' | 'quiz' | 'wrong' | 'mock';
 type ResultState = 'idle' | 'correct' | 'wrong';
 
 const bank = questionBankData as {
@@ -128,11 +132,6 @@ const subjects = [
   },
 ];
 
-function normalized(value: string) {
-  // Ignore layout while preserving strings, identifiers and compound operators.
-  return JSON.stringify(value.match(/"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[\p{L}_][\p{L}\p{N}_]*|\d+(?:\.\d+)?|\*\*|\/\/|==|!=|<=|>=|:=|->|\+=|-=|\*=|\/=|\S/gu) ?? []);
-}
-
 export default function Home() {
   const answerRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -144,6 +143,14 @@ export default function Home() {
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [examCells, setExamCells] = useState<string[]>([]);
+  const [examRound, setExamRound] = useState(0);
+
+  function startExam() {
+    setExamCells(drawExamCells(questions.filter(q => q.sourceKind !== 'reconstructed')));
+    setExamRound(round => round + 1);
+    setScreen('mock');
+  }
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -269,6 +276,11 @@ export default function Home() {
     nextQuestion();
   }
 
+  if (screen === 'mock') return <MockExam key={examRound} cellIds={examCells} onHome={() => setScreen('home')} onRetry={startExam} onComplete={(correct, wrong) => {
+    setSolvedIds(ids => [...new Set([...ids, ...correct])]);
+    setWrongIds(ids => [...new Set([...ids, ...wrong])]);
+  }} />;
+
   if (screen === 'chapters') {
     const subjectChapters = bank.chapters.filter((chapter) => chapter.subject === selectedSubject);
     const subjectQuestions = questions.filter((question) => question.subject === selectedSubject);
@@ -340,7 +352,7 @@ export default function Home() {
             <div className="source-meta">
               <span>출제 노트북</span>
               <strong>{current.file}</strong>
-              <span>Notebook Cell {current.cell}</span>
+              <span>{current.sourceKind === 'reconstructed' ? '재구성 예제 · 원본 한 셀이 아닙니다' : `Notebook Cell ${current.cell}`}</span>
               <strong>현재 셀 {currentCellPosition} / {activeCellIds.length}</strong>
             </div>
             <button className="text-button" onClick={() => setScreen(screen === 'wrong' ? 'home' : 'chapters')}>
@@ -433,7 +445,7 @@ export default function Home() {
               }
               pieces.push(<span key="tail">{source.slice(cursor)}</span>);
               return <section className="code-window chapter-code" key={sourceId} aria-label={`코드 셀 ${bank.cells[sourceId].cell}`}>
-                <div className="code-cell-title">Cell {bank.cells[sourceId].cell} · 빈칸 {cellQuestions.length}개</div>
+                <div className="code-cell-title">{bank.cells[sourceId].sourceKind === 'reconstructed' ? '재구성 예제 · 실습 힌트를 바탕으로 여러 구간을 합친 코드 (모의고사 제외)' : `Cell ${bank.cells[sourceId].cell}`} · 빈칸 {cellQuestions.length}개</div>
                 <pre><code>{pieces}</code></pre>
               </section>;
             })}
@@ -461,6 +473,7 @@ export default function Home() {
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
           <p>LLM·RAG·Data·Vision·On-device 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
+            <button className="primary-button large mock-start" onClick={startExam}>랜덤 모의고사 · 10셀 →</button>
             <Link className="primary-button large" href="/handbook/">읽는 암기 핸드북 →</Link>
             <button className="primary-button large" onClick={() => openSubject('On-device')}>
               On-device 챕터 선택 <span>→</span>

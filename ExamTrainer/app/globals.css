@@ -234,6 +234,10 @@ footer p { margin: 0; }
 .blank-picker button[aria-current=step] { background: #20694f; color: white; }
 .chapter-code { margin: 12px 0; }
 .code-cell-title { padding: 14px 20px; border-bottom: 1px solid #394c3e; font-size: 12px; }
+.mock-summary { margin: 24px 0; padding: 24px; background: #edf2e9; border-radius: 16px; scroll-margin-top: 20px; }
+.mock-summary p { font-size: 14px; line-height: 1.7; }
+.mock-exam .chapter-code { scroll-margin-top: 20px; }
+.mock-exam .blank-picker a { color: #20694f; padding: 8px; }
 .inline-code-input { display: inline-block; vertical-align: middle; box-sizing: content-box; min-height: 1.75em; padding: 2px 7px; border: 1px solid #91cda6; border-radius: 5px; background: #243e2e; color: #fff; font: inherit; line-height: inherit; resize: both; white-space: pre; }
 .inline-code-input::placeholder { color: #d7e8db; opacity: 1; }
 .inline-code-input[aria-current=step] { border-color: #f1cc72; background: #3e3a24; }

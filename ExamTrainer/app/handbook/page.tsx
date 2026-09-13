@@ -14,7 +14,7 @@ const flows: Record<string, string> = {
   Vision: '이미지 변환 → 모델·주요 레이어 → 예측 → 정답과 비교 → 학습·평가',
   'On-device': '양자화: scale·round·zero point / 프루닝: importance·threshold·mask / 증류: teacher·student·loss',
 };
-const cells = bank.cells as Record<string, { source: string; cell: number; answerSource: string }>;
+const cells = bank.cells as Record<string, { source: string; cell: number; answerSource: string; sourceKind?: string }>;
 type Question = typeof bank.questions[number];
 function offset(q: Question) {
   let start = 0;
@@ -71,6 +71,7 @@ export default function Handbook() {
     {groups.map((g, index) => <section className="hb-cell" id={g.id} key={g.id}>
       <div className="hb-cell-heading"><h3>Cell {g.cell}</h3><span>셀 {index + 1}/{groups.length}</span></div>
       <p className="hb-meta">정답 출처: {g.answerSource}</p>
+      {g.sourceKind === 'reconstructed' && <p className="hb-memory">재구성 예제: 실습 힌트를 바탕으로 여러 작성 구간을 합친 코드이며 원본 한 셀이 아닙니다. 모의고사 추첨에서는 제외합니다.</p>}
       <p className="hb-sequence">{g.questions.map(q => q.topic).join(' → ')}</p>
       <ol className="hb-steps">{g.questions.map(q => <li key={q.id}>
         <h4>{q.isSourceBlank ? '★ ' : ''}{q.topic}</h4>
