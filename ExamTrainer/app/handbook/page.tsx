@@ -41,6 +41,7 @@ export default function Handbook() {
   return <main className="handbook">
     <header className="hb-top"><Link href="/">← 문제은행</Link><button onClick={() => window.print()}>인쇄 / PDF 저장</button></header>
     <h1>읽는 암기 핸드북</h1>
+    <p><Link href="/final-handbook/">시간이 없을 때: 시험 직전 찐 암기 핸드북 →</Link></p>
     <p className="hb-intro">이동 중에도 입력 없이 읽어보세요. 챕터의 개념과 흐름을 이해한 뒤, 셀별 코드와 암기 포인트를 읽으면 됩니다.</p>
     <nav className="hb-subjects" aria-label="핸드북 과목">
       {Object.keys(flows).map(name => <button key={name} aria-pressed={subject === name} onClick={() => {
