@@ -488,6 +488,7 @@ export default function Home() {
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
           <p>LLM·RAG·Data·Vision·On-device 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
+            <Link className="primary-button large" href="/exam-recall/">2026-09 시험 복기 →</Link>
             <Link className="primary-button large" href="/final-handbook/">시험 직전 · 찐 암기 핸드북 →</Link>
             <button className="primary-button large mock-start" onClick={startExam}>랜덤 모의고사 · 10셀 →</button>
             <Link className="primary-button large" href="/handbook/">읽는 암기 핸드북 →</Link>
@@ -566,6 +567,7 @@ function Header({
       <button className="brand-button" onClick={onHome}>
         <span className="brand-mark">A</span><span>AI Coding Recall</span>
       </button>
+      {!compact && <Link className="wrong-note-button" href="/exam-recall/">시험 복기</Link>}
       {!compact && onWrong && (
         <button className="wrong-note-button" onClick={onWrong}>
           <span>오답노트</span><strong>{wrongCount}</strong>
