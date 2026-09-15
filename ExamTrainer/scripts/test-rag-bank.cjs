@@ -7,8 +7,8 @@ const ts = require('typescript');
 const bank = require('../app/question-bank.json');
 const rag = bank.questions.filter(q => q.subject === 'RAG');
 const folders = { d1_llama: '1일차', d2_task1: '2일차', d2_task2: '2일차', d2_mcp: '2일차' };
-assert.equal(rag.length, 28);
-const context = { exports: {} };
+assert.equal(rag.length, 29);
+const context = { exports: {}, require: () => ({ default: require('../app/recall-explanations.json') }) };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../app/explanations.ts'), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText, context);
@@ -37,4 +37,4 @@ for (const sourceId of new Set(rag.map(q => q.sourceId))) {
   }).sort((a, b) => a.start - b.start);
   for (let i = 1; i < ranges.length; i++) assert(ranges[i].start >= ranges[i - 1].end, ranges[i].id);
 }
-console.log('PASS: 28 RAG questions; notebook provenance, no overlapping blanks, explanations, counts, source-star flags and sanitized source');
+console.log('PASS: 29 RAG questions; notebook provenance, no overlapping blanks, explanations, counts, source-star flags and sanitized source');

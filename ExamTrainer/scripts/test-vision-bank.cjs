@@ -6,9 +6,9 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const bank = require('../app/question-bank.json');
 const vision = bank.questions.filter(q => q.subject === 'Vision');
-assert.equal(vision.length, 34);
+assert.equal(vision.length, 37);
 assert.equal(new Set(bank.questions.map(q => q.id)).size, bank.questions.length);
-const context = { exports: {} };
+const context = { exports: {}, require: () => ({ default: require('../app/recall-explanations.json') }) };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../app/explanations.ts'), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText, context);
@@ -36,4 +36,4 @@ for (const sourceId of new Set(vision.map(q => q.sourceId))) {
   }).sort((a, b) => a.start - b.start);
   for (let i = 1; i < ranges.length; i++) assert(ranges[i].start >= ranges[i - 1].end, `Overlapping blank: ${ranges[i].id}`);
 }
-console.log('PASS: 34 Vision questions; notebook code provenance, non-overlapping blanks, explanations, counts and no source-blank stars');
+console.log('PASS: 37 Vision questions; notebook code provenance, non-overlapping blanks, explanations, counts and no source-blank stars');

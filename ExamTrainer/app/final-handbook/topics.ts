@@ -1,4 +1,4 @@
-export const finalTopics = [
+const previousTopics = [
   { title: '벡터 검색: 문서 → 인덱스 → retriever → 본문', subject: 'RAG', ids: ['rag-004', 'rag-005', 'rag-023'],
     reason: '알려준 기출의 llama-index retriever 구현에 직접 대응합니다.',
     flow: '문서 분할·인덱싱 → top-k 설정 → 검색 → Node 본문 추출 → 문자열 목록',
@@ -55,4 +55,29 @@ export const finalTopics = [
     reason: 'PDF의 학습 목적에 맞는 데이터 구성과 다음 토큰 학습을 연결합니다.',
     flow: '입력 [A,B,C] → 정답 [B,C,D] → 배치 padding → 불필요한 padding target은 ignore',
     trap: '입력·타깃 길이는 같지만 시작 위치가 다릅니다. 강의의 패딩 마스크는 첫 종료 토큰은 남기고 그 뒤의 padding을 제외합니다.' },
+];
+
+// The first five now reflect the learner's September recall, not an official paper.
+export const finalTopics = [
+  { title: '9월 복기: MHA 헤드 분리와 재결합', subject: 'LLM', ids: ['llm-089', 'llm-090', 'llm-091', 'llm-092', 'llm-093', 'llm-094'],
+    reason: '사용자 제공 2026-09 복기에 나온 헤드 분리·레이어 할당과 그 주변 shape 흐름입니다.',
+    flow: '(B,T,D) → view(B,T,H,D/H) → transpose → 헤드별 연산 → transpose → contiguous·view → (B,T,D)',
+    trap: 'view는 축을 나누고 transpose는 축을 교환합니다. 입력/출력 emb_dim을 같게 유지해야 residual이 가능합니다.' },
+  { title: '9월 복기: GPT 출력과 다음 토큰', subject: 'LLM', ids: ['llm-005', 'llm-051', 'llm-054', 'llm-095', 'llm-055', 'llm-006', 'llm-056'],
+    reason: '출력 헤드·임베딩 합산·no_grad·마지막 시점 선택·argmax·cat이 복기에 있었습니다.',
+    flow: '토큰+위치 임베딩 → 모델 → logits(B,T,V) → 마지막 시점(B,V) → argmax(B,1) → cat으로 입력 연장',
+    trap: '다음 토큰의 시간 축 길이는 1이므로 keepdim=True를 유지합니다. 서로 다른 함수의 발췌를 한 코드 블록으로 실행하지 마세요.' },
+  { title: '9월 복기: 간단한 RAG API와 메시지', subject: 'RAG', ids: ['rag-001', 'rag-029', 'rag-024'],
+    reason: '이번 복기는 복잡한 KG 로직보다 기본 인덱스·query engine·메시지 형식을 강조했습니다.',
+    flow: 'documents → VectorStoreIndex.from_documents → as_query_engine → role/content 메시지',
+    trap: 'query engine은 retriever와 같은 이름의 API가 아닙니다. user 메시지의 content에 실제 질문 문자열이 들어가야 합니다.' },
+  { title: '9월 복기: 시계열 창과 decoder 반복', subject: 'Data', ids: ['data-034', 'data-035', 'data-037', 'data-038', 'data-039', 'data-040', 'data-041'],
+    reason: '과거 입력·미래 정답 구간과 RNNRNN forward의 shape 조작이 복기에 있었습니다.',
+    flow: '과거 L개 / 다음 T개 → encoder h → 마지막 관측(B,1,F) → decoder 반복 → (B,F) 목록 → stack(B,T,F)',
+    trap: '다음 input=out은 예측 재입력입니다. squeeze(1)은 배치를 보존하고 stack(dim=1)은 새 시간 축을 만듭니다.' },
+  { title: '9월 복기: Vision 기본 구성·채널 중요도', subject: 'Vision / On-device', ids: ['vision-037', 'vision-036', 'vision-024', 'vision-035', 'ondevice-061', 'ondevice-062', 'ondevice-063'],
+    reason: 'transform 순서, 두 residual 덧셈, 채널 수와 절댓값 합산 축이 복기에 있었습니다.',
+    flow: 'crop·flip·ToTensor·Normalize / attn(x)+x → ff(x)+x / 입력 채널 축 1을 남기고 (0,2,3) 합산',
+    trap: '이 채널 프루닝은 입력 채널 기준입니다. 출력 채널 기준으로 바꾸면 합산할 축도 달라집니다.' },
+  ...previousTopics,
 ];

@@ -97,6 +97,7 @@ export default function MockExam({ cellIds, title, focus, onNext, onHome, onRetr
       pieces.push(<span key="tail">{g.source.slice(cursor)}</span>);
       return <section className="code-window chapter-code" id={`mock-${g.id}`} key={g.id}>
         <div className="code-cell-title">{index + 1}/10 · {g.questions[0].subject} · {g.questions[0].chapterTitle} · Cell {g.cell} · 빈칸 {g.questions.length}개<br />{g.answerSource}</div>
+        <details className="mock-guides" open><summary>작성 가이드 · 코드 등장 순서</summary><ol>{g.questions.map(q => <li key={q.id}>{q.prompt}</li>)}</ol></details>
         <pre><code>{pieces}</code></pre>
       </section>;
     })}

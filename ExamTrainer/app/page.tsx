@@ -516,6 +516,7 @@ export default function Home() {
       <section className="subject-section" id="fixed-exams">
         <div className="section-heading"><div><span className="eyebrow">PDF 기준 · 반복 암기</span><h2>시험 대비 고정 모의고사 10회분</h2></div></div>
         <p>각 회차 10셀, 과목별 2셀입니다. 1회부터 순서대로 풀고 틀린 회차를 다시 풀어보세요. 중요한 셀은 여러 회차에 반복됩니다.</p>
+        <p>2026-09 사용자 복기 반영: 1·2·9·10회는 Tensor shape·기본 API 구성을 우선합니다. 기존 회차 구성은 변경됐으며, 공식 기출 원문이 아닌 복기 기반 보강입니다.</p>
         <p>강의 원문에서 선별한 연습 세트이며 실제 출제를 보장하지 않습니다. 제출 후 정답·해설이 표시됩니다.</p>
         <div className="chapter-grid">{fixedExams.map((exam, index) => <button className="chapter-card fixed-exam-card" key={exam.number} onClick={() => startFixedExam(index)}>
           <div className="chapter-card-top"><span>{exam.number}회</span><strong>10셀 · {exam.blankCount}빈칸</strong></div>

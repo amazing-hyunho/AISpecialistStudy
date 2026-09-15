@@ -1,9 +1,12 @@
+import recallExplanations from './recall-explanations.json';
+
 export type QuestionExplanation = {
   why: string;
   memory: string;
 };
 
 export const questionExplanations: Record<string, QuestionExplanation> = {
+  ...recallExplanations,
   'llm-001': {
     why: '입력 토큰 다음 위치부터 같은 길이만큼 잘라야 각 입력 토큰의 정답이 바로 다음 토큰이 됩니다.',
     memory: '입력이 0부터 시작하면 정답은 1부터 시작한다.',

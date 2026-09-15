@@ -33,6 +33,7 @@ function load(relative) {
     if (name === 'react') return hooks;
     if (name === 'next/link') return () => null;
     if (name === './question-bank.json') return bank;
+    if (name === './recall-explanations.json') return require('../app/recall-explanations.json');
     if (name === './explanations') return load('app/explanations.ts');
     if (name === './grading') return load('app/grading.ts');
     if (name === './fixed-exams') return load('app/fixed-exams.ts');
@@ -112,6 +113,8 @@ assert.equal(normalized(' a + b '), normalized('a+b'));
 assert.notEqual(normalized('a b'), normalized('ab'));
 assert.notEqual(normalized('a >= b'), normalized('a > b'));
 assert.notEqual(normalized('"a b"'), normalized('"ab"'));
+assert.equal(normalized('a + ' + String.fromCharCode(92) + '\n b'), normalized('a + b'));
+assert.notEqual(normalized('"a' + String.fromCharCode(92) + '\nb"'), normalized('"ab"'));
 const Mock = load('app/mock-exam.tsx').default;
 slots.length = 0;
 let saved = null;
@@ -121,6 +124,7 @@ function renderMock() { cursor = 0; return Mock(props); }
 tree = renderMock();
 const examQuestions = bank.questions.filter(q => ids.includes(q.sourceId));
 assert.equal(byClass(tree, 'chapter-code').length, 10);
+assert.equal(byClass(tree, 'mock-guides').length, 10);
 assert.equal(inputs(tree).length, examQuestions.length);
 assert.equal(byClass(tree, 'inline-feedback').length, 0);
 const firstGroup = byClass(tree, 'inline-answer-group')[0];
