@@ -8,6 +8,7 @@ import { normalized } from './grading';
 import { fixedExams } from './fixed-exams';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
+import { studySupport } from './study-support';
 
 type Chapter = {
   id: string;
@@ -40,7 +41,8 @@ type QuestionRecord = {
   isSourceBlank: boolean;
 };
 
-type Question = QuestionRecord & Cell & { explanation: QuestionExplanation };
+type Explanation = QuestionExplanation & ReturnType<typeof studySupport>;
+type Question = QuestionRecord & Cell & { explanation: Explanation };
 type Screen = 'home' | 'chapters' | 'quiz' | 'wrong' | 'mock';
 type ResultState = 'idle' | 'correct' | 'wrong';
 
@@ -60,11 +62,13 @@ if (unknownExplanationIds.length) {
   );
 }
 
-const explanationFor = (question: QuestionRecord): QuestionExplanation =>
-  questionExplanations[question.id] ?? {
-    why: `이 문제는 강의자료에서 실제로 비워 둔 ${question.topic} 작성 구간입니다. ${question.prompt}`,
-    memory: `강의 답안의 핵심 코드는 ${question.answer} 입니다.`,
-  };
+const explanationFor = (question: QuestionRecord): Explanation => {
+  const support = studySupport(question);
+  return { ...support, ...(questionExplanations[question.id] ?? {
+    why: support.concept,
+    memory: support.flow,
+  }) };
+};
 
 const questions: Question[] = bank.questions.map((question) => ({
   ...question,
@@ -141,6 +145,7 @@ export default function Home() {
   const [chapterId, setChapterId] = useState(bank.chapters[0].id);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [result, setResult] = useState<ResultState>('idle');
+  const [hintQuestionId, setHintQuestionId] = useState<string | null>(null);
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -224,6 +229,7 @@ export default function Home() {
   const completion = Math.round((solvedIds.length / questions.length) * 100);
 
   function resetQuestion() {
+    setHintQuestionId(null);
     setCurrentIndex(0);
     setResult('idle');
   }
@@ -250,6 +256,7 @@ export default function Home() {
 
   function grade() {
     if (!answer.trim()) return;
+    setHintQuestionId(null);
     const isCorrect = normalized(answer) === normalized(current.answer);
     setResult(isCorrect ? 'correct' : 'wrong');
 
@@ -269,6 +276,7 @@ export default function Home() {
   }
 
   function selectQuestion(index: number, focus = true) {
+    setHintQuestionId(null);
     setCurrentIndex(index);
     setResult('idle');
     if (!focus) return;
@@ -352,6 +360,7 @@ export default function Home() {
 
     return (
       <main className="app-shell quiz-shell" onKeyDown={event => {
+        if (event.nativeEvent?.isComposing || event.repeat) return;
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
           event.preventDefault();
           if (result === 'correct') nextQuestion();
@@ -415,7 +424,7 @@ export default function Home() {
                   className="inline-code-input"
                   aria-label={`Cell ${q.cell} · ${q.topic} · 빈칸 ${activeQuestions.findIndex(item => item.id === q.id) + 1}`}
                   aria-current={q.id === current.id ? 'step' : undefined}
-                  aria-describedby={q.id === current.id && result !== 'idle' ? `feedback-${q.id}` : undefined}
+                  aria-describedby={q.id === current.id ? [result !== 'idle' ? `feedback-${q.id}` : '', hintQuestionId === q.id ? `hint-${q.id}` : ''].filter(Boolean).join(' ') || undefined : undefined}
                   placeholder="### 공개 제한 ###"
                   value={value}
                   rows={Math.max(1, value.split('\n').length)}
@@ -429,6 +438,13 @@ export default function Home() {
                     setResult('idle');
                   }}
                   onKeyDown={event => {
+                    if (event.nativeEvent?.isComposing || event.repeat) return;
+                    if (event.key === 'Enter' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setHintQuestionId(previous => previous === q.id ? null : q.id);
+                      return;
+                    }
                     if (event.key !== 'Tab' || event.shiftKey) return;
                     event.preventDefault();
                     const input = event.currentTarget;
@@ -448,12 +464,21 @@ export default function Home() {
                     <strong>{result === 'correct' ? '✓ 정답입니다!' : '오답 · 오답노트에 저장했어요'}</strong>
                     <span className="feedback-label">정답 코드</span>
                     <span className="answer-code">{q.answer}</span>
-                    <span className="feedback-label">코드 해설</span>
-                    <span>{q.explanation.why}</span>
-                    <span className="feedback-label">암기 포인트</span>
-                    <span>{q.explanation.memory}</span>
+                    <span className="feedback-label">핵심 개념</span>
+                    <span>{q.explanation.concept}</span>
+                    {q.explanation.why !== q.explanation.concept && <><span className="feedback-label">이 코드의 역할</span><span>{q.explanation.why}</span></>}
+                    <span className="feedback-label">흐름 · Shape</span>
+                    <span>{q.explanation.flow}</span>
+                    <span className="feedback-label">헷갈리기 쉬운 점</span>
+                    <span>{q.explanation.caution}</span>
+                    {q.explanation.memory !== q.explanation.flow && <><span className="feedback-label">암기 포인트</span><span>{q.explanation.memory}</span></>}
                     <span className="feedback-hint">{result === 'correct' ? 'Ctrl + Enter → 다음 빈칸' : '수정 후 Ctrl + Enter → 다시 채점'}</span>
                     {screen === 'wrong' && result === 'correct' && <button className="resolve-button" onClick={resolveWrong}>오답 해결</button>}
+                    </span>}
+                  {q.id === current.id && hintQuestionId === q.id && <span id={`hint-${q.id}`} className="result-card inline-feedback concept-hint" role="status" aria-live="polite">
+                    <strong>개념 힌트</strong>
+                    <span>{q.explanation.hint}</span>
+                    <span className="feedback-hint">정답 코드는 표시하지 않아요 · Shift + Enter로 닫기</span>
                   </span>}
                 </span>);
                 cursor = start + q.answer.length;
@@ -466,6 +491,7 @@ export default function Home() {
             })}
 
             <div className="quiz-actions">
+              <button className="text-button" aria-expanded={hintQuestionId === current.id} onClick={() => setHintQuestionId(previous => previous === current.id ? null : current.id)}>개념 힌트 · Shift + Enter</button>
               <span aria-live="polite">Cell {current.cell} · {current.topic}<br />{result === 'correct' ? '✓ 정답! Ctrl + Enter로 다음 빈칸' : result === 'wrong' ? '오답노트에 저장했어요. 수정 후 Ctrl + Enter로 재채점' : 'Ctrl + Enter로 채점 · 공백·들여쓰기 무시'}<br />Tab: 들여쓰기 · Shift + Tab: 입력칸 밖으로 이동</span>
               {result === 'idle' ? (
                 <button className="primary-button" onClick={grade} disabled={!answer.trim()}>정답 확인</button>

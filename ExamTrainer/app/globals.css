@@ -321,3 +321,8 @@ footer p { margin: 0; }
   .quiz-actions .primary-button { width: 100%; }
   footer { gap: 10px; flex-direction: column; }
 }
+.result-card.concept-hint {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e3a5f;
+}

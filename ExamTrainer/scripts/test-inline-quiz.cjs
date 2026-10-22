@@ -35,6 +35,8 @@ function load(relative) {
     if (name === './question-bank.json') return bank;
     if (name === './recall-explanations.json') return require('../app/recall-explanations.json');
     if (name === './explanations') return load('app/explanations.ts');
+    if (name === './study-support') return load('app/study-support.ts');
+    if (name === './handbook/concepts') return load('app/handbook/concepts.ts');
     if (name === './grading') return load('app/grading.ts');
     if (name === './fixed-exams') return load('app/fixed-exams.ts');
     if (name === './mock-selection') return load('app/mock-selection.ts');
@@ -64,6 +66,24 @@ assert.equal(byClass(tree, 'chapter-code').length, new Set(expected.map(q => q.s
 assert(inputs(tree).every(n => n.props.placeholder === '### 공개 제한 ###'));
 assert.equal(all(tree, n => n.props?.id === 'answer').length, 0);
 const first = inputs(tree)[0];
+let prevented = false;
+first.props.onKeyDown({ key: 'Enter', shiftKey: true, preventDefault() { prevented = true; }, stopPropagation() {} });
+tree = render();
+assert(prevented);
+assert.equal(byClass(tree, 'concept-hint').length, 1);
+assert.equal(byClass(tree, 'answer-code').length, 0);
+assert.equal(inputs(tree)[0].props.value, '');
+assert.equal(inputs(tree)[0].props['aria-describedby'], `hint-${first.key}`);
+inputs(tree)[0].props.onKeyDown({ key: 'Enter', shiftKey: true, preventDefault() {}, stopPropagation() {} });
+tree = render();
+assert.equal(byClass(tree, 'concept-hint').length, 0);
+inputs(tree)[0].props.onKeyDown({ key: 'Enter', preventDefault() { throw new Error('Normal Enter must remain multiline'); } });
+const { studySupport } = load('app/study-support.ts');
+for (const q of bank.questions) {
+  const support = studySupport(q);
+  for (const field of ['concept', 'hint', 'flow', 'caution']) assert(support[field]?.length > 10, `${q.id}: ${field}`);
+  assert.notEqual(support.hint, q.answer);
+}
 const question = expected.find(q => q.id === first.key);
 const answer = question.answer.replace(/ /g, '   ');
 first.props.onChange({ target: { value: answer } });
@@ -76,6 +96,8 @@ assert.equal(byClass(group, 'inline-feedback').length, 1);
 assert.equal(byClass(group, 'answer-code')[0].props.children, question.answer);
 assert.equal(inputs(group)[0].props['aria-describedby'], `feedback-${question.id}`);
 assert.equal(byClass(tree, 'inline-feedback').length, 1);
+assert(byClass(tree, 'feedback-label').some(n => n.props.children === '핵심 개념'));
+assert(byClass(tree, 'feedback-label').some(n => n.props.children === '헷갈리기 쉬운 점'));
 tree.props.onKeyDown({ ctrlKey: true, key: 'Enter', preventDefault() {} });
 tree = render();
 assert.equal(inputs(tree)[1].props['aria-current'], 'step');
