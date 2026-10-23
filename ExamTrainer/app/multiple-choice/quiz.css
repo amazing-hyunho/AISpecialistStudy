@@ -1,0 +1,26 @@
+.mc-shell { max-width: 1080px; padding-bottom: 64px; }
+.mc-header, .mc-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 24px 0; }
+.mc-shell h1 { font-size: clamp(24px, 3vw, 36px); line-height: 1.5; }
+.mc-shell p { line-height: 1.8; overflow-wrap: anywhere; }
+.mc-subjects { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 30px 0; }
+.mc-subject { display: flex; flex-direction: column; gap: 16px; text-align: left; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); padding: 24px; cursor: pointer; }
+.mc-subject strong { font-size: 23px; }
+.mc-notes, .mc-card { padding: clamp(16px, 3vw, 32px); background: var(--card); border: 1px solid var(--line); border-radius: 20px; }
+.mc-note-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.mc-choices { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
+.mc-choices legend { margin-bottom: 12px; }
+.mc-option { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; border: 2px solid var(--line); padding: 18px; margin: 12px 0; border-radius: 12px; cursor: pointer; }
+.mc-option code { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.7 var(--font-geist-mono); }
+.mc-option input { margin-top: 5px; accent-color: var(--green); }
+.mc-option.selected { border-color: var(--green); background: #eef5ef; }
+.mc-option.correct { border-color: #24764c; background: #e5f6e9; }
+.mc-option.wrong { border-color: #b34343; background: #fff0ed; }
+.mc-option:focus-within { outline: 3px solid #c39235; outline-offset: 3px; }
+.mc-review { border-top: 1px solid var(--line); margin-top: 24px; }
+.mc-review h3 { font-size: 16px; margin-bottom: 4px; }
+.mc-review p { margin-top: 4px; }
+.mc-review pre { max-width: 100%; overflow: auto; background: #18251e; color: #eef5ef; border-radius: 12px; padding: 18px; font: 13px/1.7 var(--font-geist-mono); }
+.mc-review summary { cursor: pointer; padding: 16px 0; }
+.mc-source, .mc-controls > span { color: var(--muted); font-size: 13px; }
+.mc-shell button:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 600px) { .mc-controls .primary-button { width: 100%; } }
