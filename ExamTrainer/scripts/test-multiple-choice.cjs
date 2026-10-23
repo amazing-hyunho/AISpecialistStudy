@@ -10,7 +10,7 @@ const bank = require('../app/question-bank.json');
 const slots = [];
 let cursor = 0;
 const hooks = { ...React,
-  useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
+  useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
   useRef(initial) { const i = cursor++; if (!(i in slots)) slots[i] = { current: initial }; return slots[i]; },
   useEffect() {},
 };
@@ -22,7 +22,12 @@ function load(file) {
     if (name === 'react') return hooks;
     if (name === 'next/link') return 'a';
     if (name.endsWith('.css')) return {};
-    if (name === '../question-bank.json') return bank;
+    if (name === '../question-bank.json' || name === './question-bank.json') return bank;
+    if (name === './multiple-choice/questions') return load('app/multiple-choice/questions.ts');
+    if (name === './choice-practice-data') return load('app/choice-practice-data.ts');
+    if (name === './grading') return load('app/grading.ts');
+    if (name === './study-support') return load('app/study-support.ts');
+    if (name === './handbook/concepts') return load('app/handbook/concepts.ts');
     if (name === './questions') return load('app/multiple-choice/questions.ts');
     if (name === './progress') return load('app/multiple-choice/progress.ts');
     return require(name);
@@ -111,3 +116,44 @@ for (let subject = 0; subject < 5; subject++) {
   assert.equal(slots[0].wrong.length, 0);
 }
 console.log('PASS: 30 source-linked questions, 5 subjects, 4 unique options each, rationales, shuffled positions, storage validation, empty-submit guard, all rounds, keyboard grading, score and explicit wrong-note resolution');
+
+const { practiceChoices, maskedCell } = load('app/choice-practice-data.ts');
+const { normalized } = load('app/grading.ts');
+for (const q of bank.questions) {
+  const choices = practiceChoices(q);
+  assert.equal(choices.length, 4);
+  assert.equal(new Set(choices.map(c => normalized(c.text))).size, 4);
+  assert.equal(choices.filter(c => c.correct).length, 1);
+  assert.equal(choices.find(c => c.correct).text, q.answer);
+  const source = bank.cells[q.sourceId].source;
+  const masked = maskedCell(q, source);
+  assert.equal(masked.before + q.answer + masked.after, source);
+}
+const Practice = load('app/choice-practice.tsx').default;
+for (const correct of [false, true]) {
+  slots.length = 0;
+  let continued = 0;
+  const q = bank.questions[0];
+  const props = { question: q, source: bank.cells[q.sourceId].source, onContinue() { continued++; } };
+  const renderPractice = () => { cursor = 0; return Practice(props); };
+  let view = renderPractice();
+  assert.equal(radios(view).length, 4);
+  let stopped = 0;
+  const press = () => view.props.onKeyDown({ nativeEvent: {}, ctrlKey: true, key: 'Enter', preventDefault() {}, stopPropagation() { stopped++; } });
+  press(); view = renderPractice();
+  assert.equal(cls(view, 'choice-explanation').length, 0);
+  const position = slots[0].findIndex(choice => choice.correct === correct);
+  radios(view)[position].props.onChange();
+  view = renderPractice(); press(); view = renderPractice();
+  assert.equal(cls(view, 'choice-explanation').length, 1);
+  assert.equal(all(view, n => n.type === 'fieldset')[0].props.disabled, true);
+  assert.equal(continued, 0);
+  press(); view = renderPractice();
+  assert.equal(continued, 1);
+  assert.equal(radios(view).length, 0); // Hide answers before written recall.
+  assert.equal(stopped, 3); // Never bubble into parent's written grading.
+  buttons(view).find(n => n.props.children === '객관식 다시 보기').props.onClick();
+  view = renderPractice();
+  assert.equal(radios(view).length, 4);
+}
+console.log('PASS: all 267 inline choice sets and masked sources; correct/wrong feedback, shortcut isolation, collapsed choices and written-stage handoff');

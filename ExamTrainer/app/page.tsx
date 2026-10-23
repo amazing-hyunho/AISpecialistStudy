@@ -9,6 +9,7 @@ import { fixedExams } from './fixed-exams';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
 import { studySupport } from './study-support';
+import ChoicePractice from './choice-practice';
 
 type Chapter = {
   id: string;
@@ -139,6 +140,7 @@ const subjects = [
 
 export default function Home() {
   const answerRefs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  const choicePanelRef = useRef<HTMLDivElement>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedSubject, setSelectedSubject] = useState('LLM');
@@ -281,9 +283,9 @@ export default function Home() {
     setResult('idle');
     if (!focus) return;
     requestAnimationFrame(() => {
-      const input = answerRefs.current[activeQuestions[index].id];
-      input?.focus();
-      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const choiceInput = choicePanelRef.current?.querySelector<HTMLInputElement>('input[type="radio"]');
+      if (choiceInput) choiceInput.focus(); else choicePanelRef.current?.focus();
+      choicePanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -408,6 +410,17 @@ export default function Home() {
                 {solvedIds.includes(q.id) ? '✓ ' : ''}{i + 1}. Cell {q.cell} · {q.topic}
               </button>)}
             </nav>
+            <div ref={choicePanelRef} tabIndex={-1}>
+              <ChoicePractice key={current.id} question={current} source={current.source} onContinue={() => {
+                requestAnimationFrame(() => {
+                  const input = answerRefs.current[current.id];
+                  input?.focus();
+                  input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+              }} />
+            </div>
+            <h2 className="writing-stage-title">2. 같은 빈칸을 직접 입력하기</h2>
+            <p>아래 입력칸을 클릭하면 해당 빈칸의 객관식도 위에 표시됩니다. 기존에 입력한 답은 유지합니다.</p>
             {activeCellIds.map(sourceId => {
               const cellQuestions = activeQuestions.filter(q => q.sourceId === sourceId).sort((a, b) => answerOffset(a) - answerOffset(b));
               const source = bank.cells[sourceId].source;
@@ -514,7 +527,6 @@ export default function Home() {
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
           <p>LLM·RAG·Data·Vision·On-device 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
-            <Link className="primary-button large" href="/multiple-choice/">과목별 객관식 · 핵심 30문항 →</Link>
             <Link className="primary-button large" href="/exam-recall/">2026-09 시험 복기 →</Link>
             <Link className="primary-button large" href="/final-handbook/">시험 직전 · 찐 암기 핸드북 →</Link>
             <button className="primary-button large mock-start" onClick={startExam}>랜덤 모의고사 · 10셀 →</button>

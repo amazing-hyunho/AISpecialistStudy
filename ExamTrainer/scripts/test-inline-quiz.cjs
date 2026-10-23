@@ -36,6 +36,7 @@ function load(relative) {
     if (name === './recall-explanations.json') return require('../app/recall-explanations.json');
     if (name === './explanations') return load('app/explanations.ts');
     if (name === './study-support') return load('app/study-support.ts');
+    if (name === './choice-practice') return { default: () => null };
     if (name === './handbook/concepts') return load('app/handbook/concepts.ts');
     if (name === './grading') return load('app/grading.ts');
     if (name === './fixed-exams') return load('app/fixed-exams.ts');
