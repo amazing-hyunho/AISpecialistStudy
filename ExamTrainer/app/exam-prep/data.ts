@@ -123,3 +123,14 @@ export function cellParts(ids: string[], id: string) {
   }
   parts.push({text:source.slice(cursor)});return parts;
 }
+
+export function choicePreview(ids: string[], id: string) {
+  const marker = '【현재 빈칸】';
+  const masked = cellParts(ids,id).map(part => part.question
+    ? part.question.id === id ? marker : `【빈칸 ${ids.indexOf(part.question.id)+1}】`
+    : part.text).join('');
+  const start = masked.indexOf(marker);
+  const before = masked.slice(0,start).split('\n');
+  const after = masked.slice(start+marker.length).split('\n');
+  return `${before.length>6 ? '⋮\n' : ''}${before.slice(-6).join('\n')}${marker}${after.slice(0,6).join('\n')}${after.length>6 ? '\n⋮' : ''}`;
+}

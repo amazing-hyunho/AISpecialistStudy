@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRef, useState } from 'react';
-import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, cellParts, cellQuestions, subjects, isCorrect, results, type Collection } from './data';
+import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
 import './prep.css';
 
 type ItemProgress = { selected?: number; checked?: boolean; writing?: boolean; answer?: string; graded?: boolean };
@@ -117,6 +117,8 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
         <p>전체 셀 · 현재 세트의 빈칸 {cellQuestions(collection.questionIds,id).length}개를 코드 순서대로 표시합니다. 빈칸을 선택하면 해당 문항의 객관식·작성 가이드로 전환됩니다.</p>
         {!exam && !item.writing && <section aria-label="객관식 단계">
           <h3>1. 빈칸에 들어갈 예시 답안 고르기</h3>
+          <p>현재 빈칸 주변 코드입니다. 다른 출제 빈칸도 가려두었으며, 전체 코드는 아래 셀에서 확인할 수 있습니다.</p>
+          <pre className="prep-code prep-choice-preview" aria-label="객관식 코드 미리보기"><code>{choicePreview(collection.questionIds,id)}</code></pre>
           <fieldset disabled={item.checked}><legend>보기 하나를 선택하세요</legend>{choices.map((c,i) => <label className="prep-option" key={c.id}>
             <input type="radio" name={id} checked={item.selected===c.id} onChange={() => patch({selected:c.id})}/><span>{i+1}.</span><code>{c.text}</code>
           </label>)}</fieldset>
@@ -127,7 +129,7 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
         </section>}
         {(exam || item.writing) && <section aria-label="주관식 단계">
           <h3>{exam ? '셀 안의 빈칸에 코드 작성' : '2. 아래 셀 안에서 직접 작성하기'}</h3>
-          {!exam && <button className="primary-button" disabled={!item.answer?.trim()} onClick={() => patch({graded:true})}>주관식 채점</button>}
+          {!exam && <><p>코드 입력 중 Ctrl + Enter로 현재 빈칸을 바로 채점합니다. Mac에서는 ⌘ + Enter도 가능합니다.</p><button className="primary-button" disabled={!item.answer?.trim()} onClick={() => patch({graded:true})}>주관식 채점 · Ctrl + Enter</button></>}
           {reveal && <div className="prep-feedback" role="status"><strong>{isCorrect(id,item.answer??'') ? '✓ 정답' : item.answer?.trim() ? '× 오답' : '× 미입력'}</strong><h3>예시 답안</h3><pre>{q.answer}</pre><p>{q.explanation}</p></div>}
         </section>}
         <section aria-label="전체 실습 셀" className="prep-fullcell">
@@ -146,9 +148,16 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
                 onFocus={()=>{if(blank.id!==id)update({...saved,index:collection.questionIds.indexOf(blank.id)});}}
                 onChange={event=>{if(writable)patch({answer:event.target.value,graded:false},blank.id);}}
                 onKeyDown={event=>{
+                  if(event.nativeEvent?.isComposing || event.repeat) return;
+                  if(event.key==='Enter' && (event.ctrlKey || event.metaKey) && !exam && writable){
+                    event.preventDefault();event.stopPropagation();
+                    const answer=event.currentTarget.value;
+                    if(answer.trim())patch({answer,graded:true},blank.id);
+                    return;
+                  }
                   if(event.key==='Tab'&&!event.shiftKey&&writable){event.preventDefault();const start=event.currentTarget.selectionStart,end=event.currentTarget.selectionEnd;patch({answer:value.slice(0,start)+'    '+value.slice(end),graded:false},blank.id);requestAnimationFrame(()=>inputs.current[blank.id]?.setSelectionRange(start+4,start+4));}
                 }}/>
-              {(exam ? saved.submitted : progress.graded) && <span className="prep-inline-result">{isCorrect(blank.id,value)?'✓ 정답':'× 오답'} · {blank.answer}</span>}
+              {(exam ? saved.submitted : progress.graded) && <span className="prep-inline-result" role="status" aria-live="polite">{isCorrect(blank.id,value)?'✓ 정답':'× 오답'} · {blank.answer}</span>}
             </span>;
           })}</code></pre>
         </section>

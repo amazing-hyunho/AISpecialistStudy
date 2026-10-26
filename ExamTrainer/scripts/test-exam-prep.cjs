@@ -30,7 +30,7 @@ function load(file) {
   return exports;
 }
 const data=load('app/exam-prep/data.ts');
-const {cellParts,cellQuestions,prepQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
+const {choicePreview,cellParts,cellQuestions,prepQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
 assert.equal(monthlyBanks.length,5);assert.equal(monthlyExams.length,5);assert.equal(predictedExams.length,3);assert.equal(topicBanks.length,24);
 for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]) {
   assert(c.questionIds.length>0);assert.equal(new Set(c.questionIds).size,c.questionIds.length);
@@ -106,10 +106,29 @@ let tree=render();assert.equal(textarea(tree).props.readOnly,true);assert.equal(
 assert.equal(all(tree,n=>n.type==='textarea').length,cellQuestions(props.collection.questionIds,props.collection.questionIds[0]).length);
 assert(text(tree).includes('class MultiHeadAttention'));
 assert.equal(button(tree,'객관식 정답 확인').props.disabled,true);
+const preview=all(tree,n=>n.props?.['aria-label']==='객관식 코드 미리보기')[0];
+assert(preview);assert(text(preview).includes('【현재 빈칸】'));
+assert(text(preview).includes('【빈칸 2】'));
+assert(!text(preview).includes(prepQuestions['llm-090'].answer));
+const choiceStage=all(tree,n=>n.props?.['aria-label']==='객관식 단계')[0];
+assert(choiceStage.props.children.findIndex(n=>n?.props?.['aria-label']==='객관식 코드 미리보기') < choiceStage.props.children.findIndex(n=>n?.type==='fieldset'));
+for(const collection of [...monthlyBanks,...topicBanks,...predictedExams]) for(const id of collection.questionIds) {
+  const snippet=choicePreview(collection.questionIds,id);
+  assert.equal(snippet.split('【현재 빈칸】').length,2);
+}
+
 all(tree,n=>n.type==='input')[0].props.onChange();tree=render();
 button(tree,'객관식 정답 확인').props.onClick();tree=render();assert.equal(feedback(tree).length,1);
 button(tree,'보기 접고').props.onClick();tree=render();assert(textarea(tree));assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='input').length,0);
-textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();button(tree,'주관식 채점').props.onClick();tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
+function key(value,extra={}) {return {key:'Enter',ctrlKey:true,metaKey:false,nativeEvent:{isComposing:false},repeat:false,currentTarget:{value},preventDefault(){},stopPropagation(){},...extra};}
+textarea(tree).props.onKeyDown(key('  '));tree=render();assert.equal(feedback(tree).length,0);
+textarea(tree).props.onKeyDown(key('wrong',{nativeEvent:{isComposing:true}}));tree=render();assert.equal(feedback(tree).length,0);
+textarea(tree).props.onKeyDown(key('wrong',{repeat:true}));tree=render();assert.equal(feedback(tree).length,0);
+textarea(tree).props.onChange({target:{value:'wrong'}});tree=render();
+textarea(tree).props.onKeyDown(key('wrong'));tree=render();assert(text(feedback(tree)[0]).includes('× 오답'));
+textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();assert.equal(feedback(tree).length,0);
+textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer,{ctrlKey:false,metaKey:true}));tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
+console.log('PASS: masked preview before choices; Ctrl/Cmd+Enter grading, empty/IME/repeat guards and edit-to-regrade');
 const bankKey=`ai-monthly-prep-v3:bank:${props.collection.id}`;
 assert(JSON.parse(storage.get(bankKey)).items[props.collection.questionIds[0]].graded);
 slots.length=0;props={...props,initial:JSON.parse(storage.get(bankKey))};tree=render();assert(textarea(tree).props.value);assert.equal(feedback(tree).length,1);
@@ -117,6 +136,7 @@ console.log('PASS: required choice-first flow, hidden options in writing, gradin
 
 slots.length=0;props={collection:predictedExams[0],exam:true,initial:empty(),onHome(){}};tree=render();
 assert.equal(all(tree,n=>n.type==='input').length,0);assert.equal(feedback(tree).length,0);
+textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer));tree=render();assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='h3' && text(n)==='예시 답안').length,0);
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();button(tree,'다음 →').props.onClick();tree=render();
 textarea(tree).props.onChange({target:{value:'wrong'}});tree=render();button(tree,'전체 답안 제출').props.onClick();tree=render();
 assert(text(tree).includes('1/25문항 (4점)'));assert(textarea(tree).props.readOnly);assert.equal(feedback(tree).length,1);
