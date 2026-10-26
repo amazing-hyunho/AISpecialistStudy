@@ -3,7 +3,7 @@ import bank from '../question-bank.json';
 import { questionExplanations } from '../explanations';
 import { practiceChoices, type BankQuestion } from '../choice-practice-data';
 import { normalized } from '../grading';
-import { suppliedInExams, examTargets, examHints } from './exam-design';
+import { monthlyExamBlueprints, implementationBlanks, implementationHints, examTargets, examHints } from './exam-design';
 
 export const subjects = ['LLM', 'RAG', 'Data', 'Vision', 'On-device'];
 type Choice = { id: number; text: string; correct: boolean; reason: string };
@@ -67,7 +67,9 @@ export const monthlyBanks: Collection[] = [
   { id:'sep', title:'9월', description:'헤드 분리·GPT 생성 / 기본 RAG / 채널 pruning / 전처리·residual / Encoder–Decoder. 저장된 9월 복기 원문 기준입니다.', questionIds:unique([...topics('mha','gpt','transform','channel'),'rag-001','rag-029','rag-024','vision-024','vision-035','data-034','data-035','data-042',...range('data',36,41)]) },
 ];
 
-export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b, id:`exam-${b.id}`, title:`${b.title} 복기 모의고사`, questionIds:b.questionIds.filter(id=>!suppliedInExams.has(id))}));
+export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b, id:`exam-${b.id}`, title:`${b.title} 복기 모의고사`,
+  description:`9월 복기형 · ${monthlyExamBlueprints[b.id].focus}. ${b.id==='sep' ? '직접 복기된 구현을 선별했습니다.' : '월별 주제를 9월처럼 가이드가 있는 구현 빈칸으로 구성한 대응 연습입니다.'}`,
+  questionIds:monthlyExamBlueprints[b.id].questionIds}));
 export const predictedExams: Collection[] = [
   { id:'predict-1', title:'예상 모의고사 1회 · 반복 핵심', description:'MHA·GPT / 검색·KG / window·Conv1D·RNN / ResNet·전처리·학습 / kernel·channel·양자화·증류', questionIds:[
     'llm-089','llm-092','llm-049','llm-006','llm-094',
@@ -106,7 +108,7 @@ for (const q of Object.values(prepQuestions)) {
     if (other.start<q.start) start+=other.answer.length-original.length;
     shift+=other.answer.length-original.length;
   }
-  const answer=examTargets[q.id] ?? q.answer;
+  const answer=implementationBlanks.has(q.id) ? q.answer : examTargets[q.id] ?? q.answer;
   let offset=q.answer.indexOf(answer);
   if (q.id==='llm-085') {
     // Ask the gather operation rather than memorizing its input variable name.
@@ -118,8 +120,8 @@ for (const q of Object.values(prepQuestions)) {
   // Original material sometimes hides only ????; all resolved spans now contain
   // the existing answer, so every exam substring is directly verifiable.
   if (source.slice(start,start+answer.length)!==answer) throw new Error(`Exam source mismatch: ${q.id}`);
-  const narrowed=Boolean(examTargets[q.id]);
-  const hint=examHints[q.id] ?? `${q.prompt} ${narrowed ? '인수와 설정은 코드에 제공됩니다. 함수·클래스·메서드 또는 지정된 부분만 작성하세요.' : '주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.'}`;
+  const narrowed=Boolean(examTargets[q.id]) && !implementationBlanks.has(q.id);
+  const hint=implementationHints[q.id] ?? examHints[q.id] ?? `${q.prompt} ${narrowed ? '인수와 설정은 코드에 제공됩니다. 함수·클래스·메서드 또는 지정된 부분만 작성하세요.' : '주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.'}`;
   examQuestions[q.id]={...q,answer,fullCode:source,start,end:start+answer.length,hint,
     prompt:narrowed ? '제공된 코드와 빈칸별 힌트를 보고 핵심 부분만 완성하세요.' : q.prompt,
     context:source.slice(0,start)+'【빈칸】'+source.slice(start+answer.length)};
@@ -133,7 +135,7 @@ export function results(ids: string[], answers: Record<string,string>, exam=fals
     return {subject,total:subset.length,correct:subset.filter(id => isCorrect(id,answers[id] ?? '',exam)).length};
   });
 }
-for (const collection of [...monthlyBanks,...topicBanks,...predictedExams]) {
+for (const collection of [...monthlyBanks,...monthlyExams,...topicBanks,...predictedExams]) {
   if (new Set(collection.questionIds).size !== collection.questionIds.length) throw new Error(`Duplicate questions: ${collection.id}`);
   for (const id of collection.questionIds) if (!prepQuestions[id]) throw new Error(`Missing question: ${id}`);
 }

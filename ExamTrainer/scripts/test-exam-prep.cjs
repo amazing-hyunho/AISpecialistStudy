@@ -31,7 +31,7 @@ function load(file) {
 }
 const data=load('app/exam-prep/data.ts');
 const {choicePreview,cellParts,cellQuestions,prepQuestions,examQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
-const {suppliedInExams}=load('app/exam-prep/exam-design.ts');
+const {suppliedInExams,monthlyExamBlueprints}=load('app/exam-prep/exam-design.ts');
 assert.equal(monthlyBanks.length,5);assert.equal(monthlyExams.length,5);assert.equal(predictedExams.length,3);assert.equal(topicBanks.length,24);
 for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]) {
   assert(c.questionIds.length>0);assert.equal(new Set(c.questionIds).size,c.questionIds.length);
@@ -44,7 +44,9 @@ for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]
   }
 }
 for(const [i,exam] of monthlyExams.entries()) {
-  assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyBanks[i].questionIds.filter(id=>!suppliedInExams.has(id))));
+  assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyExamBlueprints[monthlyBanks[i].id].questionIds));
+  assert(exam.questionIds.every(id=>monthlyBanks[i].questionIds.includes(id)),'Keep each mock within its recalled monthly scope');
+  assert(exam.questionIds.length<monthlyBanks[i].questionIds.length,'Remove peripheral/redundant questions');
   assert.equal(new Set(exam.questionIds.map(id=>prepQuestions[id].subject)).size,5);
 }
 const predictedIds=predictedExams.flatMap(e=>e.questionIds);
@@ -104,6 +106,13 @@ assert.equal(examQuestions['llm-085'].answer,'torch.gather');
 assert.equal(examQuestions['ondevice-010'].answer,'torch.sum');
 assert(examQuestions['ondevice-010'].context.includes('(T**2)'));
 assert.equal(prepQuestions['llm-016'].answer,'-F.logsigmoid(beta * logits)');
+for(const id of ['llm-005','llm-094','llm-051','rag-001','rag-024','ondevice-062']) {
+  assert(monthlyExams[4].questionIds.includes(id),`Direct September recall must remain: ${id}`);
+  assert.equal(examQuestions[id].answer,prepQuestions[id].answer,`Preserve implementation-sized blank: ${id}`);
+}
+assert(!monthlyExams[4].questionIds.includes('llm-049'),'Omit unmentioned adjacent embedding-layer exercise');
+assert(examQuestions['rag-024'].hint.includes('딕셔너리 전체'));
+assert(examQuestions['llm-094'].hint.includes('num_heads'));
 assert(!isCorrect('llm-016',prepQuestions['llm-016'].answer,true));
 console.log('PASS: exam-only core spans, per-blank hints, supplied formulas, resolved DPO cell and separate grading');
 console.log('PASS: five monthly banks/exams, 24 topics, 75 distinct balanced prediction questions, four choices, answer/source coverage');
@@ -174,7 +183,7 @@ textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();button(tree,'다음 →').props.onClick();tree=render();
 textarea(tree).props.onChange({target:{value:'wrong'}});tree=render();button(tree,'전체 답안 제출').props.onClick();tree=render();
 assert(text(tree).includes('1/25문항 (4점)'));assert(textarea(tree).props.readOnly);assert.equal(feedback(tree).length,1);
-const examKey=`ai-monthly-prep-v4:exam:${props.collection.id}`;
+const examKey=`ai-monthly-prep-v5:exam:${props.collection.id}`;
 slots.length=0;props={...props,initial:JSON.parse(storage.get(examKey))};tree=render();assert(textarea(tree).props.readOnly);assert(text(tree).includes('1/25문항 (4점)'));
 button(tree,'오답·미입력만').props.onClick();tree=render();assert.equal(all(tree,n=>n.type==='nav')[0].props.children.length,24);
 button(tree,'답안 초기화').props.onClick();tree=render();assert.equal(textarea(tree).props.value,'');assert.equal(feedback(tree).length,0);assert(!textarea(tree).props.readOnly);
@@ -184,4 +193,5 @@ slots.length=0;storage.set(`ai-monthly-prep-v3:bank:${monthlyBanks[0].id}`,'{bad
 button(tree,'학습 / 이어서').props.onClick();cursor=0;tree=Home();assert.equal(tree.props.initial.index,0);assert.equal(Object.keys(tree.props.initial.items).length,0);
 console.log('PASS: corrupt storage safely starts a fresh attempt');
 console.log('Monthly counts:',monthlyBanks.map(c=>`${c.title}: ${c.questionIds.length}`).join(', '));
+console.log('Curated mock counts:',monthlyExams.map(c=>`${c.title}: ${c.questionIds.length}`).join(', '));
 console.log('Unique questions:',Object.keys(prepQuestions).length);

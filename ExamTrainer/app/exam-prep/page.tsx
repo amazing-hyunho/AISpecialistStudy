@@ -8,7 +8,7 @@ import './prep.css';
 type ItemProgress = { selected?: number; checked?: boolean; writing?: boolean; answer?: string; graded?: boolean };
 type Saved = { version: 3; index: number; items: Record<string,ItemProgress>; submitted: boolean };
 const empty = (): Saved => ({version:3,index:0,items:{},submitted:false});
-const storageKey = (id: string, exam: boolean) => `ai-monthly-prep-${exam ? 'v4:exam' : 'v3:bank'}:${id}`;
+const storageKey = (id: string, exam: boolean) => `ai-monthly-prep-${exam ? 'v5:exam' : 'v3:bank'}:${id}`;
 function readSaved(collection: Collection, exam: boolean): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(storageKey(collection.id,exam)) ?? 'null');
@@ -50,7 +50,7 @@ export default function ExamPrep() {
     <section id="priority"><p className="prep-note">출제포인트 기준: LLM 레이어·Tensor·학습 데이터 / RAG 흐름·llama-index·MCP / Data 모델·학습·sklearn·Metric / Vision 레이어·학습·transforms·Metric / On-device 양자화·가지치기·지식증류.</p><h2>출제 대비 예상 주제 문제은행</h2><p>‘우선’은 반복 주제 또는 9월 상세 구현, ‘보완’은 한 회차에 명시된 주제, ‘PDF 기준’은 출제포인트에 명시된 학습·평가·지식증류입니다. 주제 사이의 동일 문항은 같은 코드를 다른 맥락에서 복습하기 위한 것입니다.</p>
       {subjects.map(subject => <div className="prep-subject" key={subject}><h3>{subject}</h3>{cards(topicBanks.filter(c => c.subject === subject).map(c => ({...c,title:`${c.priority} · ${c.title}`})),false)}</div>)}
     </section>
-    <section id="monthly-exams"><h2>월별 복기 모의고사 · 5회</h2><p>월별 범위에서 핵심 구현을 골라 출제합니다. 수식·고정 설정은 제공하고 빈칸마다 역할·shape 힌트를 표시합니다. 회차별 문항 수는 다르며 실제 시험 문항 수를 재현한 것은 아닙니다.</p>{cards(monthlyExams,true)}</section>
+    <section id="monthly-exams"><h2>월별 복기 모의고사 · 5회</h2><p>9월 직접 복기의 스타일에 맞춰 전체 셀 안에서 호출식·객체 선언·슬라이싱·forward를 완성합니다. API·shape·고정 설정은 힌트로 안내합니다. 다른 월은 복기 주제에 기반한 대응 연습이며 실제 원문 문제의 복원이 아닙니다.</p>{cards(monthlyExams,true)}</section>
     <section id="predicted"><h2>시험 예상 모의고사 · 3회</h2><p>매회 25문항, LLM·RAG·Data·Vision·On-device 각 5문항입니다. 세 회차 전체에 24개 대비 주제를 모두 포함하고, 문항은 회차 간 중복 없이 배치했습니다.</p>{cards(predictedExams,true)}</section>
   </main>;
 }
@@ -176,7 +176,7 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
         <h2 ref={heading} tabIndex={-1}>{q.topic}</h2><p>{q.prompt}</p>
         <p className="prep-meta">{q.source}</p>
         <p>전체 셀 · 현재 세트의 빈칸 {cellQuestions(collection.questionIds,id,exam).length}개를 코드 순서대로 표시합니다. 빈칸을 선택하면 해당 문항의 작성 가이드로 전환됩니다.</p>
-        {exam && <p className="prep-note">수식·고정 하이퍼파라미터는 제공하고 핵심 함수·객체·텐서 흐름을 묻는 연습 구성입니다. 각 빈칸의 힌트와 제공된 인수를 함께 보세요. 개인 복기 기준으로 조정했으며 실제 시험 범위를 보증하지 않습니다.</p>}
+        {exam && <p className="prep-note">9월 복기처럼 가이드를 보고 호출식·선언·객체·텐서 흐름을 완성합니다. 힌트에 API·shape·고정 설정을 안내하고 복잡한 수식은 제공합니다. 빈칸 범위에 맞춰 이름만 쓰는 문제와 호출식 전체를 쓰는 문제를 구분하세요.</p>}
         {!exam && !item.writing && <section aria-label="객관식 단계">
           <h3>1. 빈칸에 들어갈 예시 답안 고르기</h3>
           <p>현재 빈칸 주변 코드입니다. 다른 출제 빈칸도 가려두었으며, 전체 코드는 아래 셀에서 확인할 수 있습니다.</p>

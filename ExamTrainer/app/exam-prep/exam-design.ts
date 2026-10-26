@@ -1,10 +1,81 @@
 // Mock-only scope: formulas and fixed settings remain supplied in the cell.
 // These are study-design decisions based on the user's recall, not verified exam rules.
 export const suppliedInExams = new Set([
-  'llm-005','llm-011','llm-013','llm-014','llm-015','llm-017','llm-018','llm-086','llm-087','llm-088',
+  'llm-011','llm-013','llm-014','llm-015','llm-017','llm-018','llm-086','llm-087','llm-088',
   'ondevice-004','ondevice-005','ondevice-007','ondevice-011','ondevice-030','ondevice-031','ondevice-032',
-  'ondevice-062','ondevice-065','ondevice-066','data-043','vision-034',
+  'ondevice-065','ondevice-066','data-043','vision-034',
 ]);
+
+// Curated from each month's recalled topics, at the implementation granularity
+// demonstrated by September. Other months' exact original blanks are unknown.
+export const monthlyExamBlueprints: Record<string,{focus:string;questionIds:string[]}> = {
+  apr1:{focus:'MHA 헤드 분리·분류 출력 / KG·검색 / 시계열 구간 / CIFAR 전처리·ResNet / kernel pruning',questionIds:[
+    'llm-089','llm-090','llm-091','llm-094','llm-070','llm-071','llm-072','llm-074',
+    'rag-001','rag-002','rag-003','rag-005','rag-010','rag-011',
+    'data-044','data-045','data-046','data-047',
+    'vision-037','vision-001','vision-019','vision-020','vision-036','vision-002','vision-003','vision-032',
+    'ondevice-067','ondevice-068','ondevice-069','ondevice-070']},
+  apr2:{focus:'DPO 시프트·확률 추출·모델 / LoRA 초기화 / 검색·메시지 / window·Conv1D / ViT 유사 구현 / 양자화',questionIds:[
+    'llm-009','llm-010','llm-012','llm-020','llm-021','llm-022','llm-083','llm-084','llm-085','llm-016',
+    'rag-001','rag-002','rag-005','rag-008','rag-024','rag-025','rag-010','rag-011',
+    'data-044','data-045','data-022','data-023','data-048','data-049','data-050','data-051',
+    'vision-004','vision-005','material-vit-value','vision-024','vision-035',
+    'ondevice-029','ondevice-006']},
+  may:{focus:'DPO 모델·시프트·손실 / 검색·응답 메시지 / NGCF 메시지·집계 / COCO 대응 DETR 추론 / channel pruning',questionIds:[
+    'llm-020','llm-022','llm-083','llm-084','llm-085','llm-016',
+    'rag-001','rag-002','rag-003','rag-008','rag-024','rag-025',
+    'data-011','data-030','data-012','data-014',
+    'vision-007','vision-008','vision-009',
+    'ondevice-061','ondevice-062','ondevice-063','ondevice-064']},
+  jun:{focus:'GPT 레이어·생성 흐름 / MCP client·tools·Agent / NCF 임베딩·평가 / ResNet / kernel pruning',questionIds:[
+    'llm-049','llm-050','llm-051','llm-052','llm-053','llm-054','llm-095','llm-055','llm-006','llm-056',
+    'rag-015','rag-026','rag-016','rag-017','rag-027','rag-028','rag-001','rag-029',
+    'data-017','data-018','vision-002','vision-003','vision-032',
+    'ondevice-067','ondevice-068','ondevice-069','ondevice-070']},
+  sep:{focus:'직접 복기: MHA·출력 헤드·임베딩 합산·생성 / 인덱스·Query Engine·메시지 / Encoder–Decoder / transform·residual / 채널 개수·중요도',questionIds:[
+    'llm-089','llm-090','llm-091','llm-094','llm-051','llm-005','llm-054','llm-095','llm-055','llm-006','llm-056',
+    'rag-001','rag-029','rag-024',
+    'data-034','data-035','data-042','data-036','data-037','data-038','data-039','data-040','data-041',
+    'vision-037','vision-001','vision-019','vision-020','vision-036','vision-024','vision-035',
+    'ondevice-061','ondevice-062','ondevice-063']},
+};
+
+// September recalls full calls/declarations/objects, with concrete guidance.
+// Preserve those meaningful arguments instead of reducing every blank to a name.
+export const implementationBlanks = new Set([
+  'llm-009','llm-010','llm-020','llm-022','llm-049','llm-050','llm-051','llm-072','llm-094',
+  'rag-001','rag-003','rag-004','rag-008','rag-015','rag-024','rag-026','rag-027',
+  'data-023','data-042','data-046','data-047',
+  'vision-001','vision-002','vision-004','vision-036',
+]);
+
+export const implementationHints: Record<string,string> = {
+  'llm-009':'A: (in_dim, rank). torch.empty로 해당 shape의 텐서를 만드는 호출식 전체를 작성하세요.',
+  'llm-010':'B: (rank, out_dim). 초기 보정 출력을 0으로 만들도록 torch.zeros 호출식 전체를 작성하세요.',
+  'llm-020':'GPTModel에 BASE_CONFIG를 전달해 policy_model에 할당하는 한 줄을 작성하세요.',
+  'llm-022':'GPTModel에 BASE_CONFIG를 전달해 reference_model에 할당하는 한 줄을 작성하세요.',
+  'llm-049':'nn.Embedding 사용. 테이블 크기 cfg["vocab_size"], 벡터 차원 cfg["emb_dim"]인 선언식을 작성하세요.',
+  'llm-050':'nn.Embedding 사용. 위치 개수 cfg["context_length"], 벡터 차원 cfg["emb_dim"]인 선언식을 작성하세요.',
+  'llm-051':'nn.Linear 사용. cfg["emb_dim"] → cfg["vocab_size"], bias=False인 출력 헤드 선언식을 작성하세요.',
+  'llm-072':'torch.nn.Linear 사용. in_features=BASE_CONFIG["emb_dim"], out_features=num_classes인 선언식을 작성하세요.',
+  'llm-094':'MultiHeadAttention 선언식 전체. d_in·d_out=cfg["emb_dim"], context_length=cfg["context_length"], num_heads=cfg["n_heads"], dropout=cfg["drop_rate"], qkv_bias=cfg["qkv_bias"]를 연결하세요.',
+  'rag-001':'documents 목록을 VectorStoreIndex.from_documents에 전달하는 인덱스 생성 호출식 전체를 작성하세요.',
+  'rag-003':'retriever.retrieve에 질문 문자열 "Who is the author?"를 전달하는 검색 호출식 전체를 작성하세요.',
+  'rag-004':'VectorStoreIndex.from_documents 호출. documents=documents, transformations=[self.parser]를 전달하세요.',
+  'rag-008':'메시지 딕셔너리 전체. role은 "system", content는 이미 만든 system_prompt입니다.',
+  'rag-015':'BasicMCPClient에 external_mcp_server를 전달하는 객체 생성 호출식 전체를 작성하세요.',
+  'rag-024':'메시지 딕셔너리 전체. role은 "user", content는 질문·근거를 담은 user_message입니다.',
+  'rag-026':'McpToolSpec 객체 생성식. client 인수에 mcp_client를 연결하세요.',
+  'rag-027':'Context 객체 생성식. 현재 FunctionAgent 인스턴스 self.agent를 전달하세요.',
+  'data-023':'nn.Linear 사용. hidden_size → 1인 시계열 예측 출력층 선언식을 작성하세요.',
+  'data-042':'features 목록을 np.array로 변환하세요. dtype=np.float32를 지정한 호출식 전체를 작성하세요.',
+  'data-046':'torch.tensor 사용. features를 dtype=torch.float32로 변환하는 호출식 전체를 작성하세요.',
+  'data-047':'torch.tensor 사용. labels를 dtype=torch.float32로 변환하는 호출식 전체를 작성하세요.',
+  'vision-001':'T.RandomCrop 사용. 출력 크기 32, padding=4인 증강 transform 선언식을 작성하세요.',
+  'vision-002':'nn.Conv2d 사용. 입력 3·출력 64 채널, kernel_size=3, stride=1, padding=1, bias=False인 CIFAR stem 선언식을 작성하세요.',
+  'vision-004':'nn.Linear 사용. 입력 dim, 출력 inner_dim * 3, bias=False로 QKV를 함께 투영하는 선언식을 작성하세요.',
+  'vision-036':'T.Normalize 사용. CIFAR10_MEAN과 CIFAR10_STD를 순서대로 전달하는 transform 선언식을 작성하세요.',
+};
 
 // Only an existing substring of the material's answer can become a smaller blank.
 // Arguments, arithmetic and fixed hyperparameters are supplied around that blank.
@@ -33,6 +104,8 @@ export const examTargets: Record<string,string> = {
 };
 
 export const examHints: Record<string,string> = {
+  'llm-005':'토큰·위치 임베딩은 이미 계산되어 있습니다. tok_embeds와 pos_embeds를 원소별로 더한 식을 작성하세요.',
+  'ondevice-062':'입력 채널 수 num_channels와 제거 비율 sparsity가 주어집니다. 곱을 Python round로 반올림하는 호출식 전체를 작성하세요.',
   'llm-006':'입력 logits의 마지막 축은 어휘 축입니다. 최대 점수의 토큰 인덱스를 고르고 (B,1)을 유지하세요.',
   'llm-007':'클래스 점수와 정답 인덱스를 받는 분류 손실 API입니다. 평탄화 인수는 제공됩니다.',
   'llm-008':'손실 텐서에서 계산 그래프를 따라 파라미터 기울기를 계산하는 메서드입니다.',
