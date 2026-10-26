@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
 import './prep.css';
 
@@ -18,7 +18,7 @@ function readSaved(collection: Collection, exam: boolean): Saved {
       const item = raw.items[id];
       if (!item || typeof item !== 'object') continue;
       items[id] = {selected: Number.isInteger(item.selected) && item.selected >= 0 && item.selected < 4 ? item.selected : undefined,
-        checked:item.checked === true,writing:item.writing === true || item.checked === true,answer:typeof item.answer === 'string' ? item.answer : '',graded:item.graded === true};
+        checked:item.checked === true,writing:item.writing === true,answer:typeof item.answer === 'string' ? item.answer : '',graded:item.graded === true};
     }
     return {version:3,items,index:Number.isInteger(raw.index) ? Math.max(0,Math.min(collection.questionIds.length-1,raw.index)) : 0,submitted:exam && raw.submitted === true};
   } catch { return empty(); }
@@ -83,22 +83,72 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
   function reset() {
     update(empty());setOnlyWrong(false);
   }
-  function gradeOrAdvance(target:string, answer:string) {
-    if (!answer.trim()) return;
+  function enterWriting(target=id) {
     const progress = saved.items[target];
-    if (progress?.graded && progress.answer === answer && isCorrect(target,answer)) {
-      const next = collection.questionIds.indexOf(target)+1;
-      if (next < collection.questionIds.length) go(next);
+    if (progress?.selected === undefined) return;
+    patch({checked:true,writing:true},target);
+    requestAnimationFrame(() => {inputs.current[target]?.focus();inputs.current[target]?.scrollIntoView({block:'center'});});
+  }
+  function nextQuestionIndex(target=id) {
+    const visiblePos = visibleIds.indexOf(target);
+    if (visiblePos >= 0 && visiblePos + 1 < visibleIds.length) return collection.questionIds.indexOf(visibleIds[visiblePos + 1]);
+    const pos = collection.questionIds.indexOf(target);
+    return pos + 1 < collection.questionIds.length ? pos + 1 : -1;
+  }
+  function gradeOrAdvance(target:string, answer:string) {
+    const progress = saved.items[target];
+    const currentAnswer = answer || progress?.answer || '';
+    if (!currentAnswer.trim()) return;
+    if (progress?.graded && progress.answer === currentAnswer && isCorrect(target,currentAnswer)) {
+      const next = nextQuestionIndex(target);
+      if (next >= 0) go(next);
       return;
     }
-    patch({answer,graded:true},target);
+    patch({answer:currentAnswer,graded:true},target);
   }
   // Stable per-question shuffle keeps restored radio selections consistent.
   const offset = [...id].reduce((n,c) => n+c.charCodeAt(0),0)%4;
   const choices = [...q.choices.slice(offset),...q.choices.slice(0,offset)];
   const reveal = exam ? saved.submitted : item.writing && item.graded;
   const choiceCorrect = q.choices.find(c => c.id === item.selected)?.correct;
-  return <main className="app-shell prep-shell">
+  function handleSessionKey(event:{key:string;code?:string;ctrlKey?:boolean;metaKey?:boolean;altKey?:boolean;repeat?:boolean;defaultPrevented?:boolean;isComposing?:boolean;nativeEvent?:{isComposing?:boolean};target?:unknown;preventDefault?:()=>void;stopPropagation?:()=>void}) {
+    if (exam || event.defaultPrevented || event.nativeEvent?.isComposing || event.isComposing || event.repeat) return;
+    const targetEl = event.target as {tagName?:string;readOnly?:boolean} | undefined;
+    const inWritableTextarea = targetEl?.tagName === 'TEXTAREA' && !targetEl.readOnly;
+    if (!item.writing) {
+      if (!inWritableTextarea && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const digit = ['1','2','3','4'].indexOf(event.key);
+        const codeIdx = ['Digit1','Digit2','Digit3','Digit4','Numpad1','Numpad2','Numpad3','Numpad4'].indexOf(event.code ?? '');
+        const choiceIndex = digit >= 0 ? digit : codeIdx >= 0 ? codeIdx % 4 : -1;
+        if (choiceIndex >= 0 && choices[choiceIndex]) {
+          event.preventDefault?.();event.stopPropagation?.();
+          patch({selected:choices[choiceIndex].id,checked:true});
+          return;
+        }
+      }
+      if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        if (item.selected !== undefined) {
+          event.preventDefault?.();event.stopPropagation?.();
+          enterWriting(id);
+        }
+        return;
+      }
+    } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault?.();event.stopPropagation?.();
+      gradeOrAdvance(id,inputs.current[id]?.value ?? item.answer ?? '');
+    }
+  }
+  const keyHandler = useRef(handleSessionKey);
+  useEffect(() => {
+    keyHandler.current = handleSessionKey;
+  });
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+    const listener = (event: KeyboardEvent) => keyHandler.current(event);
+    window.addEventListener('keydown',listener);
+    return () => window.removeEventListener?.('keydown',listener);
+  },[]);
+  return <main className="app-shell prep-shell" onKeyDown={handleSessionKey}>
     <header className="topbar"><button className="text-button" onClick={onHome}>← 문제은행·모의고사 목록</button><strong>{exam ? '모의고사' : '객관식 → 주관식'}</strong></header>
     <h1>{collection.title}</h1><p>{collection.description}</p>
     <p className="prep-note">공백·들여쓰기를 제외한 예시 답안의 토큰 기준으로 채점합니다. 동등한 다른 구현까지 자동 판정하지 않습니다. 답안과 진행 단계는 이 브라우저에 자동 저장됩니다.</p>
@@ -129,17 +179,19 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
           <h3>1. 빈칸에 들어갈 예시 답안 고르기</h3>
           <p>현재 빈칸 주변 코드입니다. 다른 출제 빈칸도 가려두었으며, 전체 코드는 아래 셀에서 확인할 수 있습니다.</p>
           <pre className="prep-code prep-choice-preview" aria-label="객관식 코드 미리보기"><code>{choicePreview(collection.questionIds,id)}</code></pre>
-          <fieldset><legend>보기를 선택하면 바로 주관식으로 이어집니다</legend>{choices.map((c,i) => <label className="prep-option" key={c.id}>
-            <input type="radio" name={id} checked={item.selected===c.id} onChange={() => {patch({selected:c.id,checked:true,writing:true});requestAnimationFrame(() => {inputs.current[id]?.focus();inputs.current[id]?.scrollIntoView({block:'center'});});}}/><span>{i+1}.</span><code>{c.text}</code>
+          <fieldset><legend>키보드 1 · 2 · 3 · 4 또는 마우스로 보기를 고른 뒤 Ctrl + Enter로 주관식으로 넘어가세요</legend>{choices.map((c,i) => <label className="prep-option" key={c.id}>
+            <input type="radio" name={id} checked={item.selected===c.id} onChange={() => patch({selected:c.id,checked:true})}/><span>{i+1}.</span><code>{c.text}</code>
           </label>)}</fieldset>
+          {item.selected!==undefined && <p role="status">{choiceCorrect ? '✓ 객관식 정답입니다. Ctrl + Enter로 주관식 문제로 이동하세요.' : '× 객관식 오답입니다. 1~4 키로 다시 고르거나 Ctrl + Enter로 주관식 문제로 이동하세요.'}</p>}
+          <button className="primary-button" disabled={item.selected===undefined} onClick={() => enterWriting()}>주관식 문제로 이동 · Ctrl + Enter</button>
         </section>}
         {(exam || item.writing) && <section aria-label="주관식 단계">
           <h3>{exam ? '셀 안의 빈칸에 코드 작성' : '2. 아래 셀 안에서 직접 작성하기'}</h3>
           {!exam && <>
             <p role="status">{choiceCorrect ? '객관식 정답입니다.' : '객관식 오답입니다.'} 이제 같은 빈칸을 직접 작성해보세요.</p>
             <p>Ctrl + Enter로 채점하고, 정답이면 한 번 더 눌러 다음 문제로 이동합니다. Mac에서는 ⌘ + Enter도 가능합니다.</p>
-            <button className="primary-button" disabled={!item.answer?.trim() || Boolean(item.graded && isCorrect(id,item.answer??'') && saved.index===collection.questionIds.length-1)} onClick={() => gradeOrAdvance(id,item.answer??'')}>
-              {item.graded && isCorrect(id,item.answer??'') ? saved.index===collection.questionIds.length-1 ? '마지막 문제까지 풀었습니다' : '다음 문제 · Ctrl + Enter' : '주관식 채점 · Ctrl + Enter'}
+            <button className="primary-button" disabled={!item.answer?.trim() || Boolean(item.graded && isCorrect(id,item.answer??'') && nextQuestionIndex(id)<0)} onClick={() => gradeOrAdvance(id,item.answer??'')}>
+              {item.graded && isCorrect(id,item.answer??'') ? nextQuestionIndex(id)<0 ? '마지막 문제까지 풀었습니다' : '다음 문제 · Ctrl + Enter' : '주관식 채점 · Ctrl + Enter'}
             </button>
           </>}
           {reveal && <div className="prep-feedback" role="status"><strong>{isCorrect(id,item.answer??'') ? '✓ 정답' : item.answer?.trim() ? '× 오답' : '× 미입력'}</strong><h3>예시 답안</h3><pre>{q.answer}</pre><p>{q.explanation}</p></div>}
@@ -161,9 +213,13 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
                 onChange={event=>{if(writable)patch({answer:event.target.value,graded:false},blank.id);}}
                 onKeyDown={event=>{
                   if(event.nativeEvent?.isComposing || event.repeat) return;
-                  if(event.key==='Enter' && (event.ctrlKey || event.metaKey) && !exam && writable){
+                  if(event.key==='Enter' && (event.ctrlKey || event.metaKey) && !exam){
                     event.preventDefault();event.stopPropagation();
-                    const answer=event.currentTarget.value;
+                    if(!writable){
+                      if(blank.id===id && item.selected!==undefined) enterWriting(id);
+                      return;
+                    }
+                    const answer=event.currentTarget?.value ?? value;
                     gradeOrAdvance(blank.id,answer);
                     return;
                   }
@@ -176,7 +232,9 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
         <div className="prep-actions">
           <button className="text-button" disabled={visibleIds.indexOf(id)<=0} onClick={() => go(collection.questionIds.indexOf(visibleIds[visibleIds.indexOf(id)-1]))}>← 이전</button>
           <span>{saved.index+1} / {collection.questionIds.length}</span>
-          <button className="primary-button" disabled={visibleIds.indexOf(id)>=visibleIds.length-1} onClick={() => go(collection.questionIds.indexOf(visibleIds[visibleIds.indexOf(id)+1]))}>다음 →</button>
+          <button className="primary-button" disabled={visibleIds.indexOf(id)>=visibleIds.length-1} onClick={() => go(collection.questionIds.indexOf(visibleIds[visibleIds.indexOf(id)+1]))}>
+            {!exam && item.graded && isCorrect(id,item.answer??'') ? '다음 → · Ctrl + Enter' : '다음 →'}
+          </button>
         </div>
         {!exam && done===collection.questionIds.length && <p role="status">이 문제은행의 주관식 학습을 모두 마쳤습니다. 목록에서 모의고사로 실력을 확인하세요.</p>}
       </article>
