@@ -30,7 +30,7 @@ function load(file) {
   return exports;
 }
 const data=load('app/exam-prep/data.ts');
-const {choicePreview,cellParts,cellQuestions,prepQuestions,examQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
+const {choicePreview,cellParts,cellQuestions,prepQuestions,examQuestions,monthlyBanks,monthlyReferenceBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
 const {suppliedInExams,monthlyExamBlueprints}=load('app/exam-prep/exam-design.ts');
 assert.equal(monthlyBanks.length,5);assert.equal(monthlyExams.length,5);assert.equal(predictedExams.length,3);assert.equal(topicBanks.length,24);
 for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]) {
@@ -45,8 +45,9 @@ for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]
 }
 for(const [i,exam] of monthlyExams.entries()) {
   assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyExamBlueprints[monthlyBanks[i].id].questionIds));
-  assert(exam.questionIds.every(id=>monthlyBanks[i].questionIds.includes(id)),'Keep each mock within its recalled monthly scope');
-  assert(exam.questionIds.length<monthlyBanks[i].questionIds.length,'Remove peripheral/redundant questions');
+  assert(exam.questionIds.every(id=>monthlyReferenceBanks[i].questionIds.includes(id)),'Keep each mock within its recalled monthly scope');
+  assert(exam.questionIds.length<monthlyReferenceBanks[i].questionIds.length,'Remove peripheral/redundant questions');
+  assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyBanks[i].questionIds));
   assert.equal(new Set(exam.questionIds.map(id=>prepQuestions[id].subject)).size,5);
 }
 const predictedIds=predictedExams.flatMap(e=>e.questionIds);
@@ -59,7 +60,7 @@ for(const exam of predictedExams) {
   assert(results(exam.questionIds,{},true).every(s=>s.correct===0));
 }
 for(const topic of topicBanks)assert(topic.questionIds.some(id=>predictedIds.includes(id)),`Predicted coverage: ${topic.id}`);
-assert(monthlyBanks[1].questionIds.includes('llm-017'));assert(monthlyBanks[1].questionIds.includes('vision-024'));
+assert(monthlyReferenceBanks[1].questionIds.includes('llm-017'));assert(monthlyBanks[1].questionIds.includes('vision-024'));
 assert(Object.values(prepQuestions).every(q=>!q.id.startsWith('extra-')));
 for (const id of ['data-learning','vision-learning','distillation']) assert(topicBanks.some(t=>t.id===id));
 // Additional questions are exact excerpts, never invented replacement code.
@@ -88,10 +89,10 @@ for(const collection of [...monthlyBanks,...predictedExams,...topicBanks]) {
   }
 }
 for(const id of ['llm-014','llm-015','llm-016','llm-083','llm-084','llm-085','llm-086','llm-087','llm-088']) {
-  assert(monthlyBanks[1].questionIds.includes(id));assert(monthlyBanks[2].questionIds.includes(id));
+  assert(monthlyReferenceBanks[1].questionIds.includes(id));assert(monthlyReferenceBanks[2].questionIds.includes(id));
   assert.equal(prepQuestions[id].kind,'원본 실습 빈칸 · 해설 답안');
 }
-assert(cellQuestions(monthlyBanks[1].questionIds,'llm-014').length>=12);
+assert(cellQuestions(monthlyReferenceBanks[1].questionIds,'llm-014').length>=12);
 assert(prepQuestions['llm-089'].fullCode.includes('class MultiHeadAttention'));
 for(const collection of [...monthlyExams,...predictedExams]) for(const id of collection.questionIds) {
   assert(!suppliedInExams.has(id));
@@ -160,7 +161,7 @@ textarea(tree).props.onKeyDown(key('wrong'));tree=render();assert.equal(slots[0]
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer,{ctrlKey:false,metaKey:true}));tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
 console.log('PASS: masked preview before choices; 1~4 choice keys + Ctrl/Cmd+Enter grading, empty/IME/repeat guards and edit-to-regrade');
-const bankKey=`ai-monthly-prep-v3:bank:${props.collection.id}`;
+const bankKey=`ai-monthly-prep-v5:monthly-bank:${props.collection.id}`;
 assert(JSON.parse(storage.get(bankKey)).items[props.collection.questionIds[0]].graded);
 slots.length=0;props={...props,initial:JSON.parse(storage.get(bankKey))};tree=render();assert(textarea(tree).props.value);assert.equal(feedback(tree).length,1);
 console.log('PASS: required choice-first flow, hidden options in writing, grading and persisted study progress');
@@ -174,6 +175,28 @@ textarea(tree).props.onKeyDown(key(textarea(tree).props.value));tree=render();as
 textarea(tree).props.onKeyDown(key(textarea(tree).props.value));tree=render();assert.equal(slots[0].index,lastIndex);
 assert.equal(button(tree,'마지막 문제까지').props.disabled,true);
 console.log('PASS: correct-answer shortcut advances once; last question never wraps');
+
+// A narrowed DPO blank must use matching options, preview, hint and keyboard grading.
+for(const collection of monthlyBanks) for(const id of collection.questionIds) {
+  const q=examQuestions[id],correct=q.choices.filter(c=>c.correct);
+  assert.equal(q.choices.length,4);assert.equal(correct.length,1);assert.equal(correct[0].text,q.answer);
+  assert.equal(new Set(q.choices.map(c=>c.text)).size,4);
+  for(const c of q.choices)assert.equal(isCorrect(id,c.text,true),c.correct);
+}
+slots.length=0;const dpoBank=monthlyBanks[1];
+props={collection:dpoBank,exam:false,initial:{...empty(),index:dpoBank.questionIds.indexOf('llm-016')},onHome(){}};tree=render();
+assert(text(tree).includes(examQuestions['llm-016'].hint));
+assert(text(all(tree,n=>n.props?.['aria-label']==='객관식 코드 미리보기')[0]).includes('-【현재 빈칸】(beta * logits)'));
+const correctOption=all(tree,n=>n.type==='input').find(n=>n.props.value===undefined && n.props.onChange && text(tree).includes('F.logsigmoid'));
+assert(correctOption);
+// Pick by rendered label so stable shuffling cannot change which option is correct.
+all(tree,n=>n.type==='label').find(n=>text(n).includes('F.logsigmoid')).props.children[0].props.onChange();tree=render();
+button(tree,'주관식 문제로 이동').props.onClick();tree=render();
+textarea(tree).props.onChange({target:{value:'F.logsigmoid'}});tree=render();
+textarea(tree).props.onKeyDown(key('F.logsigmoid'));tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
+assert(text(tree).includes('주관식 정답 1/33'));
+const beforeAdvance=slots[0].index;textarea(tree).props.onKeyDown(key('F.logsigmoid'));tree=render();assert.equal(slots[0].index,beforeAdvance+1);
+console.log('PASS: monthly bank/exam parity, adapted choices, preview, hints and narrowed-answer grading/advance');
 
 slots.length=0;props={collection:predictedExams[0],exam:true,initial:empty(),onHome(){}};tree=render();
 assert.equal(all(tree,n=>n.props?.className==='prep-blank-hint').length,all(tree,n=>n.type==='textarea').length);
@@ -189,7 +212,7 @@ button(tree,'오답·미입력만').props.onClick();tree=render();assert.equal(a
 button(tree,'답안 초기화').props.onClick();tree=render();assert.equal(textarea(tree).props.value,'');assert.equal(feedback(tree).length,0);assert(!textarea(tree).props.readOnly);
 console.log('PASS: no answers before submission, unanswered grading, subject scores, locked saved results, wrong-only review and retry reset');
 
-slots.length=0;storage.set(`ai-monthly-prep-v3:bank:${monthlyBanks[0].id}`,'{bad json');cursor=0;tree=Home();
+slots.length=0;storage.set(`ai-monthly-prep-v5:monthly-bank:${monthlyBanks[0].id}`,'{bad json');cursor=0;tree=Home();
 button(tree,'학습 / 이어서').props.onClick();cursor=0;tree=Home();assert.equal(tree.props.initial.index,0);assert.equal(Object.keys(tree.props.initial.items).length,0);
 console.log('PASS: corrupt storage safely starts a fresh attempt');
 console.log('Monthly counts:',monthlyBanks.map(c=>`${c.title}: ${c.questionIds.length}`).join(', '));

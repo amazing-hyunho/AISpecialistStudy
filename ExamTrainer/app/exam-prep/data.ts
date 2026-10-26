@@ -8,7 +8,7 @@ import { monthlyExamBlueprints, implementationBlanks, implementationHints, examT
 export const subjects = ['LLM', 'RAG', 'Data', 'Vision', 'On-device'];
 type Choice = { id: number; text: string; correct: boolean; reason: string };
 export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; fullCode: string; cellKey: string; start: number; end: number; source: string; kind: string; explanation: string; choices: Choice[]; hint?: string };
-export type Collection = { id: string; title: string; description: string; questionIds: string[] };
+export type Collection = { id: string; title: string; description: string; questionIds: string[]; implementation?: boolean };
 const range = (prefix: string, start: number, end: number) => Array.from({ length: end - start + 1 }, (_, i) => `${prefix}-${String(start + i).padStart(3, '0')}`);
 const unique = (ids: string[]) => [...new Set(ids)];
 const cells = bank.cells as Record<string, { source: string; cell: number; answerSource: string; sourceKind?: string }>;
@@ -59,7 +59,7 @@ const topics = (...ids: string[]) => unique(ids.flatMap(id => {
   if (!topic) throw new Error(`Unknown topic: ${id}`);
   return topic.questionIds;
 }));
-export const monthlyBanks: Collection[] = [
+export const monthlyReferenceBanks: Collection[] = [
   { id:'apr1', title:'4월 1차', description:'MHA·spam/ham / KG 검색 / kernel / ResNet18 / 시계열. 시계열 세부 문제는 기본 window로 구성한 대응 연습입니다.', questionIds:unique([...topics('mha','spam','kg','rag-basic','kernel','resnet','transform'),...range('data',43,47)]) },
   { id:'apr2', title:'4월 2차', description:'DPO·LoRA / retriever·KG·prompt / quantization / ViT Attention·residual / sliding window·Conv1D. LoRA 설정·DETR 내부 구현 복기는 강의에 있는 유사 유형으로 연습합니다.', questionIds:unique([...topics('dpo','lora','rag-basic','kg','quant','detr'),...range('data',43,47),...topics('conv')]) },
   { id:'may', title:'5월', description:'GPT-DPO / RAG / channel / COCO / NGCF. COCO는 DETR 추론 후보, RAG 세부 항목은 대응 연습입니다.', questionIds:unique([...topics('dpo','rag-basic','channel','ngcf'),'vision-007','vision-008','vision-009']) },
@@ -67,9 +67,10 @@ export const monthlyBanks: Collection[] = [
   { id:'sep', title:'9월', description:'헤드 분리·GPT 생성 / 기본 RAG / 채널 pruning / 전처리·residual / Encoder–Decoder. 저장된 9월 복기 원문 기준입니다.', questionIds:unique([...topics('mha','gpt','transform','channel'),'rag-001','rag-029','rag-024','vision-024','vision-035','data-034','data-035','data-042',...range('data',36,41)]) },
 ];
 
-export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b, id:`exam-${b.id}`, title:`${b.title} 복기 모의고사`,
+export const monthlyBanks: Collection[] = monthlyReferenceBanks.map(b => ({...b,implementation:true,
   description:`9월 복기형 · ${monthlyExamBlueprints[b.id].focus}. ${b.id==='sep' ? '직접 복기된 구현을 선별했습니다.' : '월별 주제를 9월처럼 가이드가 있는 구현 빈칸으로 구성한 대응 연습입니다.'}`,
   questionIds:monthlyExamBlueprints[b.id].questionIds}));
+export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b,id:`exam-${b.id}`,title:`${b.title} 복기 모의고사`}));
 export const predictedExams: Collection[] = [
   { id:'predict-1', title:'예상 모의고사 1회 · 반복 핵심', description:'MHA·GPT / 검색·KG / window·Conv1D·RNN / ResNet·전처리·학습 / kernel·channel·양자화·증류', questionIds:[
     'llm-089','llm-092','llm-049','llm-006','llm-094',
@@ -90,7 +91,7 @@ export const predictedExams: Collection[] = [
     'vision-003','vision-037','vision-004','material-vit-value','vision-027',
     'ondevice-070','ondevice-008','ondevice-061','ondevice-037','ondevice-069'] },
 ];
-const used = new Set([...monthlyBanks,...topicBanks,...predictedExams].flatMap(c => c.questionIds));
+const used = new Set([...monthlyReferenceBanks,...topicBanks,...predictedExams].flatMap(c => c.questionIds));
 export const prepQuestions: Record<string, PrepQuestion> = Object.fromEntries([
   ...[...bank.questions.filter(q => !materialQuestions.some(item => item.question.id === q.id)), ...materialQuestions.map(item => item.question)].filter(q => used.has(q.id)).map(fromBank),
 ].map(q => [q.id,q]));
@@ -126,6 +127,23 @@ for (const q of Object.values(prepQuestions)) {
     prompt:narrowed ? '제공된 코드와 빈칸별 힌트를 보고 핵심 부분만 완성하세요.' : q.prompt,
     context:source.slice(0,start)+'【빈칸】'+source.slice(start+answer.length)};
 }
+// Monthly practice must use options for the same adapted span it will grade.
+// Reuse source-backed distractors; never present the former full formula as correct.
+for (const q of Object.values(examQuestions)) {
+  if (q.answer===prepQuestions[q.id].answer) continue;
+  const seen=new Set([normalized(q.answer)]);
+  const candidates=Object.values(examQuestions).filter(other=>other.id!==q.id).sort((a,b)=>
+    Number(b.subject===q.subject)-Number(a.subject===q.subject) || Math.abs(a.answer.length-q.answer.length)-Math.abs(b.answer.length-q.answer.length));
+  const choices:Choice[]=[{id:0,text:q.answer,correct:true,reason:'현재 구현 빈칸의 예시 답안입니다.'}];
+  for (const other of candidates) {
+    const key=normalized(other.answer);
+    if (seen.has(key)) continue;
+    seen.add(key);choices.push({id:choices.length,text:other.answer,correct:false,reason:`‘${other.topic}’의 비교 코드입니다. 현재 빈칸의 역할·인수와 대조하세요.`});
+    if (choices.length===4) break;
+  }
+  if (choices.length!==4) throw new Error(`Missing implementation choices: ${q.id}`);
+  q.choices=choices;
+}
 export function isCorrect(id: string, answer: string, exam=false) {
   return Boolean(answer.trim()) && normalized(answer) === normalized((exam ? examQuestions : prepQuestions)[id].answer);
 }
@@ -158,9 +176,9 @@ export function cellParts(ids: string[], id: string, exam=false) {
   parts.push({text:source.slice(cursor)});return parts;
 }
 
-export function choicePreview(ids: string[], id: string) {
+export function choicePreview(ids: string[], id: string, implementation=false) {
   const marker = '【현재 빈칸】';
-  const masked = cellParts(ids,id).map(part => part.question
+  const masked = cellParts(ids,id,implementation).map(part => part.question
     ? part.question.id === id ? marker : `【빈칸 ${ids.indexOf(part.question.id)+1}】`
     : part.text).join('');
   const start = masked.indexOf(marker);
