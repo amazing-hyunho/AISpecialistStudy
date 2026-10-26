@@ -10,7 +10,7 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync(path.join(__dirname, '../a
   compilerOptions: { module: ts.ModuleKind.CommonJS },
 }).outputText, context);
 const cards = context.exports.finalTopics;
-assert.equal(cards.length, 19);
+assert.equal(cards.length, 23);
 const subjects = new Set();
 let count = 0;
 for (const card of cards) {

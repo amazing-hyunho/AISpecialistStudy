@@ -67,6 +67,42 @@
     "why": "배치·시간·특징 형태를 갖는 실수 배열로 변환합니다. 이어지는 torch.tensor에서 실습의 float32 모델 입력을 준비합니다.",
     "memory": "창 목록 → float32 배열 → Tensor."
   },
+  "data-043": {
+    "why": "시점 i부터 sequence_length개의 입력과 직후 1시점 타깃을 만들 수 있는 시작 위치 개수입니다.",
+    "memory": "시작 위치 수: len(data_seq) - sequence_length."
+  },
+  "data-044": {
+    "why": "현재 시작점 i에서 과거 sequence_length 시점만큼 잘라 하나의 입력 윈도우로 만듭니다.",
+    "memory": "입력 창: data_seq[i:i + sequence_length]."
+  },
+  "data-045": {
+    "why": "단일 시점 예측에서는 입력 창이 끝난 직후 시점의 대상 변수를 타깃으로 사용합니다.",
+    "memory": "타깃 시점: data_seq[i + sequence_length, 0]."
+  },
+  "data-046": {
+    "why": "신경망 선형·순환·합성곱 계층과 연산할 수 있도록 float32 Tensor로 변환합니다. shape는 (N, L, F)입니다.",
+    "memory": "features → torch.tensor(..., dtype=torch.float32)."
+  },
+  "data-047": {
+    "why": "회귀 손실(MSELoss 등) 계산을 위해 타깃도 입력과 같은 float32 Tensor로 맞춥니다. shape는 (N,)입니다.",
+    "memory": "labels → torch.tensor(..., dtype=torch.float32)."
+  },
+  "data-048": {
+    "why": "PyTorch nn.Conv1d는 채널 축이 시간 축보다 앞선 (B, C_in, L) 입력을 기대하므로 1번 시간 축과 2번 특성 축을 교환합니다.",
+    "memory": "Conv1d 전: (B,L,C) → transpose(1,2) → (B,C,L)."
+  },
+  "data-049": {
+    "why": "시간 축을 따라 커널이 이동하며 지역 시간 패턴을 추출해 (B, hidden_size, L_out) 출력을 만듭니다.",
+    "memory": "합성곱: x = self.conv1d(x)."
+  },
+  "data-050": {
+    "why": "nn.Linear는 마지막 차원을 입력 특성(in_features)으로 처리하므로 채널 축을 다시 마지막 축으로 옮깁니다.",
+    "memory": "Conv1d 후: (B,C,L) → transpose(1,2) → (B,L,C)."
+  },
+  "data-051": {
+    "why": "마지막 축 hidden_size를 1차원으로 투영해 (B, L_out, 1) 시계열 예측 출력을 얻습니다.",
+    "memory": "선형 투영: return self.fc(x)."
+  },
   "vision-035": {
     "why": "Attention residual 다음의 FFN도 입력과 출력 shape를 맞춰 잔차 덧셈을 수행합니다. torch.cat으로 채널을 늘리는 연결이 아닙니다.",
     "memory": "Attention도 +x, FFN도 +x."
@@ -94,5 +130,29 @@
   "ondevice-064": {
     "why": "채널별 유지 여부를 해당 채널의 모든 가중치 위치에 적용합니다. 이 코드는 가중치를 0으로 만들며 구조 자체의 채널 수를 줄이지는 않습니다.",
     "memory": "채널 mask → expand_as(weight)."
+  },
+  "ondevice-065": {
+    "why": "각 출력 채널과 입력 채널 쌍마다 하나의 2D 커널이 존재하므로 전체 커널 수는 C_out × C_in입니다.",
+    "memory": "커널 수 = shape[0] × shape[1]."
+  },
+  "ondevice-066": {
+    "why": "개별 가중치 원소나 채널 수가 아니라 커널 개수(num_kernels)를 기준으로 제거 개수를 정합니다.",
+    "memory": "round(커널 수 × sparsity)."
+  },
+  "ondevice-067": {
+    "why": "출력·입력 채널 축(0, 1)은 남기고 커널 높이·너비 축(2, 3)만 절댓값 합산합니다. 채널 프루닝의 dim=(0, 2, 3)과 구분하세요.",
+    "memory": "커널 단위는 공간 축 (2,3)만 합산."
+  },
+  "ondevice-068": {
+    "why": "kthvalue는 오름차순 k번째 값과 인덱스를 반환하므로 [0]으로 값만 꺼내 커널 제거 경계값으로 사용합니다.",
+    "memory": "kthvalue(importance.flatten(), num_pruned_kernels)[0]."
+  },
+  "ondevice-069": {
+    "why": "임계값보다 큰 커널 위치는 True(1), 작거나 같은 커널은 False(0)가 되어 커널 단위로 유지 여부를 결정합니다.",
+    "memory": "유지 마스크: importance > threshold."
+  },
+  "ondevice-070": {
+    "why": "각 커널의 유지 여부를 K_h × K_w 공간 원소 전체에 똑같이 복제해 weight.mul_(mask)가 동작하도록 맞춥니다.",
+    "memory": "커널 mask → expand_as(weight)."
   }
 }

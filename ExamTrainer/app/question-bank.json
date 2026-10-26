@@ -102,7 +102,7 @@
       "number": "TS",
       "title": "Time Series",
       "file": "ts_practice.ipynb",
-      "questionCount": 30
+      "questionCount": 39
     },
     {
       "id": "data-gcf",
@@ -174,7 +174,7 @@
       "number": "01",
       "title": "Pruning for CNN",
       "file": "1. Pruning for CNN.ipynb",
-      "questionCount": 17
+      "questionCount": 23
     },
     {
       "id": "ondevice-cnn-quant",
@@ -724,6 +724,16 @@
     "ondevice-cnn-pruning-cell-35": {
       "source": "def prune_weight_channel_level(weight: torch.Tensor, sparsity: float) -> None:\n    \"\"\"채널 단위 프루닝을 수행하는 함수\n\n    Args:\n        weight: 프루닝할 가중치 텐서 (out_channels, in_channels, kernel_h, kernel_w)\n        sparsity: 프루닝할 비율 (0~1 사이 값)\n\n    Returns:\n        프루닝 마스크 텐서\n    \"\"\"\n    sparsity = min(1.0, max(0.0, sparsity))\n    if sparsity == 1.0:\n        weight.zero_()\n        return torch.zeros_like(weight)\n    elif sparsity == 0.0:\n        return torch.ones_like(weight)\n\n    # 프루닝할 채널 수 계산\n    num_channels = weight.shape[1]\n    num_pruned_channels = round(num_channels * sparsity)\n\n    # 각 채널의 중요도를 절댓값 합으로 계산\n    # (출력 채널, 커널 높이, 커널 너비에 대해 합산)\n    importance = weight.abs().sum(dim=(0, 2, 3), keepdim=True)\n\n    # pruning threshold를 계산\n    threshold = torch.kthvalue(importance.flatten(), num_pruned_channels)[0]\n\n    # threshold보다 큰 채널은 유지(1), 작은 채널은 제거(0)\n    mask = importance > threshold\n\n    # 마스크를 가중치와 동일한 크기로 확장\n    mask = mask.expand_as(weight)\n\n    # 마스크를 적용하여 프루닝 수행\n    weight.mul_(mask)\n\n    return mask\n\nmask_channel_level = prune_weight_channel_level(weight.clone(), prune_sparsity)\ndraw_weight_distribution(mask_channel_level, title=\"Channel-level Pruning Mask\")",
       "cell": 35,
+      "answerSource": "1. Pruning for CNN_answer.ipynb"
+    },
+    "data-ts-cell-15": {
+      "source": "sequence_length = 50  # Number of time steps to look back\n\ndef convert_data_into_tensors(data_seq):\n  features, labels = [], []\n  for i in range(len(data_seq) - sequence_length):\n      features.append(data_seq[i:i + sequence_length])\n      labels.append(data_seq[i + sequence_length, 0])\n  features, labels = np.array(features), np.array(labels)\n\n  features = torch.tensor(features, dtype=torch.float32)\n  labels = torch.tensor(labels, dtype=torch.float32)\n  return features, labels\n\nX_train, y_train = convert_data_into_tensors(train_scaled)\nX_test, y_test = convert_data_into_tensors(test_scaled)\n\nprint(X_train.shape)\nprint(y_train.shape)\nprint(X_test.shape)\nprint(y_test.shape)\n\n# torch.Size([956, 50, 1])\n# torch.Size([956])\n# torch.Size([201, 50, 1])\n# torch.Size([201])",
+      "cell": 15,
+      "answerSource": "ts_solution.ipynb"
+    },
+    "ondevice-cnn-pruning-cell-33": {
+      "source": "def prune_weight_kernel_level(weight: torch.Tensor, sparsity: float) -> None:\n    \"\"\"커널 단위로 가중치를 프루닝하는 함수\n\n    Args:\n        weight: 프루닝할 가중치 텐서 (out_channels, in_channels, kernel_h, kernel_w)\n        sparsity: 프루닝할 비율 (0~1 사이 값)\n\n    Returns:\n        프루닝 마스크 텐서\n    \"\"\"\n    sparsity = min(1.0, max(0.0, sparsity))\n    if sparsity == 1.0:\n        weight.zero_()\n        return torch.zeros_like(weight)\n    elif sparsity == 0.0:\n        return torch.ones_like(weight)\n\n    # 프루닝할 커널 수 계산\n    num_kernels = weight.shape[0] * weight.shape[1]\n    num_pruned_kernels = round(num_kernels * sparsity)\n\n    # 각 커널의 중요도를 절댓값 합으로 계산 (커널 크기에 대해 합산)\n    importance = weight.abs().sum(dim=(2, 3), keepdim=True)\n\n    # pruning trheshold를 계산\n    threshold = torch.kthvalue(importance.flatten(), num_pruned_kernels)[0]\n\n    # threshold보다 큰 커널은 유지(1), 작은 커널은 제거(0)\n    mask = importance > threshold\n\n    # 마스크를 가중치와 동일한 크기로 확장\n    mask = mask.expand_as(weight)\n\n    # 마스크를 적용하여 프루닝 수행\n    weight.mul_(mask)\n\n    return mask\n\nmask_kernel_level = prune_weight_kernel_level(weight.clone(), prune_sparsity)\ndraw_weight_distribution(mask_kernel_level, title=\"Kernel-level Pruning Mask\")",
+      "cell": 33,
       "answerSource": "1. Pruning for CNN_answer.ipynb"
     }
   },
@@ -4464,6 +4474,216 @@
       "answer": "mask.expand_as(weight)",
       "occurrence": 0,
       "sourceId": "ondevice-cnn-pruning-cell-35",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-043",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Sliding Window 범위",
+      "prompt": "전체 시계열 길이에서 입력 창 길이를 뺀 반복 상한을 작성하세요.",
+      "answer": "len(data_seq) - sequence_length",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-15",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-044",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Sliding Window 입력",
+      "prompt": "시점 i부터 sequence_length 길이의 과거 구간을 입력 리스트에 추가하세요.",
+      "answer": "data_seq[i:i + sequence_length]",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-15",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-045",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "다음 시점 정답 추출",
+      "prompt": "입력 구간 바로 다음 시점(i + sequence_length)의 첫 번째 특성값을 정답으로 선택하세요.",
+      "answer": "data_seq[i + sequence_length, 0]",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-15",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-046",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "입력 Tensor 변환",
+      "prompt": "NumPy 입력 배열 features를 float32 PyTorch Tensor로 변환하세요.",
+      "answer": "torch.tensor(features, dtype=torch.float32)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-15",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-047",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "정답 Tensor 변환",
+      "prompt": "NumPy 정답 배열 labels를 float32 PyTorch Tensor로 변환하세요.",
+      "answer": "torch.tensor(labels, dtype=torch.float32)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-15",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-048",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Conv1D 입력 축 변환",
+      "prompt": "(B, L, C_in) 시계열 입력을 Conv1d가 요구하는 (B, C_in, L)로 바꿀 transpose 식을 작성하세요.",
+      "answer": "x.transpose(1, 2)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-049",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Conv1D 연산 적용",
+      "prompt": "축을 바꾼 입력 x를 1D 합성곱 레이어에 통과시키세요.",
+      "answer": "self.conv1d(x)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-050",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Linear 입력 축 복원",
+      "prompt": "합성곱 결과 (B, C_out, L_out)을 선형층 적용을 위해 (B, L_out, C_out)으로 되돌리는 transpose 식을 작성하세요.",
+      "answer": "x.transpose(1, 2)",
+      "occurrence": 1,
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": false
+    },
+    {
+      "id": "data-051",
+      "subject": "Data",
+      "chapterId": "data-ts",
+      "chapterNumber": "TS",
+      "chapterTitle": "Time Series",
+      "file": "ts_practice.ipynb",
+      "topic": "Conv1D 최종 출력",
+      "prompt": "시점별 은닉 표현에 선형층 fc를 적용해 예측값을 반환하세요.",
+      "answer": "self.fc(x)",
+      "occurrence": 0,
+      "sourceId": "data-ts-cell-29",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-065",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "전체 커널 수",
+      "prompt": "weight가 (C_out,C_in,K_h,K_w)일 때 2D 커널(K_h×K_w)의 총 개수를 구하세요.",
+      "answer": "weight.shape[0] * weight.shape[1]",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-066",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "제거할 커널 수",
+      "prompt": "전체 커널 수에 sparsity를 곱해 반올림하세요.",
+      "answer": "round(num_kernels * sparsity)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-067",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "커널 중요도 합산",
+      "prompt": "(C_out,C_in,K_h,K_w)에서 각 커널의 공간 축만 합산해 (C_out,C_in,1,1) 중요도를 구하세요.",
+      "answer": "weight.abs().sum(dim=(2, 3), keepdim=True)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-068",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "커널 Pruning Threshold",
+      "prompt": "중요도를 1차원으로 펼쳐 제거할 커널 수번째 기준값(threshold)을 구하세요.",
+      "answer": "torch.kthvalue(importance.flatten(), num_pruned_kernels)[0]",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-069",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "커널 유지 Mask",
+      "prompt": "중요도가 threshold보다 큰 커널만 유지하는 boolean mask를 만드세요.",
+      "answer": "importance > threshold",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
+      "isSourceBlank": false
+    },
+    {
+      "id": "ondevice-070",
+      "subject": "On-device",
+      "chapterId": "ondevice-cnn-pruning",
+      "chapterNumber": "01",
+      "chapterTitle": "Pruning for CNN",
+      "file": "1. Pruning for CNN.ipynb",
+      "topic": "커널 Mask 확장",
+      "prompt": "(C_out,C_in,1,1) 커널 mask를 원래 가중치 shape로 확장하세요.",
+      "answer": "mask.expand_as(weight)",
+      "occurrence": 0,
+      "sourceId": "ondevice-cnn-pruning-cell-33",
       "isSourceBlank": false
     }
   ]

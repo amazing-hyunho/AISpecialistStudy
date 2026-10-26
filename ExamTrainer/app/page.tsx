@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import MockExam from './mock-exam';
-import { drawExamCells } from './mock-selection';
 import { normalized } from './grading';
-import { fixedExams } from './fixed-exams';
 import questionBankData from './question-bank.json';
 import { questionExplanations, type QuestionExplanation } from './explanations';
 import { studySupport } from './study-support';
@@ -44,7 +41,7 @@ type QuestionRecord = {
 
 type Explanation = QuestionExplanation & ReturnType<typeof studySupport>;
 type Question = QuestionRecord & Cell & { explanation: Explanation };
-type Screen = 'home' | 'chapters' | 'quiz' | 'wrong' | 'mock';
+type Screen = 'home' | 'chapters' | 'quiz' | 'wrong';
 type ResultState = 'idle' | 'correct' | 'wrong';
 
 const bank = questionBankData as {
@@ -151,25 +148,6 @@ export default function Home() {
   const [wrongIds, setWrongIds] = useState<string[]>([]);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [examCells, setExamCells] = useState<string[]>([]);
-  const [examRound, setExamRound] = useState(0);
-  const [fixedExamIndex, setFixedExamIndex] = useState<number | null>(null);
-
-  function startExam() {
-    setFixedExamIndex(null);
-    setExamCells(drawExamCells(questions.filter(q => q.sourceKind !== 'reconstructed')));
-    setExamRound(round => round + 1);
-    setScreen('mock');
-  }
-
-  function startFixedExam(index: number) {
-    setFixedExamIndex(index);
-    setExamCells(fixedExams[index].cellIds);
-    setExamRound(round => round + 1);
-    setScreen('mock');
-    window.scrollTo({ top: 0 });
-  }
-
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     const legacyEntry = stored
@@ -296,15 +274,6 @@ export default function Home() {
     );
     nextQuestion();
   }
-
-  if (screen === 'mock') return <MockExam key={examRound} cellIds={examCells}
-    title={fixedExamIndex === null ? undefined : `${fixedExamIndex + 1}회 · ${fixedExams[fixedExamIndex].title}`}
-    focus={fixedExamIndex === null ? undefined : fixedExams[fixedExamIndex].focus}
-    onNext={fixedExamIndex !== null && fixedExamIndex < 9 ? () => startFixedExam(fixedExamIndex + 1) : undefined}
-    onHome={() => setScreen('home')} onRetry={() => fixedExamIndex === null ? startExam() : startFixedExam(fixedExamIndex)} onComplete={(correct, wrong) => {
-    setSolvedIds(ids => [...new Set([...ids, ...correct])]);
-    setWrongIds(ids => [...new Set([...ids, ...wrong])]);
-  }} />;
 
   if (screen === 'chapters') {
     const subjectChapters = bank.chapters.filter((chapter) => chapter.subject === selectedSubject);
@@ -529,7 +498,7 @@ export default function Home() {
           <div className="hero-actions">
             <Link className="primary-button large" href="/exam-recall/">2026-09 시험 복기 →</Link>
             <Link className="primary-button large" href="/final-handbook/">시험 직전 · 찐 암기 핸드북 →</Link>
-            <button className="primary-button large mock-start" onClick={startExam}>랜덤 모의고사 · 10셀 →</button>
+            <Link className="primary-button large" href="/exam-prep/">월별·예상 문제은행과 모의고사 →</Link>
             <Link className="primary-button large" href="/handbook/">읽는 암기 핸드북 →</Link>
             <button className="primary-button large" onClick={() => openSubject('On-device')}>
               On-device 챕터 선택 <span>→</span>
@@ -553,15 +522,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="subject-section" id="fixed-exams">
-        <div className="section-heading"><div><span className="eyebrow">PDF 기준 · 반복 암기</span><h2>시험 대비 고정 모의고사 10회분</h2></div></div>
-        <p>각 회차 10셀, 과목별 2셀입니다. 1회부터 순서대로 풀고 틀린 회차를 다시 풀어보세요. 중요한 셀은 여러 회차에 반복됩니다.</p>
-        <p>2026-09 사용자 복기 반영: 1·2·9·10회는 Tensor shape·기본 API 구성을 우선합니다. 기존 회차 구성은 변경됐으며, 공식 기출 원문이 아닌 복기 기반 보강입니다.</p>
-        <p>강의 원문에서 선별한 연습 세트이며 실제 출제를 보장하지 않습니다. 제출 후 정답·해설이 표시됩니다.</p>
-        <div className="chapter-grid">{fixedExams.map((exam, index) => <button className="chapter-card fixed-exam-card" key={exam.number} onClick={() => startFixedExam(index)}>
-          <div className="chapter-card-top"><span>{exam.number}회</span><strong>10셀 · {exam.blankCount}빈칸</strong></div>
-          <h3>{exam.title}</h3><p>{exam.focus}</p><span>고정 문제 풀기 →</span>
-        </button>)}</div>
+      <section className="subject-section" id="exam-prep">
+        <div className="section-heading"><h2>월별 복기와 예상 시험 대비</h2></div>
+        <p>월별 문제은행 5개 · 예상 주제 24개 · 월별 모의고사 5회 · 예상 모의고사 3회. 문제은행은 객관식 확인 후 주관식 작성으로 이어집니다.</p>
+        <div className="chapter-grid">
+          <Link className="chapter-card" href="/exam-prep/#monthly"><h3>월별 복기 문제은행</h3><p>4월 1차·2차, 5월, 6월, 9월</p></Link>
+          <Link className="chapter-card" href="/exam-prep/#priority"><h3>예상 주제 문제은행</h3><p>반복 주제와 구체적인 구현 요구 중심</p></Link>
+          <Link className="chapter-card" href="/exam-prep/#monthly-exams"><h3>월별 복기 모의고사</h3><p>각 회차의 복기 범위를 주관식으로 확인</p></Link>
+          <Link className="chapter-card" href="/exam-prep/#predicted"><h3>예상 모의고사 3회</h3><p>매회 25문항 · 다섯 과목 각 5문항</p></Link>
+        </div>
       </section>
 
       <section className="subject-section">

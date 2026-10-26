@@ -156,4 +156,4 @@ for (const correct of [false, true]) {
   view = renderPractice();
   assert.equal(radios(view).length, 4);
 }
-console.log('PASS: all 267 inline choice sets and masked sources; correct/wrong feedback, shortcut isolation, collapsed choices and written-stage handoff');
+console.log(`PASS: all ${bank.questions.length} inline choice sets and masked sources; correct/wrong feedback, shortcut isolation, collapsed choices and written-stage handoff`);

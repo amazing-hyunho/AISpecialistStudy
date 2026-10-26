@@ -59,6 +59,21 @@ for id, topic, prompt, answer, why, memory in [
     add(id,'data-ts',TS,43,'data-ts-cell-43',topic,prompt,answer,why,memory)
 add('data-042','data-ts',TS,41,'data-ts-cell-41','학습 데이터 dtype','입력 창 목록을 float32 NumPy 배열로 만드세요.','np.array(features, dtype=np.float32)',
     '배치·시간·특징 형태를 갖는 실수 배열로 변환합니다. 이어지는 torch.tensor에서 실습의 float32 모델 입력을 준비합니다.','창 목록 → float32 배열 → Tensor.')
+for id, topic, prompt, answer, why, memory in [
+    ('data-043','Sliding Window 범위','전체 시계열 길이에서 입력 창 길이를 뺀 반복 상한을 작성하세요.','len(data_seq) - sequence_length','시점 i부터 sequence_length개의 입력과 직후 1시점 타깃을 만들 수 있는 시작 위치 개수입니다.','시작 위치 수: len(data_seq) - sequence_length.'),
+    ('data-044','Sliding Window 입력','시점 i부터 sequence_length 길이의 과거 구간을 입력 리스트에 추가하세요.','data_seq[i:i + sequence_length]','현재 시작점 i에서 과거 sequence_length 시점만큼 잘라 하나의 입력 윈도우로 만듭니다.','입력 창: data_seq[i:i + sequence_length].'),
+    ('data-045','다음 시점 정답 추출','입력 구간 바로 다음 시점(i + sequence_length)의 첫 번째 특성값을 정답으로 선택하세요.','data_seq[i + sequence_length, 0]','단일 시점 예측에서는 입력 창이 끝난 직후 시점의 대상 변수를 타깃으로 사용합니다.','타깃 시점: data_seq[i + sequence_length, 0].'),
+    ('data-046','입력 Tensor 변환','NumPy 입력 배열 features를 float32 PyTorch Tensor로 변환하세요.','torch.tensor(features, dtype=torch.float32)','신경망 선형·순환·합성곱 계층과 연산할 수 있도록 float32 Tensor로 변환합니다. shape는 (N, L, F)입니다.','features → torch.tensor(..., dtype=torch.float32).'),
+    ('data-047','정답 Tensor 변환','NumPy 정답 배열 labels를 float32 PyTorch Tensor로 변환하세요.','torch.tensor(labels, dtype=torch.float32)','회귀 손실(MSELoss 등) 계산을 위해 타깃도 입력과 같은 float32 Tensor로 맞춥니다. shape는 (N,)입니다.','labels → torch.tensor(..., dtype=torch.float32).'),
+]:
+    add(id,'data-ts',TS,15,'data-ts-cell-15',topic,prompt,answer,why,memory)
+for id, topic, prompt, answer, why, memory, occ in [
+    ('data-048','Conv1D 입력 축 변환','(B, L, C_in) 시계열 입력을 Conv1d가 요구하는 (B, C_in, L)로 바꿀 transpose 식을 작성하세요.','x.transpose(1, 2)','PyTorch nn.Conv1d는 채널 축이 시간 축보다 앞선 (B, C_in, L) 입력을 기대하므로 1번 시간 축과 2번 특성 축을 교환합니다.','Conv1d 전: (B,L,C) → transpose(1,2) → (B,C,L).',0),
+    ('data-049','Conv1D 연산 적용','축을 바꾼 입력 x를 1D 합성곱 레이어에 통과시키세요.','self.conv1d(x)','시간 축을 따라 커널이 이동하며 지역 시간 패턴을 추출해 (B, hidden_size, L_out) 출력을 만듭니다.','합성곱: x = self.conv1d(x).',0),
+    ('data-050','Linear 입력 축 복원','합성곱 결과 (B, C_out, L_out)을 선형층 적용을 위해 (B, L_out, C_out)으로 되돌리는 transpose 식을 작성하세요.','x.transpose(1, 2)','nn.Linear는 마지막 차원을 입력 특성(in_features)으로 처리하므로 채널 축을 다시 마지막 축으로 옮깁니다.','Conv1d 후: (B,C,L) → transpose(1,2) → (B,L,C).',1),
+    ('data-051','Conv1D 최종 출력','시점별 은닉 표현에 선형층 fc를 적용해 예측값을 반환하세요.','self.fc(x)','마지막 축 hidden_size를 1차원으로 투영해 (B, L_out, 1) 시계열 예측 출력을 얻습니다.','선형 투영: return self.fc(x).',0),
+]:
+    add(id,'data-ts',TS,29,'data-ts-cell-29',topic,prompt,answer,why,memory,occ)
 add('vision-035','vision-vit','Vision/02_ViT_CIFAR10.ipynb',8,'vision-vit-cell-8','FFN Residual',
     'FFN으로 변환한 결과에 같은 shape의 원래 입력을 더하세요.','ff(x) + x',
     'Attention residual 다음의 FFN도 입력과 출력 shape를 맞춰 잔차 덧셈을 수행합니다. torch.cat으로 채널을 늘리는 연결이 아닙니다.','Attention도 +x, FFN도 +x.')
@@ -75,6 +90,15 @@ for id, topic, prompt, answer, why, memory in [
     ('ondevice-064','채널 mask 확장','(1,C_in,1,1) mask를 weight와 같은 크기로 확장하세요.','mask.expand_as(weight)','채널별 유지 여부를 해당 채널의 모든 가중치 위치에 적용합니다. 이 코드는 가중치를 0으로 만들며 구조 자체의 채널 수를 줄이지는 않습니다.','채널 mask → expand_as(weight).'),
 ]:
     add(id,'ondevice-cnn-pruning',PRUNE,35,'ondevice-cnn-pruning-cell-35',topic,prompt,answer,why,memory)
+for id, topic, prompt, answer, why, memory in [
+    ('ondevice-065','전체 커널 수','weight가 (C_out,C_in,K_h,K_w)일 때 2D 커널(K_h×K_w)의 총 개수를 구하세요.','weight.shape[0] * weight.shape[1]','각 출력 채널과 입력 채널 쌍마다 하나의 2D 커널이 존재하므로 전체 커널 수는 C_out × C_in입니다.','커널 수 = shape[0] × shape[1].'),
+    ('ondevice-066','제거할 커널 수','전체 커널 수에 sparsity를 곱해 반올림하세요.','round(num_kernels * sparsity)','개별 가중치 원소나 채널 수가 아니라 커널 개수(num_kernels)를 기준으로 제거 개수를 정합니다.','round(커널 수 × sparsity).'),
+    ('ondevice-067','커널 중요도 합산','(C_out,C_in,K_h,K_w)에서 각 커널의 공간 축만 합산해 (C_out,C_in,1,1) 중요도를 구하세요.','weight.abs().sum(dim=(2, 3), keepdim=True)','출력·입력 채널 축(0, 1)은 남기고 커널 높이·너비 축(2, 3)만 절댓값 합산합니다. 채널 프루닝의 dim=(0, 2, 3)과 구분하세요.','커널 단위는 공간 축 (2,3)만 합산.'),
+    ('ondevice-068','커널 Pruning Threshold','중요도를 1차원으로 펼쳐 제거할 커널 수번째 기준값(threshold)을 구하세요.','torch.kthvalue(importance.flatten(), num_pruned_kernels)[0]','kthvalue는 오름차순 k번째 값과 인덱스를 반환하므로 [0]으로 값만 꺼내 커널 제거 경계값으로 사용합니다.','kthvalue(importance.flatten(), num_pruned_kernels)[0].'),
+    ('ondevice-069','커널 유지 Mask','중요도가 threshold보다 큰 커널만 유지하는 boolean mask를 만드세요.','importance > threshold','임계값보다 큰 커널 위치는 True(1), 작거나 같은 커널은 False(0)가 되어 커널 단위로 유지 여부를 결정합니다.','유지 마스크: importance > threshold.'),
+    ('ondevice-070','커널 Mask 확장','(C_out,C_in,1,1) 커널 mask를 원래 가중치 shape로 확장하세요.','mask.expand_as(weight)','각 커널의 유지 여부를 K_h × K_w 공간 원소 전체에 똑같이 복제해 weight.mul_(mask)가 동작하도록 맞춥니다.','커널 mask → expand_as(weight).'),
+]:
+    add(id,'ondevice-cnn-pruning',PRUNE,33,'ondevice-cnn-pruning-cell-33',topic,prompt,answer,why,memory)
 
 def build():
     bank = json.loads((APP/'question-bank.json').read_text(encoding='utf-8'))

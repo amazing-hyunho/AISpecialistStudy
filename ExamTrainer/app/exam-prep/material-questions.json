@@ -1,0 +1,78 @@
+[
+  {
+    "question": {
+      "id": "llm-023",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "Preference Dataset",
+      "prompt": "데이터 항목을 학습 프롬프트 형식으로 변환하세요.",
+      "answer": "prompt = format_input(entry)",
+      "occurrence": 0,
+      "sourceId": "material-llm-023",
+      "isSourceBlank": false
+    },
+    "source": "        # 데이터를 미리 토큰화(Tokenization)하여 저장합니다.\n        for entry in data:\n            prompt = format_input(entry)\n            rejected_response = entry[\"rejected\"] # 👎 덜 선호되는 답변\n            chosen_response = entry[\"chosen\"]     # 👍 더 선호되는 답변",
+    "cell": 0,
+    "answerSource": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"
+  },
+  {
+    "question": {
+      "id": "llm-024",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "Preference Dataset",
+      "prompt": "dataset 항목에서 rejected 응답을 가져오세요.",
+      "answer": "entry[\"rejected\"]",
+      "occurrence": 0,
+      "sourceId": "material-llm-024",
+      "isSourceBlank": false
+    },
+    "source": "        for entry in data:\n            prompt = format_input(entry)\n            rejected_response = entry[\"rejected\"] # 👎 덜 선호되는 답변\n            chosen_response = entry[\"chosen\"]     # 👍 더 선호되는 답변\n",
+    "cell": 0,
+    "answerSource": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"
+  },
+  {
+    "question": {
+      "id": "llm-025",
+      "subject": "LLM",
+      "chapterId": "llm-07b",
+      "chapterNumber": "07B",
+      "chapterTitle": "DPO",
+      "file": "Chapter_7_Exercise_Follow_Instructions_dpo.ipynb",
+      "topic": "Preference Dataset",
+      "prompt": "dataset 항목에서 chosen 응답을 가져오세요.",
+      "answer": "entry[\"chosen\"]",
+      "occurrence": 0,
+      "sourceId": "material-llm-025",
+      "isSourceBlank": false
+    },
+    "source": "            prompt = format_input(entry)\n            rejected_response = entry[\"rejected\"] # 👎 덜 선호되는 답변\n            chosen_response = entry[\"chosen\"]     # 👍 더 선호되는 답변\n\n            # 프롬프트 부분만 따로 인코딩 (나중에 마스킹하기 위해 필요)",
+    "cell": 0,
+    "answerSource": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb"
+  },
+  {
+    "question": {
+      "id": "material-vit-value",
+      "subject": "Vision",
+      "chapterId": "vision-vit",
+      "chapterNumber": "02",
+      "chapterTitle": "Vision Transformer · CIFAR-10",
+      "file": "02_ViT_CIFAR10.ipynb",
+      "topic": "Attention Value 가중합",
+      "prompt": "attn은 (B,H,I,J), v는 (B,H,J,D)입니다. 강의의 einsum 표기로 Value를 가중합해 (B,H,I,D)를 만드세요.",
+      "answer": "einsum('b h i j, b h j d -> b h i d', attn, v)",
+      "occurrence": 0,
+      "sourceId": "material-material-vit-value",
+      "isSourceBlank": false
+    },
+    "source": "        self.last_attn = attn.detach()  # 그래프에서 분리(detach)해서 저장 (시각화 목적)\n\n        out = einsum('b h i j, b h j d -> b h i d', attn, v)  # attention 가중합으로 새로운 토큰 표현(out) 계산\n        out = rearrange(out, 'b h n d -> b n (h d)')  # 헤드 차원을 다시 합쳐 (batch, tokens, dim)로 복원\n        return self.to_out(out)  # 최종 투영을 거쳐 Attention 블록 출력 반환",
+    "cell": 8,
+    "answerSource": "Vision/02_ViT_CIFAR10.ipynb"
+  }
+]

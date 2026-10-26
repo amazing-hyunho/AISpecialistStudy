@@ -12,12 +12,12 @@
 | --- | --- | --- |
 | LLM | QKV 투영·점수, 임베딩 합산, out_head, no_grad, 마지막 시점·argmax·cat | **MHA class 셀 자체가 빠졌음.** 089~093: 헤드 분리·축 이동·재결합. 094: MultiHeadAttention 생성. 095: model(idx_cond) |
 | RAG | from_documents, role/content 메시지 | 029: as_query_engine. 복잡한 검색 외 기본 API 조합도 모의고사에 반복 |
-| Data | EncoderRNN/DecoderRNN 정의·학습 루프 | 034~042: 입력/타깃 슬라이싱, float32 구성, RNNRNN의 encoder 상태·초기 입력·한 스텝·출력 저장·재입력·stack |
+| Data | EncoderRNN/DecoderRNN 정의·학습 루프 | 034~042: 입력/타깃 슬라이싱, float32 구성, RNNRNN의 encoder 상태·초기 입력·한 스텝·출력 저장·재입력·stack. **추가 보강(4월①·②):** 043~047 기본 sliding window(`convert_data_into_tensors` Cell 15), 048~051 `Conv1DModel.forward`(Cell 29) |
 | Vision | crop/flip/ToTensor, Attention residual | 035~037: FFN residual, 학습 Normalize, Compose. 학습 전처리의 누락된 조각을 채움 |
-| On-device | 원소 단위 magnitude pruning | 061~064: 입력 채널 수·제거 수·중요도 합산·mask 확장. 원소 단위와 채널 단위를 구분 |
+| On-device | 원소 단위 magnitude pruning | 061~064: 입력 채널 수·제거 수·중요도 합산·mask 확장. **추가 보강(4월①·6월):** 065~070 커널 단위 프루닝(`prune_weight_kernel_level` Cell 33) |
 
-24문제 추가: LLM 95 / RAG 29 / Data 42 / Vision 37 / On-device 64 = 267문제.
-원문 셀 기반 255문제 + 기존 재구성 DPO 12문제. 재구성 DPO는 모의고사에서 계속 제외한다.
+39문제 추가: LLM 95 / RAG 29 / Data 51 / Vision 37 / On-device 70 = 282문제.
+원문 셀 기반 270문제 + 기존 재구성 DPO 12문제. 재구성 DPO는 모의고사에서 계속 제외한다.
 기존 정답과 ID는 유지한다. 신규 문제는 복기·shape 중심 선별이며 원본 빈칸이라고 단정하지 않아 별표를 붙이지 않는다.
 
 ## 모의고사와 복습

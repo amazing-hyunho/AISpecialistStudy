@@ -42,5 +42,5 @@ for (const [id, cell] of Object.entries(bank.cells)) {
   for (let i = 1; i < ranges.length; i++) assert(ranges[i].start >= ranges[i - 1].end, ranges[i].id);
 }
 for (const c of bank.chapters) assert.equal(c.questionCount, bank.questions.filter(q => q.chapterId === c.id).length);
-console.log(`PASS: ${ids.size} questions, ${Object.keys(bank.cells).length} groups; IDs, counts, answer locations, no overlapping blanks or TODO answers. Original-cell answer matches: ${matched}/${ids.size - reconstructed}; reconstructed questions: ${reconstructed} (excluded from mock exams)`);
+console.log(`PASS: ${ids.size} questions, ${Object.keys(bank.cells).length} groups; IDs, counts, answer locations, no overlapping blanks or TODO answers. Original-cell answer matches: ${matched}/${ids.size - reconstructed}; reconstructed questions: ${reconstructed} (legacy reconstructed groups; new prep selects verified original sources only)`);
 assert.equal(matched + reconstructed, ids.size, 'Review source discrepancies before claiming complete provenance');
