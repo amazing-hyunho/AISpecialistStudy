@@ -18,7 +18,7 @@ function readSaved(collection: Collection, exam: boolean): Saved {
       const item = raw.items[id];
       if (!item || typeof item !== 'object') continue;
       items[id] = {selected: Number.isInteger(item.selected) && item.selected >= 0 && item.selected < 4 ? item.selected : undefined,
-        checked:item.checked === true,writing:item.writing === true,answer:typeof item.answer === 'string' ? item.answer : '',graded:item.graded === true};
+        checked:item.checked === true,writing:item.writing === true || item.checked === true,answer:typeof item.answer === 'string' ? item.answer : '',graded:item.graded === true};
     }
     return {version:3,items,index:Number.isInteger(raw.index) ? Math.max(0,Math.min(collection.questionIds.length-1,raw.index)) : 0,submitted:exam && raw.submitted === true};
   } catch { return empty(); }
@@ -83,6 +83,16 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
   function reset() {
     update(empty());setOnlyWrong(false);
   }
+  function gradeOrAdvance(target:string, answer:string) {
+    if (!answer.trim()) return;
+    const progress = saved.items[target];
+    if (progress?.graded && progress.answer === answer && isCorrect(target,answer)) {
+      const next = collection.questionIds.indexOf(target)+1;
+      if (next < collection.questionIds.length) go(next);
+      return;
+    }
+    patch({answer,graded:true},target);
+  }
   // Stable per-question shuffle keeps restored radio selections consistent.
   const offset = [...id].reduce((n,c) => n+c.charCodeAt(0),0)%4;
   const choices = [...q.choices.slice(offset),...q.choices.slice(0,offset)];
@@ -119,17 +129,19 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
           <h3>1. 빈칸에 들어갈 예시 답안 고르기</h3>
           <p>현재 빈칸 주변 코드입니다. 다른 출제 빈칸도 가려두었으며, 전체 코드는 아래 셀에서 확인할 수 있습니다.</p>
           <pre className="prep-code prep-choice-preview" aria-label="객관식 코드 미리보기"><code>{choicePreview(collection.questionIds,id)}</code></pre>
-          <fieldset disabled={item.checked}><legend>보기 하나를 선택하세요</legend>{choices.map((c,i) => <label className="prep-option" key={c.id}>
-            <input type="radio" name={id} checked={item.selected===c.id} onChange={() => patch({selected:c.id})}/><span>{i+1}.</span><code>{c.text}</code>
+          <fieldset><legend>보기를 선택하면 바로 주관식으로 이어집니다</legend>{choices.map((c,i) => <label className="prep-option" key={c.id}>
+            <input type="radio" name={id} checked={item.selected===c.id} onChange={() => {patch({selected:c.id,checked:true,writing:true});requestAnimationFrame(() => {inputs.current[id]?.focus();inputs.current[id]?.scrollIntoView({block:'center'});});}}/><span>{i+1}.</span><code>{c.text}</code>
           </label>)}</fieldset>
-          {!item.checked ? <button className="primary-button" disabled={item.selected===undefined} onClick={() => patch({checked:true})}>객관식 정답 확인</button> : <>
-            <div className="prep-feedback" role="status"><strong>{choiceCorrect ? '정답입니다.' : '오답입니다. 정답과 이유를 확인하세요.'}</strong><pre>{q.answer}</pre><p>{q.explanation}</p></div>
-            <button className="primary-button" onClick={() => {patch({writing:true});requestAnimationFrame(() => {inputs.current[id]?.focus();inputs.current[id]?.scrollIntoView({block:'center'});});}}>보기 접고 주관식 작성 →</button>
-          </>}
         </section>}
         {(exam || item.writing) && <section aria-label="주관식 단계">
           <h3>{exam ? '셀 안의 빈칸에 코드 작성' : '2. 아래 셀 안에서 직접 작성하기'}</h3>
-          {!exam && <><p>코드 입력 중 Ctrl + Enter로 현재 빈칸을 바로 채점합니다. Mac에서는 ⌘ + Enter도 가능합니다.</p><button className="primary-button" disabled={!item.answer?.trim()} onClick={() => patch({graded:true})}>주관식 채점 · Ctrl + Enter</button></>}
+          {!exam && <>
+            <p role="status">{choiceCorrect ? '객관식 정답입니다.' : '객관식 오답입니다.'} 이제 같은 빈칸을 직접 작성해보세요.</p>
+            <p>Ctrl + Enter로 채점하고, 정답이면 한 번 더 눌러 다음 문제로 이동합니다. Mac에서는 ⌘ + Enter도 가능합니다.</p>
+            <button className="primary-button" disabled={!item.answer?.trim() || Boolean(item.graded && isCorrect(id,item.answer??'') && saved.index===collection.questionIds.length-1)} onClick={() => gradeOrAdvance(id,item.answer??'')}>
+              {item.graded && isCorrect(id,item.answer??'') ? saved.index===collection.questionIds.length-1 ? '마지막 문제까지 풀었습니다' : '다음 문제 · Ctrl + Enter' : '주관식 채점 · Ctrl + Enter'}
+            </button>
+          </>}
           {reveal && <div className="prep-feedback" role="status"><strong>{isCorrect(id,item.answer??'') ? '✓ 정답' : item.answer?.trim() ? '× 오답' : '× 미입력'}</strong><h3>예시 답안</h3><pre>{q.answer}</pre><p>{q.explanation}</p></div>}
         </section>}
         <section aria-label="전체 실습 셀" className="prep-fullcell">
@@ -152,7 +164,7 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
                   if(event.key==='Enter' && (event.ctrlKey || event.metaKey) && !exam && writable){
                     event.preventDefault();event.stopPropagation();
                     const answer=event.currentTarget.value;
-                    if(answer.trim())patch({answer,graded:true},blank.id);
+                    gradeOrAdvance(blank.id,answer);
                     return;
                   }
                   if(event.key==='Tab'&&!event.shiftKey&&writable){event.preventDefault();const start=event.currentTarget.selectionStart,end=event.currentTarget.selectionEnd;patch({answer:value.slice(0,start)+'    '+value.slice(end),graded:false},blank.id);requestAnimationFrame(()=>inputs.current[blank.id]?.setSelectionRange(start+4,start+4));}

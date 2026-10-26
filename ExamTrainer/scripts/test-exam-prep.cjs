@@ -105,7 +105,7 @@ function render(){cursor=0;return Session(props);}
 let tree=render();assert.equal(textarea(tree).props.readOnly,true);assert.equal(feedback(tree).length,0);
 assert.equal(all(tree,n=>n.type==='textarea').length,cellQuestions(props.collection.questionIds,props.collection.questionIds[0]).length);
 assert(text(tree).includes('class MultiHeadAttention'));
-assert.equal(button(tree,'객관식 정답 확인').props.disabled,true);
+assert(!buttons(tree).some(b=>text(b).includes('객관식 정답 확인')));
 const preview=all(tree,n=>n.props?.['aria-label']==='객관식 코드 미리보기')[0];
 assert(preview);assert(text(preview).includes('【현재 빈칸】'));
 assert(text(preview).includes('【빈칸 2】'));
@@ -118,14 +118,14 @@ for(const collection of [...monthlyBanks,...topicBanks,...predictedExams]) for(c
 }
 
 all(tree,n=>n.type==='input')[0].props.onChange();tree=render();
-button(tree,'객관식 정답 확인').props.onClick();tree=render();assert.equal(feedback(tree).length,1);
-button(tree,'보기 접고').props.onClick();tree=render();assert(textarea(tree));assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='input').length,0);
+assert.equal(textarea(tree).props.readOnly,false);assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='input').length,0);
 function key(value,extra={}) {return {key:'Enter',ctrlKey:true,metaKey:false,nativeEvent:{isComposing:false},repeat:false,currentTarget:{value},preventDefault(){},stopPropagation(){},...extra};}
 textarea(tree).props.onKeyDown(key('  '));tree=render();assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key('wrong',{nativeEvent:{isComposing:true}}));tree=render();assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key('wrong',{repeat:true}));tree=render();assert.equal(feedback(tree).length,0);
 textarea(tree).props.onChange({target:{value:'wrong'}});tree=render();
 textarea(tree).props.onKeyDown(key('wrong'));tree=render();assert(text(feedback(tree)[0]).includes('× 오답'));
+textarea(tree).props.onKeyDown(key('wrong'));tree=render();assert.equal(slots[0].index,0,'Wrong answers must not advance');
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer,{ctrlKey:false,metaKey:true}));tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
 console.log('PASS: masked preview before choices; Ctrl/Cmd+Enter grading, empty/IME/repeat guards and edit-to-regrade');
@@ -133,6 +133,15 @@ const bankKey=`ai-monthly-prep-v3:bank:${props.collection.id}`;
 assert(JSON.parse(storage.get(bankKey)).items[props.collection.questionIds[0]].graded);
 slots.length=0;props={...props,initial:JSON.parse(storage.get(bankKey))};tree=render();assert(textarea(tree).props.value);assert.equal(feedback(tree).length,1);
 console.log('PASS: required choice-first flow, hidden options in writing, grading and persisted study progress');
+textarea(tree).props.onKeyDown(key(textarea(tree).props.value));tree=render();
+assert.equal(slots[0].index,1);assert.equal(all(tree,n=>n.type==='input').length,4);
+assert(slots[0].items[props.collection.questionIds[0]].graded);
+const lastIndex=props.collection.questionIds.length-1,lastId=props.collection.questionIds[lastIndex];
+slots.length=0;props={...props,initial:{...empty(),index:lastIndex,items:{[lastId]:{writing:true,answer:prepQuestions[lastId].answer}}}};tree=render();
+textarea(tree).props.onKeyDown(key(textarea(tree).props.value));tree=render();assert(text(feedback(tree)[0]).includes('✓ 정답'));
+textarea(tree).props.onKeyDown(key(textarea(tree).props.value));tree=render();assert.equal(slots[0].index,lastIndex);
+assert.equal(button(tree,'마지막 문제까지').props.disabled,true);
+console.log('PASS: correct-answer shortcut advances once; last question never wraps');
 
 slots.length=0;props={collection:predictedExams[0],exam:true,initial:empty(),onHome(){}};tree=render();
 assert.equal(all(tree,n=>n.type==='input').length,0);assert.equal(feedback(tree).length,0);
