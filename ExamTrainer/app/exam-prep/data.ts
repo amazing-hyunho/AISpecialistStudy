@@ -1,12 +1,12 @@
 import materialQuestions from './material-questions.json';
 import bank from '../question-bank.json';
 import { questionExplanations } from '../explanations';
-import { practiceChoices, maskedCell, type BankQuestion } from '../choice-practice-data';
+import { practiceChoices, type BankQuestion } from '../choice-practice-data';
 import { normalized } from '../grading';
 
 export const subjects = ['LLM', 'RAG', 'Data', 'Vision', 'On-device'];
 type Choice = { id: number; text: string; correct: boolean; reason: string };
-export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; source: string; kind: string; explanation: string; choices: Choice[] };
+export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; fullCode: string; cellKey: string; start: number; end: number; source: string; kind: string; explanation: string; choices: Choice[] };
 export type Collection = { id: string; title: string; description: string; questionIds: string[] };
 const range = (prefix: string, start: number, end: number) => Array.from({ length: end - start + 1 }, (_, i) => `${prefix}-${String(start + i).padStart(3, '0')}`);
 const unique = (ids: string[]) => [...new Set(ids)];
@@ -14,19 +14,23 @@ const cells = bank.cells as Record<string, { source: string; cell: number; answe
 function fromBank(q: BankQuestion): PrepQuestion {
   const cell = materialQuestions.find(item => item.question.id === q.id) ?? cells[q.sourceId];
   if ('sourceKind' in cell && cell.sourceKind === 'reconstructed') throw new Error(`Unverified source: ${q.id}`);
-  const masked = maskedCell(q, cell.source);
-  // Keep a local, readable excerpt; the task prompt supplies the requested operation.
-  const before = masked.before.split('\n').slice(-5).join('\n');
-  const after = masked.after.split('\n').slice(0, 5).join('\n');
-  return { id: q.id, subject: q.subject, topic: q.topic, prompt: q.prompt, answer: q.answer,
-    context: `${before}【빈칸】${after}`, source: `${cell.answerSource} · 셀 ${cell.cell}`,
-    kind: '강의 코드 발췌',
-    explanation: q.id === 'material-vit-value' ? 'J축의 attention 가중치로 Value를 합산합니다. 결과는 Query 위치 I별 D차원 표현 (B,H,I,D)입니다.' : questionExplanations[q.id]?.why ?? q.prompt, choices: practiceChoices(q) };
+  const material = materialQuestions.find(item => item.question.id === q.id);
+  const target = material?.blank ?? q.answer;
+  const occurrence = material?.blankOccurrence ?? q.occurrence;
+  let start = -1, from = 0;
+  for (let i=0;i<=occurrence;i++) { start=cell.source.indexOf(target,from); if(start<0) throw new Error(`Missing blank: ${q.id}`); from=start+target.length; }
+  return { id:q.id, subject:q.subject, topic:q.topic, prompt:q.prompt, answer:q.answer,
+    fullCode:cell.source, cellKey:`${cell.answerSource.split('/').pop()}:${cell.cell}`, start, end:from,
+    context:cell.source.slice(0,start)+'【빈칸】'+cell.source.slice(from), source:`${cell.answerSource} · 셀 ${cell.cell}`,
+    kind: target.includes('????') ? '원본 실습 빈칸 · 해설 답안' : '강의 코드',
+    explanation:q.id==='material-vit-value' ? 'J축을 따라 attention 가중치와 Value를 합산해 (B,H,I,D)를 만듭니다.' : questionExplanations[q.id]?.why ?? q.prompt,
+    choices:practiceChoices(q) };
+
 }
 export const topicBanks: (Collection & { subject: string; priority: string })[] = [
   { id: 'mha', subject: 'LLM', title: 'MHA 헤드와 텐서 축', priority: '우선', description: '4월 1차·2차·9월에 Attention이 반복됩니다. 모델별 구현 맥락은 다릅니다.', questionIds: range('llm',89,94) },
   { id: 'gpt', subject: 'LLM', title: 'GPT 구성·생성', priority: '우선', description: '6월 GPT, 9월 구성·생성 구현. 5월은 GPT-DPO로 별도 분류합니다.', questionIds: ['llm-005','llm-006',...range('llm',49,56),'llm-095'] },
-  { id: 'dpo', subject: 'LLM', title: 'DPO 데이터·모델 준비', priority: '우선', description: '4월 2차·5월 반복. 강의 원문에서 확인되는 prompt·chosen·rejected 구성과 모델 로드를 연습합니다.', questionIds: range('llm',19,25) },
+  { id: 'dpo', subject: 'LLM', title: 'DPO 데이터·토큰화·손실', priority: '우선', description: '4월 2차·5월 반복. 원본 셀 0의 토큰화·시프트·gather·DPO 손실 빈칸과 모델 로드를 함께 연습합니다.', questionIds: [...range('llm',19,25),...range('llm',14,16),...range('llm',83,88)] },
   { id: 'lora', subject: 'LLM', title: 'LoRA 직접 구현·설정', priority: '보완', description: '4월 2차 설정 문제는 강의의 rank·alpha와 직접 구현 LoRA로 연습합니다.', questionIds: [...range('llm',9,13),'llm-017','llm-018'] },
   { id: 'spam', subject: 'LLM', title: 'Spam/Ham 분류', priority: '보완', description: '4월 1차 명시. 라벨·분류 출력·미세조정 범위를 확인합니다.', questionIds: range('llm',67,75) },
   { id: 'rag-basic', subject: 'RAG', title: '검색·프롬프트·기본 API', priority: '우선', description: '모든 회차에 RAG 계열 등장. 9월은 인덱스·Query Engine·메시지를 명시합니다.', questionIds: [...range('rag',1,9),'rag-022','rag-023','rag-024','rag-025','rag-029'] },
@@ -73,13 +77,13 @@ export const predictedExams: Collection[] = [
     'vision-002','vision-001','vision-036','vision-016','vision-026',
     'ondevice-009','ondevice-067','ondevice-062','ondevice-063','ondevice-005'] },
   { id:'predict-2', title:'예상 모의고사 2회 · 학습과 모델 연결', description:'DPO·LoRA·분류 / KG·MCP / NGCF·NCF / DETR 추론·ViT residual / pruning·양자화·증류', questionIds:[
-    'llm-023','llm-019','llm-020','llm-017','llm-070',
+    'llm-014','llm-016','llm-085','llm-017','llm-070',
     'rag-010','rag-013','rag-015','rag-026','rag-017',
     'data-010','data-011','data-014','data-017','data-018',
     'vision-008','vision-009','vision-005','vision-024','vision-035',
     'ondevice-068','ondevice-010','ondevice-004','ondevice-006','ondevice-031'] },
   { id:'predict-3', title:'예상 모의고사 3회 · 구현 종합', description:'생성·학습·DPO·LoRA / 검색·prompt·MCP / window·Conv1D·Seq2Seq·추천 / 분류·Attention / pruning·재양자화·증류', questionIds:[
-    'llm-093','llm-007','llm-056','llm-025','llm-011',
+    'llm-093','llm-007','llm-056','llm-088','llm-011',
     'rag-023','rag-006','rag-011','rag-027','rag-028',
     'data-046','data-050','data-040','data-032','data-016',
     'vision-003','vision-037','vision-004','material-vit-value','vision-027',
@@ -104,4 +108,18 @@ for (const collection of [...monthlyBanks,...topicBanks,...predictedExams]) {
 }
 for (const exam of predictedExams) for (const subject of subjects) {
   if (exam.questionIds.filter(id => prepQuestions[id].subject === subject).length !== 5) throw new Error(`Unbalanced exam: ${exam.id}`);
+}
+
+export function cellQuestions(ids: string[], id: string) {
+  return ids.map(key=>prepQuestions[key]).filter(q=>q.cellKey===prepQuestions[id].cellKey).sort((a,b)=>a.start-b.start);
+}
+export function cellParts(ids: string[], id: string) {
+  const questions=cellQuestions(ids,id), source=prepQuestions[id].fullCode;
+  let cursor=0;
+  const parts: {text?:string; question?:PrepQuestion}[]=[];
+  for(const q of questions) {
+    if(q.fullCode!==source || q.start<cursor) throw new Error(`Overlapping/inconsistent cell: ${q.id}`);
+    parts.push({text:source.slice(cursor,q.start)},{question:q});cursor=q.end;
+  }
+  parts.push({text:source.slice(cursor)});return parts;
 }
