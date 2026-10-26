@@ -3,10 +3,11 @@ import bank from '../question-bank.json';
 import { questionExplanations } from '../explanations';
 import { practiceChoices, type BankQuestion } from '../choice-practice-data';
 import { normalized } from '../grading';
+import { suppliedInExams, examTargets, examHints } from './exam-design';
 
 export const subjects = ['LLM', 'RAG', 'Data', 'Vision', 'On-device'];
 type Choice = { id: number; text: string; correct: boolean; reason: string };
-export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; fullCode: string; cellKey: string; start: number; end: number; source: string; kind: string; explanation: string; choices: Choice[] };
+export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; fullCode: string; cellKey: string; start: number; end: number; source: string; kind: string; explanation: string; choices: Choice[]; hint?: string };
 export type Collection = { id: string; title: string; description: string; questionIds: string[] };
 const range = (prefix: string, start: number, end: number) => Array.from({ length: end - start + 1 }, (_, i) => `${prefix}-${String(start + i).padStart(3, '0')}`);
 const unique = (ids: string[]) => [...new Set(ids)];
@@ -66,40 +67,70 @@ export const monthlyBanks: Collection[] = [
   { id:'sep', title:'9월', description:'헤드 분리·GPT 생성 / 기본 RAG / 채널 pruning / 전처리·residual / Encoder–Decoder. 저장된 9월 복기 원문 기준입니다.', questionIds:unique([...topics('mha','gpt','transform','channel'),'rag-001','rag-029','rag-024','vision-024','vision-035','data-034','data-035','data-042',...range('data',36,41)]) },
 ];
 
-// Each monthly mock includes all of that month's selected questions, so small
-// subjects (e.g. COCO/NCF) are not padded with unrelated recalled topics.
-export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b, id:`exam-${b.id}`, title:`${b.title} 복기 모의고사`}));
+export const monthlyExams: Collection[] = monthlyBanks.map(b => ({...b, id:`exam-${b.id}`, title:`${b.title} 복기 모의고사`, questionIds:b.questionIds.filter(id=>!suppliedInExams.has(id))}));
 export const predictedExams: Collection[] = [
   { id:'predict-1', title:'예상 모의고사 1회 · 반복 핵심', description:'MHA·GPT / 검색·KG / window·Conv1D·RNN / ResNet·전처리·학습 / kernel·channel·양자화·증류', questionIds:[
-    'llm-089','llm-092','llm-005','llm-006','llm-094',
+    'llm-089','llm-092','llm-049','llm-006','llm-094',
     'rag-001','rag-029','rag-005','rag-024','rag-012',
     'data-044','data-045','data-048','data-003','data-041',
     'vision-002','vision-001','vision-036','vision-016','vision-026',
-    'ondevice-009','ondevice-067','ondevice-062','ondevice-063','ondevice-005'] },
+    'ondevice-009','ondevice-067','ondevice-064','ondevice-063','ondevice-029'] },
   { id:'predict-2', title:'예상 모의고사 2회 · 학습과 모델 연결', description:'DPO·LoRA·분류 / KG·MCP / NGCF·NCF / DETR 추론·ViT residual / pruning·양자화·증류', questionIds:[
-    'llm-014','llm-016','llm-085','llm-017','llm-070',
+    'llm-020','llm-016','llm-085','llm-009','llm-070',
     'rag-010','rag-013','rag-015','rag-026','rag-017',
     'data-010','data-011','data-014','data-017','data-018',
     'vision-008','vision-009','vision-005','vision-024','vision-035',
-    'ondevice-068','ondevice-010','ondevice-004','ondevice-006','ondevice-031'] },
-  { id:'predict-3', title:'예상 모의고사 3회 · 구현 종합', description:'생성·학습·DPO·LoRA / 검색·prompt·MCP / window·Conv1D·Seq2Seq·추천 / 분류·Attention / pruning·재양자화·증류', questionIds:[
-    'llm-093','llm-007','llm-056','llm-088','llm-011',
+    'ondevice-068','ondevice-010','ondevice-035','ondevice-006','ondevice-036'] },
+  { id:'predict-3', title:'예상 모의고사 3회 · 구현 종합', description:'생성·학습·DPO·LoRA / 검색·prompt·MCP / window·Conv1D·Seq2Seq·추천 / 분류·Attention / pruning·증류', questionIds:[
+    'llm-093','llm-007','llm-056','llm-083','llm-010',
     'rag-023','rag-006','rag-011','rag-027','rag-028',
     'data-046','data-050','data-040','data-032','data-016',
     'vision-003','vision-037','vision-004','material-vit-value','vision-027',
-    'ondevice-066','ondevice-011','ondevice-061','ondevice-029','ondevice-007'] },
+    'ondevice-070','ondevice-008','ondevice-061','ondevice-037','ondevice-069'] },
 ];
 const used = new Set([...monthlyBanks,...topicBanks,...predictedExams].flatMap(c => c.questionIds));
 export const prepQuestions: Record<string, PrepQuestion> = Object.fromEntries([
   ...[...bank.questions.filter(q => !materialQuestions.some(item => item.question.id === q.id)), ...materialQuestions.map(item => item.question)].filter(q => used.has(q.id)).map(fromBank),
 ].map(q => [q.id,q]));
-export function isCorrect(id: string, answer: string) {
-  return Boolean(answer.trim()) && normalized(answer) === normalized(prepQuestions[id].answer);
+// Resolve original exercise ???? using the existing material answers, then narrow
+// only the exam's spans. The bank retains its original full-answer exercises.
+export const examQuestions: Record<string,PrepQuestion> = {};
+for (const q of Object.values(prepQuestions)) {
+  const siblings = Object.values(prepQuestions).filter(other=>other.cellKey===q.cellKey).sort((a,b)=>a.start-b.start);
+  let source=q.fullCode, shift=0, start=q.start;
+  for (const other of siblings) {
+    const original=q.fullCode.slice(other.start,other.end);
+    if (!original.includes('????')) continue;
+    const position=other.start+shift;
+    source=source.slice(0,position)+other.answer+source.slice(position+original.length);
+    if (other.start<q.start) start+=other.answer.length-original.length;
+    shift+=other.answer.length-original.length;
+  }
+  const answer=examTargets[q.id] ?? q.answer;
+  let offset=q.answer.indexOf(answer);
+  if (q.id==='llm-085') {
+    // Ask the gather operation rather than memorizing its input variable name.
+    start=source.lastIndexOf('torch.gather',start);
+    offset=0;
+  }
+  if (offset<0 || start<0) throw new Error(`Invalid exam target: ${q.id}`);
+  start+=offset;
+  // Original material sometimes hides only ????; all resolved spans now contain
+  // the existing answer, so every exam substring is directly verifiable.
+  if (source.slice(start,start+answer.length)!==answer) throw new Error(`Exam source mismatch: ${q.id}`);
+  const narrowed=Boolean(examTargets[q.id]);
+  const hint=examHints[q.id] ?? `${q.prompt} ${narrowed ? '인수와 설정은 코드에 제공됩니다. 함수·클래스·메서드 또는 지정된 부분만 작성하세요.' : '주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.'}`;
+  examQuestions[q.id]={...q,answer,fullCode:source,start,end:start+answer.length,hint,
+    prompt:narrowed ? '제공된 코드와 빈칸별 힌트를 보고 핵심 부분만 완성하세요.' : q.prompt,
+    context:source.slice(0,start)+'【빈칸】'+source.slice(start+answer.length)};
 }
-export function results(ids: string[], answers: Record<string,string>) {
+export function isCorrect(id: string, answer: string, exam=false) {
+  return Boolean(answer.trim()) && normalized(answer) === normalized((exam ? examQuestions : prepQuestions)[id].answer);
+}
+export function results(ids: string[], answers: Record<string,string>, exam=false) {
   return subjects.map(subject => {
     const subset = ids.filter(id => prepQuestions[id].subject === subject);
-    return {subject,total:subset.length,correct:subset.filter(id => isCorrect(id,answers[id] ?? '')).length};
+    return {subject,total:subset.length,correct:subset.filter(id => isCorrect(id,answers[id] ?? '',exam)).length};
   });
 }
 for (const collection of [...monthlyBanks,...topicBanks,...predictedExams]) {
@@ -110,11 +141,12 @@ for (const exam of predictedExams) for (const subject of subjects) {
   if (exam.questionIds.filter(id => prepQuestions[id].subject === subject).length !== 5) throw new Error(`Unbalanced exam: ${exam.id}`);
 }
 
-export function cellQuestions(ids: string[], id: string) {
-  return ids.map(key=>prepQuestions[key]).filter(q=>q.cellKey===prepQuestions[id].cellKey).sort((a,b)=>a.start-b.start);
+export function cellQuestions(ids: string[], id: string, exam=false) {
+  const questions=exam ? examQuestions : prepQuestions;
+  return ids.map(key=>questions[key]).filter(q=>q.cellKey===questions[id].cellKey).sort((a,b)=>a.start-b.start);
 }
-export function cellParts(ids: string[], id: string) {
-  const questions=cellQuestions(ids,id), source=prepQuestions[id].fullCode;
+export function cellParts(ids: string[], id: string, exam=false) {
+  const questions=cellQuestions(ids,id,exam), source=(exam ? examQuestions : prepQuestions)[id].fullCode;
   let cursor=0;
   const parts: {text?:string; question?:PrepQuestion}[]=[];
   for(const q of questions) {

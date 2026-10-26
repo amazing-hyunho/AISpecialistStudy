@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
+import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, examQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
 import './prep.css';
 
 type ItemProgress = { selected?: number; checked?: boolean; writing?: boolean; answer?: string; graded?: boolean };
 type Saved = { version: 3; index: number; items: Record<string,ItemProgress>; submitted: boolean };
 const empty = (): Saved => ({version:3,index:0,items:{},submitted:false});
-const storageKey = (id: string, exam: boolean) => `ai-monthly-prep-v3:${exam ? 'exam' : 'bank'}:${id}`;
+const storageKey = (id: string, exam: boolean) => `ai-monthly-prep-${exam ? 'v4:exam' : 'v3:bank'}:${id}`;
 function readSaved(collection: Collection, exam: boolean): Saved {
   try {
     const raw = JSON.parse(localStorage.getItem(storageKey(collection.id,exam)) ?? 'null');
@@ -50,7 +50,7 @@ export default function ExamPrep() {
     <section id="priority"><p className="prep-note">출제포인트 기준: LLM 레이어·Tensor·학습 데이터 / RAG 흐름·llama-index·MCP / Data 모델·학습·sklearn·Metric / Vision 레이어·학습·transforms·Metric / On-device 양자화·가지치기·지식증류.</p><h2>출제 대비 예상 주제 문제은행</h2><p>‘우선’은 반복 주제 또는 9월 상세 구현, ‘보완’은 한 회차에 명시된 주제, ‘PDF 기준’은 출제포인트에 명시된 학습·평가·지식증류입니다. 주제 사이의 동일 문항은 같은 코드를 다른 맥락에서 복습하기 위한 것입니다.</p>
       {subjects.map(subject => <div className="prep-subject" key={subject}><h3>{subject}</h3>{cards(topicBanks.filter(c => c.subject === subject).map(c => ({...c,title:`${c.priority} · ${c.title}`})),false)}</div>)}
     </section>
-    <section id="monthly-exams"><h2>월별 복기 모의고사 · 5회</h2><p>각 월별 문제은행의 전체 문항을 주관식으로 풉니다. 복기 범위에 맞추므로 회차별·과목별 문항 수는 다릅니다. 실제 시험 문항 수를 재현한 것은 아닙니다.</p>{cards(monthlyExams,true)}</section>
+    <section id="monthly-exams"><h2>월별 복기 모의고사 · 5회</h2><p>월별 범위에서 핵심 구현을 골라 출제합니다. 수식·고정 설정은 제공하고 빈칸마다 역할·shape 힌트를 표시합니다. 회차별 문항 수는 다르며 실제 시험 문항 수를 재현한 것은 아닙니다.</p>{cards(monthlyExams,true)}</section>
     <section id="predicted"><h2>시험 예상 모의고사 · 3회</h2><p>매회 25문항, LLM·RAG·Data·Vision·On-device 각 5문항입니다. 세 회차 전체에 24개 대비 주제를 모두 포함하고, 문항은 회차 간 중복 없이 배치했습니다.</p>{cards(predictedExams,true)}</section>
   </main>;
 }
@@ -62,14 +62,15 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
   const inputs = useRef<Record<string,HTMLTextAreaElement|null>>({});
   const heading = useRef<HTMLHeadingElement>(null);
   const id = collection.questionIds[saved.index];
-  const q = prepQuestions[id];
+  const questions = exam ? examQuestions : prepQuestions;
+  const q = questions[id];
   const item = saved.items[id] ?? {};
   const answers = Object.fromEntries(collection.questionIds.map(qid => [qid,saved.items[qid]?.answer ?? '']));
-  const scores = results(collection.questionIds,answers);
+  const scores = results(collection.questionIds,answers,exam);
   const correctCount = scores.reduce((n,s) => n+s.correct,0);
   const filled = Object.values(answers).filter(a => a.trim()).length;
   const done = collection.questionIds.filter(qid => saved.items[qid]?.graded && isCorrect(qid,answers[qid])).length;
-  const visibleIds = onlyWrong ? collection.questionIds.filter(qid => !isCorrect(qid,answers[qid])) : collection.questionIds;
+  const visibleIds = onlyWrong ? collection.questionIds.filter(qid => !isCorrect(qid,answers[qid],exam)) : collection.questionIds;
   function update(next: Saved) {
     setSaved(next);
     try { localStorage.setItem(storageKey(collection.id,exam),JSON.stringify(next));setStorageError(false); }
@@ -160,21 +161,22 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
       <div className="prep-score-grid">{scores.map(s => <p key={s.subject}><strong>{s.subject}</strong><br/>{s.correct}/{s.total}</p>)}</div>
       <button className="text-button" disabled={correctCount===collection.questionIds.length} onClick={() => {
         const next = !onlyWrong;setOnlyWrong(next);
-        if (next) go(collection.questionIds.findIndex(qid => !isCorrect(qid,answers[qid])));
+        if (next) go(collection.questionIds.findIndex(qid => !isCorrect(qid,answers[qid],exam)));
       }}>{onlyWrong ? '전체 문항 보기' : '오답·미입력만 보기'}</button>
       <button className="primary-button" onClick={reset}>답안 초기화하고 재응시</button>
     </section>}
     <div className="prep-workspace">
       <nav className="prep-question-nav" aria-label="문항 이동">{visibleIds.map(qid => {
         const index = collection.questionIds.indexOf(qid), progress = saved.items[qid];
-        const status = (exam ? saved.submitted : progress?.graded) ? (isCorrect(qid,answers[qid]) ? '✓' : '×') : answers[qid]?.trim() ? '●' : '';
+        const status = (exam ? saved.submitted : progress?.graded) ? (isCorrect(qid,answers[qid],exam) ? '✓' : '×') : answers[qid]?.trim() ? '●' : '';
         return <button key={qid} aria-current={qid===id ? 'step' : undefined} onClick={() => go(index)}>{index+1}. {prepQuestions[qid].subject} · {prepQuestions[qid].topic} {status}</button>;
       })}</nav>
       <article className="prep-question">
         <span className="eyebrow">{saved.index+1}/{collection.questionIds.length} · {q.subject} · {q.kind}</span>
         <h2 ref={heading} tabIndex={-1}>{q.topic}</h2><p>{q.prompt}</p>
         <p className="prep-meta">{q.source}</p>
-        <p>전체 셀 · 현재 세트의 빈칸 {cellQuestions(collection.questionIds,id).length}개를 코드 순서대로 표시합니다. 빈칸을 선택하면 해당 문항의 객관식·작성 가이드로 전환됩니다.</p>
+        <p>전체 셀 · 현재 세트의 빈칸 {cellQuestions(collection.questionIds,id,exam).length}개를 코드 순서대로 표시합니다. 빈칸을 선택하면 해당 문항의 작성 가이드로 전환됩니다.</p>
+        {exam && <p className="prep-note">수식·고정 하이퍼파라미터는 제공하고 핵심 함수·객체·텐서 흐름을 묻는 연습 구성입니다. 각 빈칸의 힌트와 제공된 인수를 함께 보세요. 개인 복기 기준으로 조정했으며 실제 시험 범위를 보증하지 않습니다.</p>}
         {!exam && !item.writing && <section aria-label="객관식 단계">
           <h3>1. 빈칸에 들어갈 예시 답안 고르기</h3>
           <p>현재 빈칸 주변 코드입니다. 다른 출제 빈칸도 가려두었으며, 전체 코드는 아래 셀에서 확인할 수 있습니다.</p>
@@ -194,11 +196,11 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
               {item.graded && isCorrect(id,item.answer??'') ? nextQuestionIndex(id)<0 ? '마지막 문제까지 풀었습니다' : '다음 문제 · Ctrl + Enter' : '주관식 채점 · Ctrl + Enter'}
             </button>
           </>}
-          {reveal && <div className="prep-feedback" role="status"><strong>{isCorrect(id,item.answer??'') ? '✓ 정답' : item.answer?.trim() ? '× 오답' : '× 미입력'}</strong><h3>예시 답안</h3><pre>{q.answer}</pre><p>{q.explanation}</p></div>}
+          {reveal && <div className="prep-feedback" role="status"><strong>{isCorrect(id,item.answer??'',exam) ? '✓ 정답' : item.answer?.trim() ? '× 오답' : '× 미입력'}</strong><h3>예시 답안</h3><pre>{q.answer}</pre><p>{q.explanation}</p></div>}
         </section>}
         <section aria-label="전체 실습 셀" className="prep-fullcell">
           <div className="prep-cell-heading">{q.source} · 전체 코드 (생략 없음) <button className="text-button" onClick={()=>{inputs.current[id]?.focus();inputs.current[id]?.scrollIntoView({block:'center'});}}>현재 빈칸으로 이동</button></div>
-          <pre><code>{cellParts(collection.questionIds,id).map((part,i) => {
+          <pre><code>{cellParts(collection.questionIds,id,exam).map((part,i) => {
             const blank=part.question;
             if(!blank) return <span key={i}>{part.text}</span>;
             const progress=saved.items[blank.id] ?? {};
@@ -206,7 +208,9 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
             const value=progress.answer ?? '';
             return <span className="prep-inline-blank" key={blank.id}>
               <span className="prep-blank-label">[{collection.questionIds.indexOf(blank.id)+1}] {blank.topic}</span>
+              {exam && <span id={`hint-${blank.id}`} className="prep-blank-hint">힌트 · {blank.hint}</span>}
               <textarea ref={element=>{inputs.current[blank.id]=element;}} aria-label={`${blank.topic} · 코드 빈칸`} aria-current={blank.id===id ? 'step' : undefined}
+                aria-describedby={exam ? `hint-${blank.id}` : undefined}
                 value={value} readOnly={!writable} placeholder={writable ? '코드 입력' : exam ? '미입력' : '선택 후 객관식 → 주관식'}
                 rows={Math.max(1,value.split('\n').length)} spellCheck={false}
                 onFocus={()=>{if(blank.id!==id)update({...saved,index:collection.questionIds.indexOf(blank.id)});}}
@@ -225,7 +229,7 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
                   }
                   if(event.key==='Tab'&&!event.shiftKey&&writable){event.preventDefault();const start=event.currentTarget.selectionStart,end=event.currentTarget.selectionEnd;patch({answer:value.slice(0,start)+'    '+value.slice(end),graded:false},blank.id);requestAnimationFrame(()=>inputs.current[blank.id]?.setSelectionRange(start+4,start+4));}
                 }}/>
-              {(exam ? saved.submitted : progress.graded) && <span className="prep-inline-result" role="status" aria-live="polite">{isCorrect(blank.id,value)?'✓ 정답':'× 오답'} · {blank.answer}</span>}
+              {(exam ? saved.submitted : progress.graded) && <span className="prep-inline-result" role="status" aria-live="polite">{isCorrect(blank.id,value,exam)?'✓ 정답':'× 오답'} · {blank.answer}</span>}
             </span>;
           })}</code></pre>
         </section>

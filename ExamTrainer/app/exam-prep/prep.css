@@ -43,6 +43,7 @@
 .prep-fullcell pre { margin:0; padding:20px; max-height:75vh; overflow:auto; background:#17271f; color:#e6f0eb; font:14px/1.8 Consolas,monospace; white-space:pre; tab-size:4; }
 .prep-inline-blank { display:inline-flex; vertical-align:middle; flex-direction:column; min-width:26ch; max-width:80ch; margin:4px; }
 .prep-blank-label { color:#a4e0bc; font:12px/1.6 sans-serif; white-space:normal; }
+.prep-blank-hint { display:block; color:#d5e9f9; background:#263e48; padding:8px 10px; border-left:3px solid #94c9ef; border-radius:4px; white-space:normal; font:13px/1.65 sans-serif; margin:4px 0; max-width:60ch; }
 .prep-fullcell textarea { display:inline-block; width: min(60ch,60vw); min-height:38px; margin:0; padding:8px; font:14px/1.6 Consolas,monospace; }
 .prep-fullcell textarea[aria-current] { outline:3px solid #e9bd63; }
 .prep-fullcell textarea[readonly] { background:#e1e8e3; }

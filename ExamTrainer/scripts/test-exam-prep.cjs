@@ -30,7 +30,8 @@ function load(file) {
   return exports;
 }
 const data=load('app/exam-prep/data.ts');
-const {choicePreview,cellParts,cellQuestions,prepQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
+const {choicePreview,cellParts,cellQuestions,prepQuestions,examQuestions,monthlyBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
+const {suppliedInExams}=load('app/exam-prep/exam-design.ts');
 assert.equal(monthlyBanks.length,5);assert.equal(monthlyExams.length,5);assert.equal(predictedExams.length,3);assert.equal(topicBanks.length,24);
 for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]) {
   assert(c.questionIds.length>0);assert.equal(new Set(c.questionIds).size,c.questionIds.length);
@@ -43,7 +44,7 @@ for(const c of [...monthlyBanks,...topicBanks,...monthlyExams,...predictedExams]
   }
 }
 for(const [i,exam] of monthlyExams.entries()) {
-  assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyBanks[i].questionIds));
+  assert.equal(JSON.stringify(exam.questionIds),JSON.stringify(monthlyBanks[i].questionIds.filter(id=>!suppliedInExams.has(id))));
   assert.equal(new Set(exam.questionIds.map(id=>prepQuestions[id].subject)).size,5);
 }
 const predictedIds=predictedExams.flatMap(e=>e.questionIds);
@@ -51,9 +52,9 @@ assert.equal(new Set(predictedIds).size,75,'Three rounds must use different ques
 for(const exam of predictedExams) {
   assert.equal(exam.questionIds.length,25);
   for(const subject of subjects)assert.equal(exam.questionIds.filter(id=>prepQuestions[id].subject===subject).length,5);
-  const perfect=Object.fromEntries(exam.questionIds.map(id=>[id,prepQuestions[id].answer]));
-  assert(results(exam.questionIds,perfect).every(s=>s.correct===5));
-  assert(results(exam.questionIds,{}).every(s=>s.correct===0));
+  const perfect=Object.fromEntries(exam.questionIds.map(id=>[id,examQuestions[id].answer]));
+  assert(results(exam.questionIds,perfect,true).every(s=>s.correct===5));
+  assert(results(exam.questionIds,{},true).every(s=>s.correct===0));
 }
 for(const topic of topicBanks)assert(topic.questionIds.some(id=>predictedIds.includes(id)),`Predicted coverage: ${topic.id}`);
 assert(monthlyBanks[1].questionIds.includes('llm-017'));assert(monthlyBanks[1].questionIds.includes('vision-024'));
@@ -90,6 +91,21 @@ for(const id of ['llm-014','llm-015','llm-016','llm-083','llm-084','llm-085','ll
 }
 assert(cellQuestions(monthlyBanks[1].questionIds,'llm-014').length>=12);
 assert(prepQuestions['llm-089'].fullCode.includes('class MultiHeadAttention'));
+for(const collection of [...monthlyExams,...predictedExams]) for(const id of collection.questionIds) {
+  assert(!suppliedInExams.has(id));
+  const q=examQuestions[id];assert(q.hint?.length>15);
+  const parts=cellParts(collection.questionIds,id,true);
+  assert.equal(parts.map(p=>p.question ? p.question.answer : p.text).join(''),q.fullCode,'All exam blanks must reconstruct supplied cell');
+  assert(!q.fullCode.includes('????'),'Every original exercise placeholder is resolved before masking');
+  assert(isCorrect(id,q.answer,true));assert(!isCorrect(id,'wrong',true));
+}
+assert.equal(examQuestions['llm-016'].answer,'F.logsigmoid');
+assert.equal(examQuestions['llm-085'].answer,'torch.gather');
+assert.equal(examQuestions['ondevice-010'].answer,'torch.sum');
+assert(examQuestions['ondevice-010'].context.includes('(T**2)'));
+assert.equal(prepQuestions['llm-016'].answer,'-F.logsigmoid(beta * logits)');
+assert(!isCorrect('llm-016',prepQuestions['llm-016'].answer,true));
+console.log('PASS: exam-only core spans, per-blank hints, supplied formulas, resolved DPO cell and separate grading');
 console.log('PASS: five monthly banks/exams, 24 topics, 75 distinct balanced prediction questions, four choices, answer/source coverage');
 
 const {Session,default:Home}=load('app/exam-prep/page.tsx');
@@ -151,12 +167,14 @@ assert.equal(button(tree,'마지막 문제까지').props.disabled,true);
 console.log('PASS: correct-answer shortcut advances once; last question never wraps');
 
 slots.length=0;props={collection:predictedExams[0],exam:true,initial:empty(),onHome(){}};tree=render();
+assert.equal(all(tree,n=>n.props?.className==='prep-blank-hint').length,all(tree,n=>n.type==='textarea').length);
+assert(textarea(tree).props['aria-describedby']);
 assert.equal(all(tree,n=>n.type==='input').length,0);assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer));tree=render();assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='h3' && text(n)==='예시 답안').length,0);
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();button(tree,'다음 →').props.onClick();tree=render();
 textarea(tree).props.onChange({target:{value:'wrong'}});tree=render();button(tree,'전체 답안 제출').props.onClick();tree=render();
 assert(text(tree).includes('1/25문항 (4점)'));assert(textarea(tree).props.readOnly);assert.equal(feedback(tree).length,1);
-const examKey=`ai-monthly-prep-v3:exam:${props.collection.id}`;
+const examKey=`ai-monthly-prep-v4:exam:${props.collection.id}`;
 slots.length=0;props={...props,initial:JSON.parse(storage.get(examKey))};tree=render();assert(textarea(tree).props.readOnly);assert(text(tree).includes('1/25문항 (4점)'));
 button(tree,'오답·미입력만').props.onClick();tree=render();assert.equal(all(tree,n=>n.type==='nav')[0].props.children.length,24);
 button(tree,'답안 초기화').props.onClick();tree=render();assert.equal(textarea(tree).props.value,'');assert.equal(feedback(tree).length,0);assert(!textarea(tree).props.readOnly);
