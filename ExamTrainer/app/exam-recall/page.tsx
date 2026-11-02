@@ -64,7 +64,8 @@ export default function ExamRecall() {
   const [raw, setRaw] = useState(false);
   return <main className="handbook">
     <header className="hb-top"><Link href="/">← 문제은행</Link><Link href="/final-handbook/">암기 핸드북</Link><button onClick={() => window.print()}>인쇄 / PDF 저장</button></header>
-    <h1>시험 복기 아카이브 (4월·5월·6월·9월)</h1>
+    <h1>시험 복기 아카이브 (4월·5월·6월·9월·10월)</h1>
+    <section className="hb-cell"><h2>10월 복기 추가</h2><p>DPO · MHA · GPT 임베딩 / MCP Agent / CIFAR-10 ResNet18 / NCF / CNN·LLM 양자화</p><Link href="/october-recall/">10월 과목별 정리와 모의고사 25문항 →</Link></section>
     <p className="hb-intro">직접 적어주신 9월 복기 원문과 4월(1·2차)·5월·6월 기출 복기 주제의 Study 노트북 매핑을 함께 보관한 탭입니다. 공식 시험지·공식 정답이 아닌 사용자 기억 기반 기록입니다.</p>
     <section className="hb-cell" id="recall-past">
       <h2>4월(1·2차) · 5월 · 6월 복기 주제 및 Study 매핑</h2>
