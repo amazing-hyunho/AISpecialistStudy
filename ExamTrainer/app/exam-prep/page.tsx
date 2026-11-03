@@ -40,7 +40,7 @@ export default function ExamPrep() {
     </article>)}</div>;
   }
   return <main className="app-shell prep-shell">
-    <header className="topbar"><Link href="/">← 학습 홈</Link><Link href="/exam-recall/">9월 복기 원문</Link></header>
+    <header className="topbar"><Link href="/">← 학습 홈</Link><Link href="/study-plan/">10일 커리큘럼</Link><Link href="/exam-recall/">월별 복기</Link></header>
     <section className="prep-hero"><span className="eyebrow">4월 · 5월 · 6월 · 9월</span><h1>복기에서 연습으로,<br/>연습에서 실전으로.</h1>
       <p>문제은행에서는 객관식 확인 후 전체 셀 안에서 같은 코드를 직접 작성합니다. 모의고사는 보기를 제공하지 않으며 제출 후 정답·해설과 과목별 점수를 공개합니다.</p>
       <nav className="prep-tabs"><a href="#monthly">월별 문제은행</a><a href="#priority">예상 주제 문제은행</a><a href="#monthly-exams">월별 모의고사</a><a href="#predicted">예상 3회</a></nav>

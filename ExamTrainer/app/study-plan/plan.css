@@ -1,0 +1,32 @@
+.study-plan { max-width: 1160px; margin: 0 auto; padding: 0 28px 60px; line-height: 1.75; }
+.plan-nav { display:flex; flex-wrap:wrap; gap:24px; padding:26px 0; border-bottom:1px solid var(--line); font-size:.9rem; }
+.study-plan a { color:var(--green-dark); text-underline-offset:4px; }
+.plan-hero { padding:54px 0 34px; }
+.plan-eyebrow { font-size:.78rem; font-weight:750; letter-spacing:.13em; color:var(--green); }
+.plan-hero h1 { font-size:clamp(2.25rem,5vw,3.8rem); line-height:1.22; letter-spacing:-.05em; margin:20px 0; }
+.plan-lead { color:var(--muted); font-size:1.1rem; }
+.plan-stats { display:grid; grid-template-columns:repeat(4,1fr); margin-top:32px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+.plan-stats div { display:flex; flex-direction:column; padding:20px 24px; }
+.plan-stats strong { font-size:1.7rem; }.plan-stats span { font-size:.8rem; color:var(--muted); }
+.plan-toolbar { display:flex; flex-wrap:wrap; gap:18px; align-items:center; padding:20px 0; border-bottom:1px solid var(--line); }
+.plan-toolbar p { margin:0; font-size:.9rem; }.plan-toolbar label { font-weight:700; }
+.plan-toolbar form { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.study-plan input[type=date],.study-plan button { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); font:inherit; }
+.study-plan button { cursor:pointer; }.study-plan :focus-visible { outline:3px solid var(--green); outline-offset:3px; }
+.plan-progress { margin:24px 0; padding:20px; background:var(--green-soft); border-radius:12px; }
+.plan-progress>div { display:flex; justify-content:space-between; gap:16px; }.plan-progress span { font-size:.9rem; }
+.plan-progress progress { width:100%; height:12px; accent-color:var(--green); }.plan-progress p { margin:6px 0 0; font-size:.8rem; }
+.plan-principles { border-left:3px solid var(--green); padding:2px 22px; margin:32px 0 44px; }.plan-principles h2 { font-size:1.1rem; }.plan-principles p { font-size:.92rem; }
+.plan-overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.plan-overview a { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:10px; padding:17px 20px; text-decoration:none; background:var(--card); }
+.plan-overview a:hover { border-color:var(--green); }.plan-overview span { font-size:.75rem; letter-spacing:.03em; color:var(--muted); }.plan-overview strong { margin:4px 0; }.plan-overview small { color:var(--muted); }
+#daily-detail { margin-top:46px; }.plan-day { background:var(--card); border:1px solid var(--line); border-radius:16px; margin:24px 0; padding:28px; scroll-margin-top:20px; }
+.plan-day>header { display:flex; gap:20px; align-items:center; }.plan-day-number { color:var(--green); font-size:.88rem; font-weight:800; white-space:nowrap; }.plan-day header p { margin:0; color:var(--muted); font-size:.82rem; }.plan-day h3 { margin:3px 0; font-size:1.3rem; letter-spacing:-.03em; }.plan-day-status { margin-left:auto; border-radius:20px; padding:3px 12px; background:var(--green-soft); color:var(--green-dark); font-size:.8rem; white-space:nowrap; }
+.plan-goal { margin:22px 0; font-weight:650; }.plan-blocks { list-style:none; padding:0; margin:0; }.plan-blocks li { padding:17px 0; border-top:1px solid var(--line); }.plan-blocks li>div { display:flex; align-items:center; gap:12px; }.plan-blocks span { font-size:.8rem; color:var(--muted); }.plan-blocks em { margin-left:auto; color:var(--green); font-style:normal; font-weight:700; font-size:.85rem; }.plan-blocks p { margin:7px 0 0 27px; font-size:.93rem; }
+.plan-sources { padding:14px 18px; background:#f1f1e9; border-radius:8px; font-size:.85rem; }.study-plan summary { cursor:pointer; font-weight:700; }.plan-sources li { margin:14px 0; }.plan-sources code { overflow-wrap:anywhere; }.plan-sources p { margin:3px 0; }
+.plan-checks { border:0; border-top:1px solid var(--line); margin:26px 0 18px; padding:14px 0 0; }.plan-checks legend { font-weight:750; }.plan-checks label { display:flex; align-items:flex-start; gap:10px; margin:9px 0; font-size:.92rem; }.study-plan input[type=checkbox] { accent-color:var(--green); width:17px; height:17px; margin-top:6px; flex:none; }
+.plan-notes { display:block; font-size:.85rem; font-weight:650; }.plan-notes textarea { display:block; width:100%; margin-top:7px; padding:12px; border:1px solid var(--line); border-radius:8px; resize:vertical; background:#fff; font-size:.92rem; font-weight:400; color:var(--ink); }
+.plan-practice { display:flex; flex-wrap:wrap; gap:10px 22px; margin:19px 0; font-size:.9rem; font-weight:700; }.plan-extra { font-size:.82rem; color:var(--muted); margin-bottom:0; }
+.plan-evidence { margin:44px 0; }.plan-evidence details { margin-top:22px; padding:20px; background:var(--card); border:1px solid var(--line); border-radius:12px; font-size:.85rem; }.plan-table-wrap { overflow-x:auto; }.plan-evidence table { width:100%; border-collapse:collapse; min-width:650px; font-size:.86rem; }.plan-evidence th,.plan-evidence td { text-align:left; padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }.plan-evidence thead { background:var(--green-soft); }.plan-file-list { max-height:320px; overflow:auto; overflow-wrap:anywhere; }.plan-footer { font-size:.8rem; color:var(--muted); border-top:1px solid var(--line); padding-top:24px; }
+@media(max-width:680px) { .study-plan { padding:0 16px 40px; }.plan-nav { gap:12px; font-size:.8rem; }.plan-hero { padding-top:30px; }.plan-stats { grid-template-columns:repeat(2,1fr); }.plan-stats div { padding:15px; }.plan-overview { grid-template-columns:1fr; }.plan-day { padding:18px; }.plan-day>header { gap:10px; flex-wrap:wrap; }.plan-day h3 { font-size:1.12rem; }.plan-day-number { width:100%; }.plan-day-status { display:none; }.plan-blocks p { margin-left:0; }.plan-toolbar { gap:12px; } }
+@media print { .study-plan { max-width:none; padding:0; font-size:10pt; }.plan-nav,.plan-toolbar,.plan-progress,.plan-notes,.plan-practice,.plan-footer,.plan-evidence details { display:none; }.plan-hero { padding:0; }.plan-hero h1 { font-size:25pt; }.plan-overview { grid-template-columns:1fr 1fr; }.plan-day { break-inside:avoid; border-radius:0; padding:16px; }.plan-blocks li { padding:8px 0; }.plan-stats div { padding:8px; }.plan-evidence table { min-width:0; }.plan-sources:not([open]) { display:none; } }

@@ -1,0 +1,116 @@
+{
+  "version":1,
+  "reviewed":"2026-11-03",
+  "defaultStart":"2026-11-03",
+  "dailyMinutes":180,
+  "scopeNote":"프로젝트에 저장된 ‘26.3월 시험 출제 포인트 및 자가 점검 체크 포인트’와 4·5·6·9·10월 개인 복기를 기준으로 구성했습니다. 이후 시험의 최신 공지나 확정 출제 비중을 확인한 것은 아닙니다.",
+  "coverage":[
+    {"subject":"LLM","scope":"주요 layer의 의미·동작·구성·활용, 입력→출력 Tensor 흐름, 학습 작업, 목적에 맞는 데이터 구성","days":[1,2,3,9,10],"reason":"복기의 MHA·GPT·DPO를 우선하되 Dataset·학습 루프·분류·LoRA까지 연결"},
+    {"subject":"RAG","scope":"RAG 구성 요소와 주요 흐름, llama-index·mcp library 활용","days":[3,4,9,10],"reason":"문서→검색→프롬프트→생성을 먼저 익힌 뒤 KG·MCP·Agent를 연결"},
+    {"subject":"Data","scope":"모델 구조·Tensor 흐름·학습 연결, 학습/평가 데이터 구성, sklearn 등 library, 평가 Metric","days":[5,6,10],"reason":"10월 NCF만 공부하면 빠지는 시계열·NGCF·학습·지표를 포함"},
+    {"subject":"Vision","scope":"주요 layer·학습 연결, 데이터 구성, torchvision.transforms, 평가 Metric","days":[6,7,9,10],"reason":"CIFAR·ResNet 외에 ViT·DETR와 분할·생성 학습의 차이를 확인"},
+    {"subject":"On-device","scope":"layer 단위 양자화/역양자화, 중요도 기반 Pruning, Teacher 예측·정답을 이용한 Student 학습","days":[8,9,10],"reason":"최근 양자화 복기를 집중 연습하고 PDF에 명시된 Pruning·Distillation을 별도 확보"}
+  ],
+  "days":[
+    {"day":1,"title":"LLM 기초: Dataset → MultiHeadAttention","subjects":["LLM"],"goal":"다음 토큰 정답을 구성하고 MHA의 모든 축 변화를 설명한다.","blocks":[
+      {"minutes":20,"label":"진단","task":"핸드북에서 다섯 과목을 훑고 모르는 API를 표시한다. (B,T,D), (B,H,T,Dh)를 손으로 적고 학습 전 자신 없는 주제 3개를 기록한다."},
+      {"minutes":55,"label":"강의·코드 읽기","task":"Dataset의 stride·max_length·입력/정답 한 칸 이동을 확인한다. Attention의 Q/K/V projection, causal mask, scale, softmax, head 결합을 함수 전체로 읽는다."},
+      {"minutes":75,"label":"직접 구현","task":"GPTDatasetV1의 input_ids/target_ids를 작성하고 작은 토큰 배열로 출력한다. MHA의 view→transpose→점수→mask→softmax→V→재결합을 보지 않고 적는다. API 이름만 가린 빈칸과 줄 전체 빈칸을 번갈아 푼다."},
+      {"minutes":30,"label":"자가 점검","task":"MHA 문제 10개를 풀고 오류를 축·shape·메서드 세 가지로 분류한다. 정답률 80% 미만인 줄은 전체 함수를 다시 읽고 재작성한다."}
+    ],"sources":[
+      {"path":"Study/LLM/Chapter_2_Exercise_Dataset.ipynb","cells":[3,4],"find":["GPTDatasetV1","create_dataloader_v1"]},
+      {"path":"Study/LLM/Chapter_3_Excercise_Attention.ipynb","cells":[4],"find":["MultiHeadAttention"]}
+    ],"checks":["입력 [A,B,C]에 대한 다음 토큰 정답 [B,C,D]를 구성한다","MHA 중간 shape 7단계를 설명한다","transpose(1,2)와 keys.transpose(2,3)의 역할을 구분한다"],"practice":[{"label":"MHA 문제은행","href":"/exam-prep/#priority"},{"label":"텐서·코드 핸드북","href":"/handbook/"}],"extra":"여유 60분: Chapter_3_Excercise_Viz_Multi_head_attention.ipynb의 시각화로 head별 attention을 확인한다."},
+    {"day":2,"title":"GPT 구성·학습·분류·LoRA","subjects":["LLM"],"goal":"모델 선언을 학습 루프와 연결하고 미세조정에서 바뀌는 파라미터를 구분한다.","blocks":[
+      {"minutes":20,"label":"전날 복습","task":"Day 1의 입력/정답 shift와 MHA 헤드 결합을 자료 없이 다시 적는다. 틀린 축만 다시 확인한다."},
+      {"minutes":55,"label":"강의·코드 읽기","task":"GPT의 token/position embedding·TransformerBlock·residual·output head·생성 흐름을 읽는다. 사전학습 loss와 zero_grad→backward→step, 분류 head 교체·동결·LoRA 보정 경로를 대조한다."},
+      {"minutes":75,"label":"직접 구현","task":"GPTModel의 주요 선언과 generate_text_simple의 마지막 logits·argmax·cat을 작성한다. calc_loss_batch와 학습 갱신을 복원하고 Spam 분류의 마지막 토큰 출력과 LoRALayer의 A/B shape·alpha/rank를 적는다."},
+      {"minutes":30,"label":"자가 점검","task":"GPT·학습·LoRA에서 각 3개 이상 빈칸을 푼다. 학습되는 파라미터와 동결된 파라미터를 말로 설명하고 오답 3개를 기록한다."}
+    ],"sources":[
+      {"path":"Study/LLM/Chapter_4_Excercise_GPT.ipynb","cells":[3,4,5],"find":["TransformerBlock","GPTModel","generate_text_simple"]},
+      {"path":"Study/LLM/Chapter_5_Excercise_Pretraining.ipynb","cells":[2,3],"find":["calc_loss_batch","train_model_simple"]},
+      {"path":"Study/LLM/Chapter_6_Excercise_Finetuning_Classification.ipynb","cells":[1,2],"find":["SpamDataset","calc_accuracy_loader"]},
+      {"path":"Study/LLM/Chapter_6_Excercise_Finetuning_Classification_LoRA.ipynb","cells":[3,4],"find":["LoRALayer","LinearWithLoRA","replace_linear_with_lora"]}
+    ],"checks":["vocab_size·context_length·emb_dim의 자리를 정확히 쓴다","loss 계산과 zero_grad·backward·step을 순서대로 연결한다","분류 head와 LoRA A/B 중 학습할 파라미터를 구분한다"],"practice":[{"label":"GPT·LoRA·학습 문제은행","href":"/exam-prep/#priority"},{"label":"최종 암기 핸드북","href":"/final-handbook/"}],"extra":"여유 60분: 사전학습 노트북에서 작은 배치 1회만 실행해 loss shape와 train/eval 동작을 확인한다. 전체 모델 학습은 필수가 아니다."},
+    {"day":3,"title":"DPO·Instruction 데이터 + RAG 입문","subjects":["LLM","RAG"],"goal":"DPO 데이터와 마스크를 완성하고 RAG의 기본 호출 흐름을 연결한다.","blocks":[
+      {"minutes":20,"label":"누적 복습","task":"Day 2 GPT 임베딩 세 줄과 학습 갱신 순서를 재작성한다. 마지막 토큰 logits와 다음 토큰 target shift의 차이를 설명한다."},
+      {"minutes":60,"label":"DPO 코드 읽기·작성","task":"InstructionDataset·custom_collate_fn의 padding target과 DPO PreferenceDataset의 chosen/rejected 토큰화를 비교한다. prompt mask·labels/logits shift·gather·policy/reference 로그비·DPO loss를 한 흐름으로 적는다. +2는 해당 강의 구현값임을 기억한다."},
+      {"minutes":70,"label":"RAG 기본 구현","task":"문서→Node→embedding→index→query engine/retriever→prompt→생성을 그린다. VectorStoreIndex.from_documents·as_query_engine·as_retriever·retrieve와 system/user 메시지를 직접 작성한다. 검색 결과 객체와 본문 문자열을 구분한다."},
+      {"minutes":30,"label":"자가 점검","task":"DPO 6문항과 RAG 기본 API 4문항을 푼다. 잘못된 응답 변수·await 누락·입력 타입 오류를 따로 기록한다."}
+    ],"sources":[
+      {"path":"Study/LLM/Chapter_7_Exercise_Follow_Instructions.ipynb","cells":[1],"find":["InstructionDataset","custom_collate_fn"]},
+      {"path":"Study/LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb","cells":[1],"find":["PreferenceDataset","custom_collate_fn","compute_logprobs","compute_dpo_loss"]},
+      {"path":"Study/RAG/1일차/실습 자료/Code/1. Llama_index.ipynb","cells":[16,33,50],"find":["VectorStoreIndex","as_query_engine","as_retriever"]}
+    ],"checks":["prompt와 chosen/rejected 전체 토큰의 차이를 설명한다","DPO 마스크·한 칸 shift·gather를 복원한다","문서부터 답변까지 RAG 호출 순서를 작성한다"],"practice":[{"label":"10월 DPO 정리","href":"/october-recall/#oct-LLM"},{"label":"DPO·RAG 문제은행","href":"/exam-prep/#priority"}],"extra":"여유 60분: 1일차 2. RAG.ipynb에서 RAG_from_scratch와 Refine_RAG의 차이를 읽는다."},
+    {"day":4,"title":"RAG 심화: Retriever·KG·MCP Agent","subjects":["RAG"],"goal":"검색 결과를 생성까지 전달하고 MCP의 비동기 Agent 흐름을 작성한다.","blocks":[
+      {"minutes":20,"label":"간격 복습","task":"Day 1 MHA 축 이동을 5분, Day 3 RAG 흐름과 DPO 마스크를 15분 동안 다시 작성한다."},
+      {"minutes":55,"label":"검색·KG 흐름","task":"Task_1의 LlamaIndexRetriever→prompt_generator→Reader를 따라간다. Task_2의 KGQueryEngine·RAGWithKG·RAGWithSRKG를 비교해 금융 KG와 일반 검색의 분기를 적는다. 항상 두 결과를 합치는 코드로 오해하지 않는다."},
+      {"minutes":75,"label":"MCP 직접 구현","task":"BasicMCPClient→McpToolSpec→await tools/resources→FunctionAgent→Context→run→stream_events→await handler를 복원한다. 도구 설명 제한, ToolCall/ToolCallResult 분기와 CRAG_evaluation의 입력·출력도 읽는다."},
+      {"minutes":30,"label":"자가 점검","task":"RAG 10개 빈칸을 풀고 각 호출의 입력·반환 타입을 설명한다. 서버나 API 키가 없으면 로컬 코드 읽기·작성으로 마무리하고 네트워크 환경 설정에 시간을 쓰지 않는다."}
+    ],"sources":[
+      {"path":"Study/RAG/2일차/실습 자료/Code/2. Task_1.ipynb","cells":[17,24,26,30],"find":["LlamaIndexRetriever","prompt_generator","Reader","RAG"]},
+      {"path":"Study/RAG/2일차/실습 자료/Code/3. Task_2.ipynb","cells":[26,32,37],"find":["KGQueryEngine","RAGWithKG","RAGWithSRKG"]},
+      {"path":"Study/RAG/2일차/실습 자료/Code/4_RAG_framework_evaluation_with_MCP.ipynb","cells":[20,38,43,44,47,56],"find":["CRAG_evaluation","BasicMCPClient","KGQueryEngineWithMCP","RAGwithMCP"]}
+    ],"checks":["retriever 결과에서 node 본문을 추출해 Reader까지 전달한다","도구 목록과 resource 조회를 구분한다","Context·handler·최종 문자열의 차이를 설명한다"],"practice":[{"label":"10월 MCP 정리","href":"/october-recall/#oct-RAG"},{"label":"검색·KG·MCP 문제은행","href":"/exam-prep/#priority"}],"extra":"여유 60분: Graph_RAG.pdf와 NL2SQL___mcp.pdf에서 노트북의 KG·도구 흐름에 대응하는 설명을 읽는다."},
+    {"day":5,"title":"Data: 시계열 데이터·모델·학습·Metric","subjects":["Data"],"goal":"window부터 예측·손실·평가까지 시계열 파이프라인을 구현한다.","blocks":[
+      {"minutes":20,"label":"누적 복습","task":"Day 2 학습 루프와 Day 4 MCP await 위치를 각 10분씩 복원한다."},
+      {"minutes":55,"label":"강의·코드 읽기","task":"시계열 강의 1·2-ts PDF의 데이터/평가 설명을 읽고 solution의 window·loader·LSTM·Conv1D·RNN·Encoder–Decoder에 연결한다. 시계열에서는 미래 정보가 학습에 섞이지 않게 분리 시점을 점검한다."},
+      {"minutes":75,"label":"직접 구현","task":"작은 배열로 window와 target 경계를 출력한다. Conv1D의 transpose 두 번, RNNRNN의 마지막 입력·hidden state·stack 흐름과 train/test를 작성한다. MSE→RMSE 및 MAPE 계산을 설명한다."},
+      {"minutes":30,"label":"자가 점검","task":"window·forward·학습·지표 각 2개 이상 빈칸을 푼다. 입력/예측/정답 shape를 적고 MAPE의 0 근처 정답 문제를 설명한다."}
+    ],"sources":[
+      {"path":"Study/TIME/3_4-ts-practice/ts_solution.ipynb","cells":[16,18,22,24,28,30,35,42,44,46,50],"find":["convert_data_into_tensors","Conv1DModel","RNNRNN","train_","test_"]},
+      {"path":"Study/TIME/3_4-ts-practice/ts_practice.ipynb","cells":[16,30,42,44],"find":["convert_data_into_tensors","Conv1DModel","create_enc_dec_sequences","RNNRNN"]}
+    ],"checks":["window와 target 구간이 겹치지 않게 자른다","Conv1D·Encoder–Decoder의 입력/출력 shape를 적는다","예측·정답·loss·업데이트·RMSE/MAPE를 연결한다"],"practice":[{"label":"시계열·Metric 문제은행","href":"/exam-prep/#priority"},{"label":"학습·평가 핸드북","href":"/final-handbook/"}],"extra":"여유 60분: train/test의 split·shuffle·스케일링 적합 시점을 점검하고 작은 배치의 forward를 실행한다."},
+    {"day":6,"title":"추천시스템 NCF·NGCF + CIFAR·ResNet18","subjects":["Data","Vision"],"goal":"추천 모델의 임베딩 결합과 이미지 전처리·분류 stem을 완성한다.","blocks":[
+      {"minutes":20,"label":"간격 복습","task":"Day 3 DPO 토큰화와 Day 5 window·Conv1D를 다시 적는다."},
+      {"minutes":60,"label":"추천 코드 구현","task":"NCF의 MovieLens Dataset·ID 인코딩·분리·Embedding→cat→fc1→ReLU→fc2·RMSE를 읽고 복원한다. NGCF는 degree 정규화·W1/W2 메시지·index_add_·레이어 임베딩 concat을 NCF와 비교한다."},
+      {"minutes":70,"label":"Vision 코드 구현","task":"train/test transforms를 쓰고 3×3 conv1·Identity maxpool·fc 교체를 완성한다. train_one_epoch/evaluate에서 loss·정답·optimizer·eval/no_grad와 accuracy_top1을 확인한다."},
+      {"minutes":30,"label":"자가 점검","task":"NCF 3개·NGCF 2개·ResNet/전처리 5개 빈칸을 푼다. NCF (B,32)+(B,32)→(B,64)와 CIFAR (B,3,32,32) 흐름을 설명한다."}
+    ],"sources":[
+      {"path":"Study/TIME/7_8-recsys-practice/RecSys_NCF.ipynb","cells":[8,11],"find":["MovieLens","Neural_Collaborative_Filtering"]},
+      {"path":"Study/TIME/7_8-recsys-practice/RecSys_GCF_sol.ipynb","cells":[10,14,15,17,19],"find":["create_edge_index","NGCFLayer","NGCF","evaluate","train"]},
+      {"path":"Study/Vision/01_ResNet18_CIFAR10.ipynb","cells":[6,9,11,17],"find":["train_tfms","build_resnet18_for_cifar10","accuracy_top1","train_one_epoch","collect_predictions"]}
+    ],"checks":["NCF cat 축과 Linear 차원 64→32→1을 쓴다","NGCF 메시지 집계와 레이어 concat을 구분한다","증강·stem·분류 학습·정확도를 연결한다"],"practice":[{"label":"NCF·CIFAR 복기 정리","href":"/october-recall/"},{"label":"추천·Vision 문제은행","href":"/exam-prep/#priority"}],"extra":"여유 60분: 5-recsys-basics.pdf·6-recsys-advanced.pdf에서 NCF와 그래프 추천의 차이를 정리한다."},
+    {"day":7,"title":"Vision: ViT·DETR·과제별 학습 비교","subjects":["Vision"],"goal":"Attention·잔차·탐지 추론을 구현하고 분류/분할/생성의 정답 차이를 설명한다.","blocks":[
+      {"minutes":20,"label":"간격 복습","task":"Day 1 MHA 전체 shape와 Day 6 train/test transforms를 자료 없이 적는다."},
+      {"minutes":55,"label":"ViT·DETR 읽기","task":"ViT의 patch/CLS token·QKV 분리·einsum·softmax·잔차를 읽는다. DETR의 pred_logits→no-object 제외→confidence 필터→박스 변환을 연결한다. 이 DETR 실습에는 내부 Transformer 직접 구현이 없으므로 ViT/LLM MHA로 대응 연습한다."},
+      {"minutes":75,"label":"직접 구현·학습 비교","task":"ViT Attention/Transformer와 DETR 후처리를 재작성한다(50분). U-Net의 logits·픽셀 mask·BCEWithLogitsLoss와 DDPM의 q_sample·noise target·p_losses, Stable Diffusion의 pipeline 호출·조건 입력을 비교한다(25분)."},
+      {"minutes":30,"label":"자가 점검","task":"ViT/DETR/전처리·평가 10문항을 푼다. 분류 label·분할 mask·확산 noise target을 구분한다. 80% 미만이면 새 시각화 대신 틀린 함수를 재작성한다."}
+    ],"sources":[
+      {"path":"Study/Vision/02_ViT_CIFAR10.ipynb","cells":[9,11,19,20],"find":["Attention","Transformer","ViT","train_epoch","evaluate"]},
+      {"path":"Study/Vision/03_DETR.ipynb","cells":[8,18],"find":["box_cxcywh_to_xyxy","rescale_bboxes","pred_logits"]},
+      {"path":"Study/Vision/04_Unet.ipynb","cells":[7,11],"find":["UNet","train_one_epoch"]},
+      {"path":"Study/Vision/05_DDPM.ipynb","cells":[16,18],"find":["q_sample","p_losses"]},
+      {"path":"Study/Vision/06_Stable_Diffusion_v1_4.ipynb","cells":[],"find":["StableDiffusionPipeline"]}
+    ],"checks":["ViT attention 점수/Value 합산과 residual을 적는다","DETR no-object 제외와 box 좌표 변환을 설명한다","분류·분할·생성의 출력/정답/loss 차이를 말한다"],"practice":[{"label":"Vision 주제 문제은행","href":"/exam-prep/#priority"},{"label":"학습·평가 최종 정리","href":"/final-handbook/"}],"extra":"여유 60분: 03_Attention.pdf·04_Applications.pdf·05_Generative models.pdf를 해당 코드와 대조한다. 이미지 생성이나 대규모 모델 다운로드는 완료 조건이 아니다."},
+    {"day":8,"title":"On-device: Pruning·Knowledge Distillation","subjects":["On-device"],"goal":"제거 단위에 따른 중요도 축과 Teacher/Student 학습 경로를 구분한다.","blocks":[
+      {"minutes":20,"label":"누적 복습","task":"Day 4 MCP 실행 흐름과 Day 7 ViT 잔차를 복원한다."},
+      {"minutes":55,"label":"Pruning 코드 읽기·작성","task":"CNN 원소·vector·kernel·channel 중요도 합산 축을 비교한다. 개수→threshold→mask→expand_as→mul_와 sparsity schedule·재학습 흐름을 작성한다. LLM magnitude/Wanda는 가중치만 쓰는지 입력 특징도 쓰는지 비교한다."},
+      {"minutes":75,"label":"증류 직접 구현","task":"train_knowledge_distillation에서 teacher no_grad·student logits·온도 분포·soft loss·label loss·가중합·student 갱신을 복원한다. cosine/MSE 특징 증류는 비교 읽기로 확인한다. teacher에 gradient를 흘리는 오류를 찾아 고친다."},
+      {"minutes":30,"label":"자가 점검","task":"kernel/channel 5개·distillation 5개 빈칸을 푼다. 동률 threshold에서 제거 개수가 달라질 수 있는 이유와 T² 보정 위치를 설명한다."}
+    ],"sources":[
+      {"path":"Study/On-Device/실습/1. Pruning for CNN_answer.ipynb","cells":[30,32,34,36,66],"find":["prune_weight_fine_grained","prune_weight_kernel_level","prune_weight_channel_level","get_sparsity_schedule"]},
+      {"path":"Study/On-Device/실습/3. Knowledge Distillation_answer.ipynb","cells":[27,40,53],"find":["train_knowledge_distillation","train_cosine_loss","train_mse_loss"]},
+      {"path":"Study/On-Device/실습/4. Pruning for LLM_answer.ipynb","cells":[11,20],"find":["prune_magnitude","prune_wanda"]}
+    ],"checks":["kernel (2,3)·입력 channel (0,2,3) 합산 축을 쓴다","importance→threshold→mask의 True가 유지임을 설명한다","teacher 예측·실제 label로 student loss를 구성한다"],"practice":[{"label":"Pruning·증류 문제은행","href":"/exam-prep/#priority"},{"label":"On-device 핸드북","href":"/final-handbook/"}],"extra":"여유 60분: Pruning for CNN_slide.pdf와 Knowledge Distillation_slide.pdf에서 민감도·희소도·증류 설명을 코드와 대조한다."},
+    {"day":9,"title":"CNN·LLM 양자화 + 10월 모의고사","subjects":["On-device","LLM","RAG","Data","Vision"],"goal":"scale·zero point·재양자화를 복원하고 10월 복기를 시간 제한 안에 점검한다.","blocks":[
+      {"minutes":20,"label":"간격 복습","task":"Day 3 DPO 마스크·Day 6 NCF·Day 8 kernel/channel 축을 짧게 재작성한다."},
+      {"minutes":40,"label":"양자화 코드 읽기","task":"linear_quantize·scale/zero point·per-channel·bias 보정·quantized_linear/conv2d를 읽는다. LLM pseudo_quantize_tensor와 AWQ·SmoothQuant·rotation 구간은 핵심 scale 이동 원리를 비교한다."},
+      {"minutes":60,"label":"직접 구현","task":"scale 계산→round→zero point→clamp와 s_in×s_w/s_out 재양자화, Conv bias/weight_scale reshape를 적는다. pseudo 양자화의 정수 코드 범위·역양자화·원래 shape 복원을 작성한다. 각 1개 수치 예시를 손으로 계산한다."},
+      {"minutes":60,"label":"10월 모의고사","task":"10월 복기 25문항을 정답·정리 없이 응시한다. 한 문항에 3분 넘게 막히면 표시 후 넘어간다. 제출 후 점수·과목별 오답을 기록하고 Day 10 보완 주제 3개를 정한다."}
+    ],"sources":[
+      {"path":"Study/On-Device/실습/2. Quantization for CNN_answer.ipynb","cells":[23,25,34,44,54,56,62,64],"find":["linear_quantize","get_quantization_scale_and_zero_point","quantized_linear","quantized_conv2d"]},
+      {"path":"Study/On-Device/실습/5. Quantization for LLM_answer.ipynb","cells":[18,35,44,59,68],"find":["pseudo_quantize_tensor","auto_scale_block","smooth_lm","rotate_model_weight"]}
+    ],"checks":["CNN signed int8과 LLM unsigned 정수 코드 범위를 구분한다","채널 scale shape·bias 보정·재양자화를 쓴다","10월 25문항 결과와 보완 주제 3개를 기록한다"],"practice":[{"label":"10월 모의고사 25문항 응시","href":"/october-recall/"},{"label":"양자화 문제은행","href":"/exam-prep/#priority"}],"extra":"여유 60분: Quantization for CNN_slide.pdf·Quantization for LLM_slide.pdf에서 per-tensor/per-channel과 오차를 비교한다."},
+    {"day":10,"title":"전 범위 모의고사·오답 재현·최종 점검","subjects":["LLM","RAG","Data","Vision","On-device"],"goal":"10월 밖의 범위까지 확인하고 틀린 함수를 통째로 복원한다.","blocks":[
+      {"minutes":20,"label":"실전 전 복습","task":"Day 5 시계열·지표, Day 7 Vision 학습, Day 8 증류에서 자주 틀린 줄만 재작성한다. 오늘 볼 다섯 과목 체크리스트를 한 장으로 만든다."},
+      {"minutes":60,"label":"전 범위 모의고사","task":"전체 모의고사 페이지의 ‘예상 모의고사 1회 · 반복 핵심’ 25문항을 풀이한다. 10월 전용 시험과 다른 범위를 포함하는 시험이다. 정답 없이 풀고 60분 후 제출한다."},
+      {"minutes":70,"label":"약점 보완","task":"Day 9/10 오답을 합쳐 빈도가 높은 함수 3개를 선정한다. source 셀 전체를 읽고 자료를 닫은 뒤 함수 전체를 작성한다. 틀린 이유를 API·shape·학습/평가·수식 적용으로 나눠 적는다. 최저 점수 과목에 최소 30분을 배정한다."},
+      {"minutes":30,"label":"최종 체크","task":"출제 범위 표의 모든 항목을 말로 설명한다. 복습용 10개 핵심 빈칸을 새로 골라 8개 이상 맞히는지 점검한다. 80%는 학습용 목표이며 공식 합격 기준이 아니다. 미달 항목은 다음 회독 첫 과제로 남긴다."}
+    ],"sources":[
+      {"path":"Study/AI인증시험_출제포인트.pdf","cells":[],"find":[]},
+      {"path":"ExamTrainer/PAST_EXAMS_STUDY_GUIDE.md","cells":[],"find":[]},
+      {"path":"ExamTrainer/app/october-recall/content.json","cells":[],"find":[]}
+    ],"checks":["전 범위 모의고사와 과목별 결과를 기록한다","오답 함수 3개를 자료 없이 다시 작성한다","다섯 과목 범위 항목을 설명하고 남은 약점을 기록한다"],"practice":[{"label":"전 범위 예상 모의고사 1회","href":"/exam-prep/#predicted"},{"label":"마지막 암기 핸드북","href":"/final-handbook/"}],"extra":"여유 60분: 예상 모의고사 2회 또는 3회 중 취약 주제 위주로 추가 풀이한다. 새 API 학습보다 오답 함수 재현을 우선한다."}
+  ]
+}

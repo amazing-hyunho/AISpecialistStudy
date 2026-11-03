@@ -42,7 +42,7 @@ export default function OctoberRecall() {
   }
 
   return <main className="october">
-    <header className="oct-nav"><Link href="/">← 학습 홈</Link><Link href="/exam-recall/">월별 복기 아카이브</Link><Link href="/exam-prep/">전체 모의고사</Link></header>
+    <header className="oct-nav"><Link href="/">← 학습 홈</Link><Link href="/study-plan/">10일 커리큘럼</Link><Link href="/exam-recall/">월별 복기 아카이브</Link><Link href="/exam-prep/">전체 모의고사</Link></header>
     <h1>10월 AI Specialist 복기</h1>
     <p className="oct-lead">실습 코드 전체를 읽고, 어느 줄이 비어도 직접 완성할 수 있도록.</p>
     <p>사용자 제공 복기와 저장된 강의 코드를 대조한 정리입니다. 복기 기반 재구성 문제이며 공식 시험지·공식 정답은 아닙니다. 정리일: 2026-11-03.</p>

@@ -496,6 +496,7 @@ export default function Home() {
           <h1>강의자료 그대로,<br />한 칸씩 기억하기.</h1>
           <p>LLM·RAG·Data·Vision·On-device 강의 노트북 {bank.chapters.length}개의 핵심 코드를 빈칸으로 만들었습니다. 답안 코드와 비교하고, 틀린 코드는 다시 만납니다.</p>
           <div className="hero-actions">
+            <Link className="primary-button large" href="/study-plan/">출제 범위 기반 · 10일 커리큘럼 →</Link>
             <Link className="primary-button large" href="/october-recall/">10월 복기 정리 · 모의고사 25문항 →</Link>
             <Link className="primary-button large" href="/exam-recall/">월별 시험 복기 →</Link>
             <Link className="primary-button large" href="/final-handbook/">시험 직전 · 찐 암기 핸드북 →</Link>
