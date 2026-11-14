@@ -1,5 +1,6 @@
 import materialQuestions from './material-questions.json';
 import bank from '../question-bank.json';
+import november from './november.json';
 import { questionExplanations } from '../explanations';
 import { practiceChoices, type BankQuestion } from '../choice-practice-data';
 import { normalized } from '../grading';
@@ -91,6 +92,7 @@ export const predictedExams: Collection[] = [
     'vision-003','vision-037','vision-004','material-vit-value','vision-027',
     'ondevice-070','ondevice-008','ondevice-061','ondevice-037','ondevice-069'] },
 ];
+export const novemberExams: Collection[] = november.exams;
 const used = new Set([...monthlyReferenceBanks,...topicBanks,...predictedExams].flatMap(c => c.questionIds));
 export const prepQuestions: Record<string, PrepQuestion> = Object.fromEntries([
   ...[...bank.questions.filter(q => !materialQuestions.some(item => item.question.id === q.id)), ...materialQuestions.map(item => item.question)].filter(q => used.has(q.id)).map(fromBank),
@@ -144,6 +146,12 @@ for (const q of Object.values(examQuestions)) {
   if (choices.length!==4) throw new Error(`Missing implementation choices: ${q.id}`);
   q.choices=choices;
 }
+// November-only quantization excerpts use the same mock session and grading.
+for (const q of november.questions) {
+  prepQuestions[q.id] = q;
+  examQuestions[q.id] = q;
+}
+
 export function isCorrect(id: string, answer: string, exam=false) {
   return Boolean(answer.trim()) && normalized(answer) === normalized((exam ? examQuestions : prepQuestions)[id].answer);
 }
@@ -153,7 +161,7 @@ export function results(ids: string[], answers: Record<string,string>, exam=fals
     return {subject,total:subset.length,correct:subset.filter(id => isCorrect(id,answers[id] ?? '',exam)).length};
   });
 }
-for (const collection of [...monthlyBanks,...monthlyExams,...topicBanks,...predictedExams]) {
+for (const collection of [...monthlyBanks,...monthlyExams,...topicBanks,...predictedExams,...novemberExams]) {
   if (new Set(collection.questionIds).size !== collection.questionIds.length) throw new Error(`Duplicate questions: ${collection.id}`);
   for (const id of collection.questionIds) if (!prepQuestions[id]) throw new Error(`Missing question: ${id}`);
 }

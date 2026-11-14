@@ -30,6 +30,7 @@ function load(file) {
   return exports;
 }
 const data=load('app/exam-prep/data.ts');
+const {novemberExams}=data;
 const {choicePreview,cellParts,cellQuestions,prepQuestions,examQuestions,monthlyBanks,monthlyReferenceBanks,topicBanks,monthlyExams,predictedExams,subjects,isCorrect,results}=data;
 const {suppliedInExams,monthlyExamBlueprints}=load('app/exam-prep/exam-design.ts');
 assert.equal(monthlyBanks.length,5);assert.equal(monthlyExams.length,5);assert.equal(predictedExams.length,3);assert.equal(topicBanks.length,24);
@@ -74,6 +75,13 @@ for (const item of material) {
 }
 const sourceBank=load('app/question-bank.json');
 for (const id of Object.keys(prepQuestions)) {
+  if (id.startsWith('oct-')) {
+    const october=load('app/october-recall/content.json');
+    const original=october.questions.find(q=>q.id===id);
+    assert(original && original.answers.includes(prepQuestions[id].answer));
+    assert(october.topics.some(t=>t.code===prepQuestions[id].fullCode));
+    continue;
+  }
   if (material.some(item=>item.question.id===id)) continue;
   const q=sourceBank.questions.find(q=>q.id===id);
   assert(q);
@@ -218,3 +226,28 @@ console.log('PASS: corrupt storage safely starts a fresh attempt');
 console.log('Monthly counts:',monthlyBanks.map(c=>`${c.title}: ${c.questionIds.length}`).join(', '));
 console.log('Curated mock counts:',monthlyExams.map(c=>`${c.title}: ${c.questionIds.length}`).join(', '));
 console.log('Unique questions:',Object.keys(prepQuestions).length);
+
+assert.equal(novemberExams.length,2);
+assert.equal(new Set(novemberExams.flatMap(e=>e.questionIds)).size,50);
+for (const exam of novemberExams) {
+  assert.equal(exam.questionIds.length,25);
+  for (const subject of subjects) assert.equal(exam.questionIds.filter(id=>examQuestions[id].subject===subject).length,5);
+  for (const id of exam.questionIds) {
+    const parts=cellParts(exam.questionIds,id,true);
+    assert.equal(parts.map(p=>p.question?p.question.answer:p.text).join(''),examQuestions[id].fullCode);
+    assert(examQuestions[id].hint.length>15);
+  }
+  slots.length=0;
+  props={collection:exam,exam:true,initial:{...empty(),items:Object.fromEntries(exam.questionIds.map(id=>[id,{answer:examQuestions[id].answer}]))},onHome(){}};
+  tree=render();assert.equal(feedback(tree).length,0);
+  button(tree,'전체 답안 제출').props.onClick();tree=render();
+  assert(text(tree).includes('25/25문항 (100점)'));assert(textarea(tree).props.readOnly);
+  const saved=JSON.parse(storage.get(`ai-monthly-prep-v5:exam:${exam.id}`));
+  assert(saved.submitted);
+  slots.length=0;props={...props,initial:saved};tree=render();assert(textarea(tree).props.readOnly);
+  button(tree,'답안 초기화').props.onClick();tree=render();assert.equal(textarea(tree).props.value,'');
+}
+slots.length=0;cursor=0;tree=Home();
+assert(all(tree,n=>n.props?.id==='november').length===1);
+assert(text(tree).includes('11월 대비 1회'));assert(text(tree).includes('11월 대비 2회'));
+console.log('PASS: November cards, 50 balanced blanks, exact cell restoration, grading, saved results and retry');

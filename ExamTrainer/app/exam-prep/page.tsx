@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { monthlyBanks, topicBanks, monthlyExams, predictedExams, prepQuestions, examQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
+import { monthlyBanks, topicBanks, monthlyExams, predictedExams, novemberExams, prepQuestions, examQuestions, cellParts, cellQuestions, choicePreview, subjects, isCorrect, results, type Collection } from './data';
 import './prep.css';
 
 type ItemProgress = { selected?: number; checked?: boolean; writing?: boolean; answer?: string; graded?: boolean };
@@ -43,10 +43,11 @@ export default function ExamPrep() {
     <header className="topbar"><Link href="/">← 학습 홈</Link><Link href="/study-plan/">10일 커리큘럼</Link><Link href="/exam-recall/">월별 복기</Link></header>
     <section className="prep-hero"><span className="eyebrow">4월 · 5월 · 6월 · 9월</span><h1>복기에서 연습으로,<br/>연습에서 실전으로.</h1>
       <p>문제은행에서는 객관식 확인 후 전체 셀 안에서 같은 코드를 직접 작성합니다. 모의고사는 보기를 제공하지 않으며 제출 후 정답·해설과 과목별 점수를 공개합니다.</p>
-      <nav className="prep-tabs"><a href="#monthly">월별 문제은행</a><a href="#priority">예상 주제 문제은행</a><a href="#monthly-exams">월별 모의고사</a><a href="#predicted">예상 3회</a></nav>
+      <nav className="prep-tabs"><a href="#november">11월 대비 2회 · 신규</a><a href="#monthly">월별 문제은행</a><a href="#priority">예상 주제 문제은행</a><a href="#monthly-exams">월별 모의고사</a><a href="#predicted">예상 3회</a></nav>
       <p className="prep-note">개인 복기를 바탕으로 만든 연습 문제입니다. 예상 주제의 우선순위는 반복 등장과 구체적인 구현 요구를 근거로 정했으며 확률 수치가 아닙니다. 실습자료 전체 셀을 유지합니다. 원본 ????는 해당 실습의 해설 답안으로 채점합니다. 자료에 없는 복기 구현은 강의의 유사 유형으로 연습합니다.</p>
     </section>
-    <section className="prep-card"><h2>10월 복기 모의고사 · 신규</h2><p>DPO·GPT·MHA / MCP·Agent / CIFAR-10 / NCF / CNN·LLM 양자화. 과목별 정리와 주관식 25문항, 정답·해설을 제공합니다.</p><Link href="/october-recall/">10월 정리 · 모의고사 응시 →</Link></section>
+    <section id="november"><h2>11월 대비 모의고사 · 신규 2회</h2><p>1회는 먼저 준비할 후보, 2회는 다음 후보입니다. 각 60분 · 5과목 × 5빈칸 · 100점. 전체 셀 안에서 작성하고 제출하면 과목별 점수와 정답·해설을 확인할 수 있습니다. 실제 출제 확률을 검증한 자료는 아닙니다.</p>{cards(novemberExams,true)}</section>
+    <section className="prep-card"><h2>10월 복기 모의고사</h2><p>DPO·GPT·MHA / MCP·Agent / CIFAR-10 / NCF / CNN·LLM 양자화. 과목별 정리와 주관식 25문항, 정답·해설을 제공합니다.</p><Link href="/october-recall/">10월 정리 · 모의고사 응시 →</Link></section>
     <section id="monthly"><h2>월별 복기 문제은행</h2><p>모의고사와 같은 선별 문항·구현 빈칸·힌트로 연습합니다. 객관식으로 확인한 뒤 같은 빈칸을 주관식으로 작성합니다.</p>{cards(monthlyBanks,false)}</section>
     <section id="priority"><p className="prep-note">출제포인트 기준: LLM 레이어·Tensor·학습 데이터 / RAG 흐름·llama-index·MCP / Data 모델·학습·sklearn·Metric / Vision 레이어·학습·transforms·Metric / On-device 양자화·가지치기·지식증류.</p><h2>출제 대비 예상 주제 문제은행</h2><p>‘우선’은 반복 주제 또는 9월 상세 구현, ‘보완’은 한 회차에 명시된 주제, ‘PDF 기준’은 출제포인트에 명시된 학습·평가·지식증류입니다. 주제 사이의 동일 문항은 같은 코드를 다른 맥락에서 복습하기 위한 것입니다.</p>
       {subjects.map(subject => <div className="prep-subject" key={subject}><h3>{subject}</h3>{cards(topicBanks.filter(c => c.subject === subject).map(c => ({...c,title:`${c.priority} · ${c.title}`})),false)}</div>)}

@@ -112,4 +112,13 @@ for (const set of sets) {
 }
 assert.equal(new Set(sets.flatMap(s => s.ids)).size, 50);
 fs.writeFileSync(path.join(out, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+fs.writeFileSync(path.join(root, 'app/exam-prep/november.json'), JSON.stringify({
+  exams: sets.map(set => ({id: `november-${set.slug}`, title: `11월 대비 ${set.name}`,
+    description: `${set.focus}. 권장 60분 · 25빈칸 · 각 4점. 복기 기반 대비 후보이며 실제 출제 확률을 검증한 자료가 아닙니다.`,
+    questionIds: set.ids, implementation: true})),
+  questions: Object.values(extra).map(q => ({id:q.id,subject:q.subject,topic:q.topic,prompt:'가이드와 전체 코드를 보고 빈칸을 완성하세요.',
+    answer:q.answer,fullCode:q.fullCode,cellKey:q.cellKey,start:q.start,end:q.end,
+    context:q.fullCode.slice(0,q.start)+'【빈칸】'+q.fullCode.slice(q.end),source:q.source,
+    kind:'10월 복기·강의 코드 기반',explanation:q.explanation,hint:q.hint,choices:[]})),
+}, null, 2) + '\n');
 fs.writeFileSync(path.join(out, 'README.md'), '# 11월 대비 모의고사\n\n1회는 먼저 준비할 후보, 2회는 다음 후보를 연습합니다. 각 60분·25빈칸·100점이며 회차별로 5과목에서 5빈칸씩 출제합니다. 실제 출제 확률을 수치화한 자료는 아닙니다.\n\n| 회차 | 문제 | 별도 정답 |\n| --- | --- | --- |\n| 1회 · 우선 후보 | [문제](mock-1.md) | [정답·해설](mock-1-answers.md) |\n| 2회 · 다음 후보 | [문제](mock-2.md) | [정답·해설](mock-2-answers.md) |\n\n기존 강의 기반 문제은행과 10월 복기 정리를 사용했습니다. 같은 셀의 선택된 빈칸을 함께 가리고 전체 셀을 보존합니다. 두 회차의 문항 ID는 중복되지 않으며, 기존 웹 모의고사와 겹치는 연습 문항은 있습니다.\n\n생성·검증: `node scripts/create-november-mocks.cjs`\n');
