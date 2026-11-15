@@ -20,7 +20,10 @@ function readSaved(collection: Collection, exam: boolean): Saved {
       items[id] = {selected: Number.isInteger(item.selected) && item.selected >= 0 && item.selected < 4 ? item.selected : undefined,
         checked:item.checked === true,writing:item.writing === true,answer:typeof item.answer === 'string' ? item.answer : '',graded:item.graded === true};
     }
-    return {version:3,items,index:Number.isInteger(raw.index) ? Math.max(0,Math.min(collection.questionIds.length-1,raw.index)) : 0,submitted:exam && raw.submitted === true};
+    const oldIndex = Number.isInteger(raw.index) ? Math.max(0,Math.min(collection.questionIds.length-1,raw.index)) : 0;
+    const questionId = typeof raw.questionId === 'string' && collection.questionIds.includes(raw.questionId)
+      ? raw.questionId : (collection.previousQuestionIds ?? collection.questionIds)[oldIndex];
+    return {version:3,items,index:Math.max(0,collection.questionIds.indexOf(questionId)),submitted:exam && raw.submitted === true};
   } catch { return empty(); }
 }
 
@@ -49,7 +52,7 @@ export default function ExamPrep() {
     <section id="november"><h2>11월 대비 모의고사 · 신규 2회</h2><p>1회는 먼저 준비할 후보, 2회는 다음 후보입니다. 각 60분 · 5과목 × 5빈칸 · 100점. 전체 셀 안에서 작성하고 제출하면 과목별 점수와 정답·해설을 확인할 수 있습니다. 실제 출제 확률을 검증한 자료는 아닙니다.</p>{cards(novemberExams,true)}</section>
     <section className="prep-card"><h2>10월 복기 모의고사</h2><p>DPO·GPT·MHA / MCP·Agent / CIFAR-10 / NCF / CNN·LLM 양자화. 과목별 정리와 주관식 25문항, 정답·해설을 제공합니다.</p><Link href="/october-recall/">10월 정리 · 모의고사 응시 →</Link></section>
     <section id="monthly"><h2>월별 복기 문제은행</h2><p>모의고사와 같은 선별 문항·구현 빈칸·힌트로 연습합니다. 객관식으로 확인한 뒤 같은 빈칸을 주관식으로 작성합니다.</p>{cards(monthlyBanks,false)}</section>
-    <section id="priority"><p className="prep-note">출제포인트 기준: LLM 레이어·Tensor·학습 데이터 / RAG 흐름·llama-index·MCP / Data 모델·학습·sklearn·Metric / Vision 레이어·학습·transforms·Metric / On-device 양자화·가지치기·지식증류.</p><h2>출제 대비 예상 주제 문제은행</h2><p>‘우선’은 반복 주제 또는 9월 상세 구현, ‘보완’은 한 회차에 명시된 주제, ‘PDF 기준’은 출제포인트에 명시된 학습·평가·지식증류입니다. 주제 사이의 동일 문항은 같은 코드를 다른 맥락에서 복습하기 위한 것입니다.</p>
+    <section id="priority"><p className="prep-note">출제포인트 기준: LLM 레이어·Tensor·학습 데이터 / RAG 흐름·llama-index·MCP / Data 모델·학습·sklearn·Metric / Vision 레이어·학습·transforms·Metric / On-device 양자화·가지치기·지식증류.</p><h2>출제 대비 예상 주제 문제은행</h2><p>각 주제는 노트북별 셀 순서와 코드 위→아래 순서로 진행합니다. ‘우선’은 반복 주제 또는 9월 상세 구현, ‘보완’은 한 회차에 명시된 주제, ‘PDF 기준’은 출제포인트에 명시된 학습·평가·지식증류입니다. 주제 사이의 동일 문항은 같은 코드를 다른 맥락에서 복습하기 위한 것입니다.</p>
       {subjects.map(subject => <div className="prep-subject" key={subject}><h3>{subject}</h3>{cards(topicBanks.filter(c => c.subject === subject).map(c => ({...c,title:`${c.priority} · ${c.title}`})),false)}</div>)}
     </section>
     <section id="monthly-exams"><h2>월별 복기 모의고사 · 5회</h2><p>9월 직접 복기의 스타일에 맞춰 전체 셀 안에서 호출식·객체 선언·슬라이싱·forward를 완성합니다. API·shape·고정 설정은 힌트로 안내합니다. 다른 월은 복기 주제에 기반한 대응 연습이며 실제 원문 문제의 복원이 아닙니다.</p>{cards(monthlyExams,true)}</section>
@@ -76,7 +79,7 @@ export function Session({collection,exam,initial,onHome}:{collection:Collection;
   const visibleIds = onlyWrong ? collection.questionIds.filter(qid => !isCorrect(qid,answers[qid],implementation)) : collection.questionIds;
   function update(next: Saved) {
     setSaved(next);
-    try { localStorage.setItem(storageKey(collection.id,exam),JSON.stringify(next));setStorageError(false); }
+    try { localStorage.setItem(storageKey(collection.id,exam),JSON.stringify({...next,questionId:collection.questionIds[next.index]}));setStorageError(false); }
     catch { setStorageError(true); }
   }
   function patch(changes: ItemProgress, target=id) { update({...saved,items:{...saved.items,[target]:{...saved.items[target],...changes}}}); }

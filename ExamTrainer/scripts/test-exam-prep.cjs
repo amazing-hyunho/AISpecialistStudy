@@ -251,3 +251,47 @@ slots.length=0;cursor=0;tree=Home();
 assert(all(tree,n=>n.props?.id==='november').length===1);
 assert(text(tree).includes('11월 대비 1회'));assert(text(tree).includes('11월 대비 2회'));
 console.log('PASS: November cards, 50 balanced blanks, exact cell restoration, grading, saved results and retry');
+
+for (const topic of topicBanks) {
+  assert.deepEqual([...topic.questionIds].sort(),[...topic.previousQuestionIds].sort(),'Reordering must keep every question');
+  const seenNotebooks=new Set(), seenCells=new Set();
+  let previous;
+  for (const id of topic.questionIds) {
+    const q=prepQuestions[id], split=q.cellKey.lastIndexOf(':');
+    const notebook=q.cellKey.slice(0,split), cell=Number(q.cellKey.slice(split+1));
+    if (previous?.notebook===notebook) {
+      assert(cell>=previous.cell,`${topic.id}: notebook cells must advance`);
+      if (cell===previous.cell) assert(q.start>=previous.start,`${topic.id}: blanks must advance down the code`);
+    } else {
+      assert(!seenNotebooks.has(notebook),`${topic.id}: notebook must not reappear`);
+      seenNotebooks.add(notebook);
+    }
+    if (previous?.cellKey!==q.cellKey) {
+      assert(!seenCells.has(q.cellKey),`${topic.id}: a source cell must remain contiguous`);
+      seenCells.add(q.cellKey);
+    }
+    previous={notebook,cell,start:q.start,cellKey:q.cellKey};
+  }
+}
+// Old saves held only an index; new saves hold the current question ID.
+const gpt=topicBanks.find(t=>t.id==='gpt');
+const legacyId=gpt.previousQuestionIds[0], migratedIndex=gpt.questionIds.indexOf(legacyId);
+assert(migratedIndex!==0,'Fixture must exercise an actual order change');
+const gptKey='ai-monthly-prep-v3:bank:gpt';
+storage.set(gptKey,JSON.stringify({...empty(),items:{[legacyId]:{answer:'saved answer',writing:true,graded:true}},index:0}));
+function openGpt() {
+  slots.length=0;cursor=0;let home=Home();
+  const card=all(home,n=>n.type==='article').find(n=>text(n).includes('GPT 구성·생성'));
+  button(card,'학습 / 이어서').props.onClick();cursor=0;home=Home();return home.props;
+}
+let resumed=openGpt();
+assert.equal(resumed.initial.index,migratedIndex);
+assert.equal(resumed.initial.items[legacyId].answer,'saved answer');
+slots.length=0;props=resumed;tree=render();
+textarea(tree).props.onChange({target:{value:'updated answer'}});tree=render();
+assert.equal(JSON.parse(storage.get(gptKey)).questionId,legacyId);
+resumed=openGpt();assert.equal(resumed.initial.index,migratedIndex);
+assert.equal(resumed.initial.items[legacyId].answer,'updated answer');
+console.log('PASS: all 24 topics follow notebook/cell/code order; legacy and new saves resume the same question');
+console.log('GPT code order:',gpt.questionIds.join(', '));
+console.log('DPO code order:',topicBanks.find(t=>t.id==='dpo').questionIds.join(', '));

@@ -9,7 +9,7 @@ import { monthlyExamBlueprints, implementationBlanks, implementationHints, examT
 export const subjects = ['LLM', 'RAG', 'Data', 'Vision', 'On-device'];
 type Choice = { id: number; text: string; correct: boolean; reason: string };
 export type PrepQuestion = { id: string; subject: string; topic: string; prompt: string; answer: string; context: string; fullCode: string; cellKey: string; start: number; end: number; source: string; kind: string; explanation: string; choices: Choice[]; hint?: string };
-export type Collection = { id: string; title: string; description: string; questionIds: string[]; implementation?: boolean };
+export type Collection = { id: string; title: string; description: string; questionIds: string[]; implementation?: boolean; previousQuestionIds?: string[] };
 const range = (prefix: string, start: number, end: number) => Array.from({ length: end - start + 1 }, (_, i) => `${prefix}-${String(start + i).padStart(3, '0')}`);
 const unique = (ids: string[]) => [...new Set(ids)];
 const cells = bank.cells as Record<string, { source: string; cell: number; answerSource: string; sourceKind?: string }>;
@@ -97,6 +97,24 @@ const used = new Set([...monthlyReferenceBanks,...topicBanks,...predictedExams].
 export const prepQuestions: Record<string, PrepQuestion> = Object.fromEntries([
   ...[...bank.questions.filter(q => !materialQuestions.some(item => item.question.id === q.id)), ...materialQuestions.map(item => item.question)].filter(q => used.has(q.id)).map(fromBank),
 ].map(q => [q.id,q]));
+
+// Keep notebooks in the topic's established order, then follow their cells and
+// the actual blank offsets. Question IDs reflect when questions were added.
+export function questionsInCodeOrder(ids: string[]) {
+  const notebooks = new Map<string, number>();
+  const positions = ids.map(id => {
+    const q = prepQuestions[id];
+    const separator = q.cellKey.lastIndexOf(':');
+    const notebook = q.cellKey.slice(0, separator);
+    if (!notebooks.has(notebook)) notebooks.set(notebook, notebooks.size);
+    return {id, notebook: notebooks.get(notebook)!, cell: Number(q.cellKey.slice(separator + 1)), start: q.start};
+  });
+  return positions.sort((a,b) => a.notebook-b.notebook || a.cell-b.cell || a.start-b.start).map(q => q.id);
+}
+for (const topic of topicBanks) {
+  topic.previousQuestionIds = [...topic.questionIds];
+  topic.questionIds = questionsInCodeOrder(topic.questionIds);
+}
 // Resolve original exercise ???? using the existing material answers, then narrow
 // only the exam's spans. The bank retains its original full-answer exercises.
 export const examQuestions: Record<string,PrepQuestion> = {};
