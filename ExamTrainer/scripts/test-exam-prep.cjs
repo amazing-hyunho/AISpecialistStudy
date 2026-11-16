@@ -207,8 +207,8 @@ const beforeAdvance=slots[0].index;textarea(tree).props.onKeyDown(key('F.logsigm
 console.log('PASS: monthly bank/exam parity, adapted choices, preview, hints and narrowed-answer grading/advance');
 
 slots.length=0;props={collection:predictedExams[0],exam:true,initial:empty(),onHome(){}};tree=render();
-assert.equal(all(tree,n=>n.props?.className==='prep-blank-hint').length,all(tree,n=>n.type==='textarea').length);
-assert(textarea(tree).props['aria-describedby']);
+assert.equal(all(tree,n=>n.props?.className==='prep-blank-hint').length,0);
+assert.equal(textarea(tree).props['aria-describedby'],undefined);
 assert.equal(all(tree,n=>n.type==='input').length,0);assert.equal(feedback(tree).length,0);
 textarea(tree).props.onKeyDown(key(prepQuestions[props.collection.questionIds[0]].answer));tree=render();assert.equal(feedback(tree).length,0);assert.equal(all(tree,n=>n.type==='h3' && text(n)==='예시 답안').length,0);
 textarea(tree).props.onChange({target:{value:prepQuestions[props.collection.questionIds[0]].answer}});tree=render();button(tree,'다음 →').props.onClick();tree=render();
@@ -295,3 +295,13 @@ assert.equal(resumed.initial.items[legacyId].answer,'updated answer');
 console.log('PASS: all 24 topics follow notebook/cell/code order; legacy and new saves resume the same question');
 console.log('GPT code order:',gpt.questionIds.join(', '));
 console.log('DPO code order:',topicBanks.find(t=>t.id==='dpo').questionIds.join(', '));
+
+for (const exam of [...monthlyExams,...predictedExams,...novemberExams]) {
+  for (let index=0;index<exam.questionIds.length;index++) {
+    slots.length=0;props={collection:exam,exam:true,initial:{...empty(),index},onHome(){}};tree=render();
+    assert.equal(all(tree,n=>n.props?.className==='prep-blank-hint').length,0);
+    assert.equal(textarea(tree).props['aria-describedby'],undefined);
+    assert(text(tree).includes('전체 코드의 흐름에 맞게 빈칸을 완성하세요.'));
+  }
+}
+console.log('PASS: every monthly, predicted and November mock hides learning hints at every question');

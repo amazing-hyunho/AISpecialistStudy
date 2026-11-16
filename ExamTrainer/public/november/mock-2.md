@@ -11,16 +11,16 @@
 - 【빈칸 번호】에 들어갈 코드만 답안란에 작성하세요. 여러 줄이 필요한 빈칸도 있습니다.
 - 같은 셀의 출제 빈칸은 동시에 가렸으며, 나머지 코드는 제공합니다. 전체 셀을 읽고 답하세요.
 - 강의 셀의 import·데이터·앞선 셀의 정의는 준비됐다고 가정합니다. 셀을 독립 실행하는 시험은 아닙니다.
-- 수식과 고정 설정은 제공된 코드를 참고하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.
+- 학습용 힌트 없이 제공된 코드의 흐름에 맞게 작성하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.
 - 풀 때 정답 파일은 열지 마세요. 답안란은 문서 하단에 있습니다.
 
 ## LLM — 빈칸 1, 2, 3
 
 출처: LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb · 셀 0
 
-- **1번 · 자동회귀 시프트**: 자동회귀 정답은 다음 토큰입니다. 첫 토큰을 제외하는 슬라이스만 작성하세요.
-- **2번 · 정답 로그확률**: 로그확률에서 labels가 가리키는 위치를 모읍니다. input·dim·index 인수는 제공됩니다.
-- **3번 · DPO Loss**: DPO 수식의 부호와 beta 배율은 제공됩니다. sigmoid의 로그를 안정적으로 계산하는 함수만 채우세요.
+- **1번 · 자동회귀 시프트**
+- **2번 · 정답 로그확률**
+- **3번 · DPO Loss**
 
 ```python
 import os
@@ -359,8 +359,8 @@ def train_model_dpo_simple(policy_model, reference_model, train_loader, val_load
 
 출처: llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb · 셀 29
 
-- **4번 · LoRA A**: A: (in_dim, rank). torch.empty로 해당 shape의 텐서를 만드는 호출식 전체를 작성하세요.
-- **5번 · LoRA B**: B: (rank, out_dim). 초기 보정 출력을 0으로 만들도록 torch.zeros 호출식 전체를 작성하세요.
+- **4번 · LoRA A**
+- **5번 · LoRA B**
 
 ```python
 import math
@@ -421,9 +421,9 @@ class LoRALayer(torch.nn.Module):
 
 출처: 4_RAG_framework_evaluation_with_MCP.ipynb · 셀 42
 
-- **6번 · MCP 연결**: BasicMCPClient에 external_mcp_server를 전달하는 객체 생성 호출식 전체를 작성하세요.
-- **7번 · MCP 도구 어댑터**: McpToolSpec 객체 생성식. client 인수에 mcp_client를 연결하세요.
-- **8번 · 도구 조회**: MCP 서버의 도구 목록을 비동기로 가져오세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **6번 · MCP 연결**
+- **7번 · MCP 도구 어댑터**
+- **8번 · 도구 조회**
 
 ```python
 mcp_client = 【빈칸 6】
@@ -440,8 +440,8 @@ for tool in tools:
 
 출처: 4_RAG_framework_evaluation_with_MCP.ipynb · 셀 46
 
-- **9번 · Agent 생성**: 가져온 tools와 LLM으로 FunctionAgent를 만드세요. 인수와 설정은 코드에 제공됩니다. 함수·클래스·메서드 또는 지정된 부분만 작성하세요.
-- **10번 · Agent 실행 문맥**: Context 객체 생성식. 현재 FunctionAgent 인스턴스 self.agent를 전달하세요.
+- **9번 · Agent 생성**
+- **10번 · Agent 실행 문맥**
 
 ```python
 from llama_index.llms.openai import OpenAI
@@ -489,8 +489,8 @@ await kg_engine.init_agent()
 
 출처: RecSys_GCF_sol.ipynb · 셀 13
 
-- **11번 · Message Passing**: NGCF 수식은 제공됩니다. 원소별 상호작용 src_feat*dst_feat를 투영하는 레이어 멤버를 고르세요.
-- **12번 · Message 집계**: 아이템 목적지 인덱스에 edge message를 누적하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **11번 · Message Passing**
+- **12번 · Message 집계**
 
 ```python
 class NGCFLayer(nn.Module):
@@ -546,7 +546,7 @@ class NGCFLayer(nn.Module):
 
 출처: RecSys_GCF_sol.ipynb · 셀 14
 
-- **13번 · Layer 결합**: 모든 layer의 feature를 마지막 차원으로 연결하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **13번 · Layer 결합**
 
 ```python
 class NGCF(nn.Module):
@@ -592,7 +592,7 @@ class NGCF(nn.Module):
 
 출처: RecSys_NCF.ipynb · 셀 10
 
-- **14번 · Embedding 결합**: 사용자와 영화 embedding을 입력 feature로 연결하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **14번 · Embedding 결합**
 
 ```python
 ### Embedding layer + NCF layer
@@ -635,7 +635,7 @@ class Neural_Collaborative_Filtering(nn.Module):
 
 출처: RecSys_NCF.ipynb · 셀 18
 
-- **15번 · 평가 Metric**: sklearn으로 실제 평점과 모델 출력의 MSE를 계산하세요. 인수와 설정은 코드에 제공됩니다. 함수·클래스·메서드 또는 지정된 부분만 작성하세요.
+- **15번 · 평가 Metric**
 
 ```python
 from sklearn.metrics import mean_squared_error
@@ -664,8 +664,8 @@ print(f"rms: {rms}")
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 5
 
-- **16번 · Data Augmentation**: T.RandomCrop 사용. 출력 크기 32, padding=4인 증강 transform 선언식을 작성하세요.
-- **17번 · 학습 이미지 정규화**: T.Normalize 사용. CIFAR10_MEAN과 CIFAR10_STD를 순서대로 전달하는 transform 선언식을 작성하세요.
+- **16번 · Data Augmentation**
+- **17번 · 학습 이미지 정규화**
 
 ```python
 # CIFAR-10에서 널리 쓰는 normalize 값
@@ -709,8 +709,8 @@ print('Total batch size (train: %d, test: %d)' % (len(train_loader), len(test_lo
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 8
 
-- **18번 · CIFAR Stem**: nn.Conv2d 사용. 입력 3·출력 64 채널, kernel_size=3, stride=1, padding=1, bias=False인 CIFAR stem 선언식을 작성하세요.
-- **19번 · MaxPool 제거**: 작은 입력에서 초기 해상도를 보존하도록 기존 maxpool을 대체하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **18번 · CIFAR Stem**
+- **19번 · MaxPool 제거**
 
 ```python
 def build_resnet18_for_cifar10(num_classes: int = 10):
@@ -740,7 +740,7 @@ print(f'params: {num_params:,}')  # 출력
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 10
 
-- **20번 · 예측 클래스 선택**: (B, C) logits에서 샘플별 최대 점수의 클래스 인덱스를 선택하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **20번 · 예측 클래스 선택**
 
 ```python
 from dataclasses import dataclass  # 설정을 깔끔하게 묶기 위한 dataclass
@@ -823,7 +823,7 @@ def plot_history(hist):
 
 출처: 2. Quantization for CNN_answer.ipynb · 셀 24
 
-- **21번 · Linear Quantization**: 스케일된 텐서를 원소별 가장 가까운 정수값으로 반올림하는 PyTorch 함수입니다.
+- **21번 · Linear Quantization**
 
 ```python
 def linear_quantize(fp_tensor, bitwidth, scale, zero_point, dtype=torch.int8) -> torch.Tensor:
@@ -866,7 +866,7 @@ def linear_quantize(fp_tensor, bitwidth, scale, zero_point, dtype=torch.int8) ->
 
 출처: 2. Quantization for CNN_answer.ipynb · 셀 33
 
-- **22번 · Zero Point**: zero point 수식은 제공됩니다. Python 정수 반올림 함수를 작성하세요.
+- **22번 · Zero Point**
 
 ```python
 def get_quantization_scale_and_zero_point(fp_tensor, bitwidth):
@@ -900,8 +900,8 @@ def get_quantization_scale_and_zero_point(fp_tensor, bitwidth):
 
 출처: On-Device/실습/2. Quantization for CNN_answer.ipynb · 셀 64
 
-- **23번 · 채널별 scale broadcast**: weight_scale을 flatten한 뒤 (1,OC,1,1)로 만들고 output을 float로 바꾸는 두 줄을 쓰세요.
-- **24번 · CNN 반올림·범위 제한**: round → get_quantized_range로 clamp → int8 변환 순서로 output을 갱신하세요. feature_bitwidth=8이며 get_quantized_range는 signed 정수 범위를 반환합니다.
+- **23번 · 채널별 scale broadcast**
+- **24번 · CNN 반올림·범위 제한**
 
 ```python
 # 앞 단계에서 Conv 누적 + shifted_bias까지 계산한 output
@@ -915,7 +915,7 @@ output = output + output_zero_point
 
 출처: On-Device/실습/5. Quantization for LLM_answer.ipynb · 셀 18
 
-- **25번 · LLM 양자화와 복원**: w/scale 반올림 후 zero point를 더해 [0,max_int]로 clamp하고, 다음 줄에서 실수로 복원하세요. 제공식: q=clamp(round(w/scales)+zeros, 0, max_int), 복원값=(q-zeros)*scales.
+- **25번 · LLM 양자화와 복원**
 
 ```python
 max_int = 2 ** n_bit - 1

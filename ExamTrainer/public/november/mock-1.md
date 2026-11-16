@@ -11,15 +11,15 @@
 - 【빈칸 번호】에 들어갈 코드만 답안란에 작성하세요. 여러 줄이 필요한 빈칸도 있습니다.
 - 같은 셀의 출제 빈칸은 동시에 가렸으며, 나머지 코드는 제공합니다. 전체 셀을 읽고 답하세요.
 - 강의 셀의 import·데이터·앞선 셀의 정의는 준비됐다고 가정합니다. 셀을 독립 실행하는 시험은 아닙니다.
-- 수식과 고정 설정은 제공된 코드를 참고하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.
+- 학습용 힌트 없이 제공된 코드의 흐름에 맞게 작성하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.
 - 풀 때 정답 파일은 열지 마세요. 답안란은 문서 하단에 있습니다.
 
 ## LLM — 빈칸 1, 2
 
 출처: Chapter_3_Attention_Mechanisms_KR.ipynb · 셀 136
 
-- **1번 · MHA keys 헤드 분리**: (B,T,D_out) → (B,T,H,D_head). 셀 위쪽에 선언된 차원을 이용해 모양을 바꾸세요.
-- **2번 · MHA 헤드 축 이동**: (B,T,H,D_head) → (B,H,T,D_head). 시간 축과 헤드 축을 맞바꾸세요.
+- **1번 · MHA keys 헤드 분리**
+- **2번 · MHA 헤드 축 이동**
 
 ```python
 import torch
@@ -124,7 +124,7 @@ print("출력 크기:", context_vecs.shape)
 
 출처: llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb · 셀 3
 
-- **3번 · 출력 헤드**: nn.Linear 사용. cfg["emb_dim"] → cfg["vocab_size"], bias=False인 출력 헤드 선언식을 작성하세요.
+- **3번 · 출력 헤드**
 
 ```python
 ##중요 : 아래는 GPT 모델 전체 구조를 정의하는 코드입니다
@@ -179,8 +179,8 @@ class GPTModel(nn.Module):
 
 출처: llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb · 셀 4
 
-- **4번 · 마지막 시점**: (B,T,V)에서 마지막 시점만 선택하고 배치와 어휘 축은 유지하세요.
-- **5번 · Greedy Decoding**: 입력 logits의 마지막 축은 어휘 축입니다. 최대 점수의 토큰 인덱스를 고르고 (B,1)을 유지하세요.
+- **4번 · 마지막 시점**
+- **5번 · Greedy Decoding**
 
 ```python
 def generate_text_simple(model, idx, max_new_tokens, context_size):
@@ -215,7 +215,7 @@ def generate_text_simple(model, idx, max_new_tokens, context_size):
 
 출처: 1. Llama_index.ipynb · 셀 15
 
-- **6번 · 인덱스 생성**: documents 목록을 VectorStoreIndex.from_documents에 전달하는 인덱스 생성 호출식 전체를 작성하세요.
+- **6번 · 인덱스 생성**
 
 ```python
 index = 【빈칸 6】
@@ -225,7 +225,7 @@ index = 【빈칸 6】
 
 출처: 1. Llama_index.ipynb · 셀 32
 
-- **7번 · Query Engine 구성**: 이미 만든 index에서 검색과 응답 생성을 수행할 query engine을 만드세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **7번 · Query Engine 구성**
 
 ```python
 query_engine = 【빈칸 7】
@@ -235,7 +235,7 @@ query_engine = 【빈칸 7】
 
 출처: 2. Task_1.ipynb · 셀 16
 
-- **8번 · Top-k 검색**: 요청된 topk를 similarity_top_k로 전달하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **8번 · Top-k 검색**
 
 ```python
 from llama_index.core.schema import Document
@@ -276,7 +276,7 @@ class LlamaIndexRetriever:
 
 출처: 2. Task_1.ipynb · 셀 23
 
-- **9번 · 질문과 근거 메시지**: 메시지 딕셔너리 전체. role은 "user", content는 질문·근거를 담은 user_message입니다.
+- **9번 · 질문과 근거 메시지**
 
 ```python
 def prompt_generator(query, top_k_chunks, system_prompt):
@@ -308,7 +308,7 @@ def prompt_generator(query, top_k_chunks, system_prompt):
 
 출처: 2. Task_1.ipynb · 셀 29
 
-- **10번 · 검색에서 생성으로**: 질문과 검색된 chunk 목록을 Reader에 전달해 최종 응답을 생성하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **10번 · 검색에서 생성으로**
 
 ```python
 class RAG:
@@ -330,8 +330,8 @@ class RAG:
 
 출처: ts_solution.ipynb · 셀 41
 
-- **11번 · Encoder 입력 구간**: 시점 i부터 sequence_length 길이의 과거 관측을 입력에 추가하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
-- **12번 · Decoder 정답 구간**: 입력 직후부터 target_len 길이의 미래 관측을 정답으로 선택하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **11번 · Encoder 입력 구간**
+- **12번 · Decoder 정답 구간**
 
 ```python
 sequence_length = 50
@@ -365,9 +365,9 @@ test_loader_ = to_loader(X_test_, y_test_, batch_size, shuffle=False)
 
 출처: ts_solution.ipynb · 셀 43
 
-- **13번 · Decoder 초기 입력**: 마지막 관측 (B,F)을 고른 다음 길이 1의 시간 축을 넣어 (B,1,F)로 만드세요.
-- **14번 · 예측을 다음 입력으로**: 현재 예측 out을 다음 decoder 단계의 입력으로 사용하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
-- **15번 · 예측 시간 축 생성**: 리스트의 (B,F) 텐서들을 새 시간 축으로 쌓아 (B,target_len,F)로 만드세요.
+- **13번 · Decoder 초기 입력**
+- **14번 · 예측을 다음 입력으로**
+- **15번 · 예측 시간 축 생성**
 
 ```python
 class EncoderRNN(nn.Module):
@@ -426,11 +426,11 @@ print(model_)
 
 출처: 02_ViT_CIFAR10.ipynb · 셀 8
 
-- **16번 · QKV Projection**: nn.Linear 사용. 입력 dim, 출력 inner_dim * 3, bias=False로 QKV를 함께 투영하는 선언식을 작성하세요.
-- **17번 · Scaled Dot-product**: 축 표기와 scale 수식은 제공됩니다. 문자열의 축 규칙으로 텐서를 축약하는 함수입니다.
-- **18번 · Attention Value 가중합**: Attention 가중치와 Value의 축 표기는 제공됩니다. J축을 합산하는 텐서 축약 함수입니다.
-- **19번 · Attention Residual**: Attention 출력에 입력을 더하는 residual 연결을 완성하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
-- **20번 · FFN Residual**: FFN으로 변환한 결과에 같은 shape의 원래 입력을 더하세요. 주변 코드의 변수와 shape를 이용해 현재 빈칸의 실행 코드를 작성하세요.
+- **16번 · QKV Projection**
+- **17번 · Scaled Dot-product**
+- **18번 · Attention Value 가중합**
+- **19번 · Attention Residual**
+- **20번 · FFN Residual**
 
 ```python
 def pair(t):  # image_size/patch_size를 (H,W) 형태로 통일하는 유틸
@@ -510,8 +510,8 @@ class Transformer(nn.Module):  # Encoder block을 여러 층(depth) 쌓는 Trans
 
 출처: 1. Pruning for CNN_answer.ipynb · 셀 33
 
-- **21번 · 커널 중요도 합산**: (C_out,C_in,K_h,K_w) → (C_out,C_in,1,1). 공간 축만 절댓값 합산하세요.
-- **22번 · 커널 Pruning Threshold**: importance를 펼친 뒤 제거할 개수번째 작은 값과 그 인덱스 중 값을 선택하세요.
+- **21번 · 커널 중요도 합산**
+- **22번 · 커널 Pruning Threshold**
 
 ```python
 def prune_weight_kernel_level(weight: torch.Tensor, sparsity: float) -> None:
@@ -560,9 +560,9 @@ draw_weight_distribution(mask_kernel_level, title="Kernel-level Pruning Mask")
 
 출처: 1. Pruning for CNN_answer.ipynb · 셀 35
 
-- **23번 · 입력 채널 수**: Conv 가중치의 축은 (C_out,C_in,K_h,K_w)입니다. 입력 채널 크기를 읽으세요.
-- **24번 · 채널 중요도 합산**: (C_out,C_in,K_h,K_w) → (1,C_in,1,1). 입력 채널만 남겨 절댓값을 합산하세요.
-- **25번 · 채널 mask 확장**: (1,C_in,1,1) 마스크를 원래 weight와 같은 shape로 확장하세요.
+- **23번 · 입력 채널 수**
+- **24번 · 채널 중요도 합산**
+- **25번 · 채널 mask 확장**
 
 ```python
 def prune_weight_channel_level(weight: torch.Tensor, sparsity: float) -> None:

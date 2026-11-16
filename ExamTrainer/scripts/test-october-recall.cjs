@@ -13,12 +13,15 @@ function load(file) {
 }
 const {matches} = load('app/october-recall/grading.ts');
 const data = JSON.parse(fs.readFileSync(path.join(root,'app/october-recall/content.json'),'utf8'));
+const examPrompts = JSON.parse(fs.readFileSync(path.join(root,'app/october-recall/exam-prompts.json'),'utf8'));
 assert.equal(data.questions.length,25);
 assert.equal(new Set(data.questions.map(q=>q.id)).size,25);
 assert.deepEqual(Object.fromEntries(['LLM','RAG','Vision','Data','On-device'].map(s=>[s,data.questions.filter(q=>q.subject===s).length])),{LLM:7,RAG:6,Vision:4,Data:3,'On-device':5});
 for(const q of data.questions) {
   assert.equal(q.code.split('【빈칸】').length,2,q.id);
   assert(q.source && q.explanation && q.prompt,q.id);
+  assert(examPrompts[q.id]?.length>10,q.id);
+  assert(!/torch\.|nn\.|T\.|contiguous|flatten|torch\.cat|McpToolSpec|get_quantized_range|clamp|round|dim=/.test(examPrompts[q.id]),q.id);
   for(const answer of q.answers) assert(matches(answer,q.answers),q.id);
   assert(!matches('',q.answers),q.id);
   assert(!matches('None',q.answers),q.id);
@@ -34,3 +37,6 @@ assert(!matches('x = "a b"',['x = "ab"']));
 assert(!matches('x = a + +b',['x = a + b']));
 for(const file of ['summary.md','mock-exam.md','answers.md']) assert(fs.statSync(path.join(root,'public/october',file)).size>1000);
 console.log('October recall: 25 questions, coverage, answer alignment, grading and downloads passed.');
+const paper=fs.readFileSync(path.join(root,'public/october/mock-exam.md'),'utf8');
+for(const q of data.questions)assert(paper.includes(examPrompts[q.id]));
+console.log('PASS: October web/download instructions specify requirements without naming answer APIs');

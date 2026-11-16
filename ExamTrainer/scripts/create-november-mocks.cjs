@@ -70,7 +70,7 @@ for (const set of sets) {
     if (!groups.has(q.cellKey)) groups.set(q.cellKey, []);
     groups.get(q.cellKey).push(q);
   }
-  let paper = `# 11월 대비 모의고사 ${set.name}\n\n범위: ${set.focus}\n\n권장 60분 · 25빈칸 · 빈칸당 4점 · 총 100점. 시간과 배점은 연습용입니다.\n\n복기에서 고른 대비 후보이며 실제 11월 출제나 확률을 검증한 자료가 아닙니다. 2회는 보완 범위이며 난이도 순서가 아닙니다.\n\n## 응시 방법\n\n- 【빈칸 번호】에 들어갈 코드만 답안란에 작성하세요. 여러 줄이 필요한 빈칸도 있습니다.\n- 같은 셀의 출제 빈칸은 동시에 가렸으며, 나머지 코드는 제공합니다. 전체 셀을 읽고 답하세요.\n- 강의 셀의 import·데이터·앞선 셀의 정의는 준비됐다고 가정합니다. 셀을 독립 실행하는 시험은 아닙니다.\n- 수식과 고정 설정은 제공된 코드를 참고하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.\n- 풀 때 정답 파일은 열지 마세요. 답안란은 문서 하단에 있습니다.\n`;
+  let paper = `# 11월 대비 모의고사 ${set.name}\n\n범위: ${set.focus}\n\n권장 60분 · 25빈칸 · 빈칸당 4점 · 총 100점. 시간과 배점은 연습용입니다.\n\n복기에서 고른 대비 후보이며 실제 11월 출제나 확률을 검증한 자료가 아닙니다. 2회는 보완 범위이며 난이도 순서가 아닙니다.\n\n## 응시 방법\n\n- 【빈칸 번호】에 들어갈 코드만 답안란에 작성하세요. 여러 줄이 필요한 빈칸도 있습니다.\n- 같은 셀의 출제 빈칸은 동시에 가렸으며, 나머지 코드는 제공합니다. 전체 셀을 읽고 답하세요.\n- 강의 셀의 import·데이터·앞선 셀의 정의는 준비됐다고 가정합니다. 셀을 독립 실행하는 시험은 아닙니다.\n- 학습용 힌트 없이 제공된 코드의 흐름에 맞게 작성하세요. 강의 API 기준이며 서버 연결은 필요하지 않습니다.\n- 풀 때 정답 파일은 열지 마세요. 답안란은 문서 하단에 있습니다.\n`;
   let key = `# 11월 대비 ${set.name} — 정답·해설\n\n빈칸당 4점, 과목당 20점, 총 100점. 미작성은 0점. 아래는 예시 답안이며 같은 shape와 동작의 동등한 구현도 정답으로 인정합니다. API 이름만 묻는 빈칸은 해당 위치에 들어갈 부분만 작성합니다. 다중 줄은 필요한 동작을 모두 충족하면 4점으로 채점하세요.\n`;
   const masked = [];
   for (const qs of groups.values()) {
@@ -90,7 +90,7 @@ for (const set of sets) {
     }
     masked.push(code);
     paper += `\n## ${first.subject} — 빈칸 ${qs.map(q => index.get(q.id)).join(', ')}\n\n출처: ${first.source}\n\n`;
-    for (const q of qs) paper += `- **${index.get(q.id)}번 · ${q.topic}**: ${q.hint}\n`;
+    for (const q of qs) paper += `- **${index.get(q.id)}번 · ${q.topic}**\n`;
     paper += '\n' + fence(code) + '\n';
   }
   for (const [i, id] of set.ids.entries()) {

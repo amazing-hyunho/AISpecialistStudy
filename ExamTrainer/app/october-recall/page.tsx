@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import content from './content.json';
+import examPrompts from './exam-prompts.json';
 import { matches } from './grading';
 import './recall.css';
 
@@ -70,7 +71,7 @@ export default function OctoberRecall() {
         })}</ul><label><input type="checkbox" checked={onlyWrong} onChange={e => setOnlyWrong(e.target.checked)} /> 오답만 보기</label><p>직접 인정한 답안은 이번 결과에 반영되며 다시 채점할 때 초기화됩니다.</p></div>}
       </section>
       {content.questions.map((q, i) => submitted && onlyWrong && correct(q.id) ? null : <article key={q.id} className="oct-card">
-        <h2>{i + 1}. {q.subject} · {q.title} <small>4점</small></h2><p>{q.prompt}</p><pre><code>{q.code}</code></pre>
+        <h2>{i + 1}. {q.subject} · {q.title} <small>4점</small></h2><p>{examPrompts[q.id as keyof typeof examPrompts]}</p><pre><code>{q.code}</code></pre>
         <label htmlFor={q.id}>답안</label><textarea id={q.id} spellCheck={false} rows={Math.max(3, q.answers[0].split('\n').length + 1)} value={answers[q.id] ?? ''} readOnly={submitted} onChange={e => save({...answers, [q.id]:e.target.value})} />
         {submitted && <div className="oct-result"><strong>{correct(q.id) ? '정답' : '오답'}{accepted[q.id] ? ' (직접 인정)' : ''}</strong><h3>기준 답안</h3><pre><code>{q.answers[0]}</code></pre><p>{q.explanation}</p><p className="oct-meta">{q.source}</p>
           {!matches(answers[q.id] ?? '', q.answers) && !!answers[q.id]?.trim() && <label><input type="checkbox" checked={accepted[q.id] ?? false} onChange={e => setAccepted({...accepted, [q.id]:e.target.checked})} /> 의미가 같은 답안으로 직접 인정</label>}

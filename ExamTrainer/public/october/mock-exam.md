@@ -4,7 +4,7 @@
 
 ## 1. LLM — DPO 응답 토큰화 (4점)
 
-선호·비선호 전체 시퀀스를 만드는 두 줄을 작성하세요. 위의 prompt는 문자열입니다.
+질문과 각 응답을 포함한 선호·비선호 시퀀스를 토큰화하는 두 줄을 작성하세요. prompt는 문자열입니다.
 
 ```python
 prompt_tokens = tokenizer.encode(prompt)
@@ -13,7 +13,7 @@ prompt_tokens = tokenizer.encode(prompt)
 
 ## 2. LLM — DPO 프롬프트 제외 (4점)
 
-prompt는 1차원 토큰 텐서입니다. 강의의 +2 규칙을 사용해 제외 구간을 False로 설정하세요.
+응답만 학습하도록 프롬프트 구간을 마스크에서 제외하세요. prompt는 1차원이며, 강의에서 정한 구분자 길이는 2토큰입니다.
 
 ```python
 if mask_prompt_tokens:
@@ -22,7 +22,7 @@ if mask_prompt_tokens:
 
 ## 3. LLM — MHA Q/K/V 축 이동 (4점)
 
-세 텐서가 (B,T,H,Dh)입니다. (B,H,T,Dh)로 만드는 세 줄을 keys, queries, values 순서로 쓰세요.
+세 텐서의 형태를 (B,T,H,Dh)에서 (B,H,T,Dh)로 바꾸는 세 줄을 작성하세요. 작성 순서는 keys, queries, values입니다.
 
 ```python
 # head 분리를 위한 view는 완료됨
@@ -32,7 +32,7 @@ attn_scores = queries @ keys.transpose(2, 3)
 
 ## 4. LLM — MHA 헤드 재결합 (4점)
 
-D=H×Dh이며 context_vec는 이미 (B,T,H,Dh)입니다. contiguous와 view를 사용하세요.
+context_vec의 형태를 (B,T,H,Dh)에서 (B,T,D)로 바꾸세요. D는 H와 Dh의 곱입니다.
 
 ```python
 context_vec = (attn_weights @ values).transpose(1, 2)
@@ -41,7 +41,7 @@ context_vec = (attn_weights @ values).transpose(1, 2)
 
 ## 5. LLM — GPT 토큰 임베딩 (4점)
 
-cfg의 vocab_size와 emb_dim으로 토큰 임베딩을 선언하세요.
+설정에 맞는 토큰 임베딩 레이어를 선언하세요.
 
 ```python
 # GPTModel.__init__
@@ -50,7 +50,7 @@ cfg의 vocab_size와 emb_dim으로 토큰 임베딩을 선언하세요.
 
 ## 6. LLM — GPT 위치 임베딩 (4점)
 
-cfg의 context_length와 emb_dim으로 위치 임베딩을 선언하세요.
+설정에 맞는 위치 임베딩 레이어를 선언하세요.
 
 ```python
 # GPTModel.__init__
@@ -59,7 +59,7 @@ cfg의 context_length와 emb_dim으로 위치 임베딩을 선언하세요.
 
 ## 7. LLM — GPT 임베딩 dropout (4점)
 
-drop_rate를 읽어 임베딩 dropout을 선언하세요.
+설정에 맞는 임베딩 드롭아웃 레이어를 선언하세요.
 
 ```python
 # GPTModel.__init__
@@ -68,7 +68,7 @@ drop_rate를 읽어 임베딩 dropout을 선언하세요.
 
 ## 8. RAG — MCP 연결과 래퍼 (4점)
 
-필요한 import는 완료됐습니다. external_mcp_server로 client와 McpToolSpec을 순서대로 선언하세요.
+주어진 서버 주소로 클라이언트와 도구 어댑터를 순서대로 생성하세요. 필요한 import는 완료됐습니다.
 
 ```python
 external_mcp_server = "<MCP_SERVER_URL>"
@@ -77,7 +77,7 @@ external_mcp_server = "<MCP_SERVER_URL>"
 
 ## 9. RAG — 도구 목록 조회 (4점)
 
-비동기 메서드로 변환된 도구 목록을 tools에 저장하세요.
+서버에서 제공하는 도구 목록을 조회해 tools에 저장하세요.
 
 ```python
 # mcp_tool은 McpToolSpec 객체
@@ -86,7 +86,7 @@ external_mcp_server = "<MCP_SERVER_URL>"
 
 ## 10. RAG — 리소스 조회 (4점)
 
-MCP의 리소스를 비동기로 조회해 resources에 저장하세요.
+서버에서 제공하는 리소스를 조회해 resources에 저장하세요.
 
 ```python
 # 도구 목록 조회와 구분할 것
@@ -95,7 +95,7 @@ MCP의 리소스를 비동기로 조회해 resources에 저장하세요.
 
 ## 11. RAG — FunctionAgent 선언 (4점)
 
-빈칸에는 tools, llm, system_prompt 키워드 인자 세 개를 이 순서로 작성하세요.
+준비된 도구·언어 모델·시스템 지침을 Agent에 연결하는 세 줄을 작성하세요.
 
 ```python
 self.agent = FunctionAgent(
@@ -107,7 +107,7 @@ self.agent = FunctionAgent(
 
 ## 12. RAG — Agent Context 생성 (4점)
 
-현재 agent의 워크플로 컨텍스트를 저장하세요.
+현재 Agent의 실행 문맥을 생성하세요.
 
 ```python
 # FunctionAgent 생성 직후
@@ -116,7 +116,7 @@ self.agent = FunctionAgent(
 
 ## 13. RAG — Agent 실행 핸들러 (4점)
 
-question과 기존 컨텍스트로 실행 핸들러를 만드세요. 이 줄에서는 await하지 않습니다.
+질문과 기존 실행 문맥으로 Agent를 실행해 핸들러를 얻으세요. 최종 결과를 기다리는 처리는 뒤에서 수행합니다.
 
 ```python
 【빈칸】
@@ -128,7 +128,7 @@ return str(response)
 
 ## 14. Vision — 학습용 증강·정규화 (4점)
 
-crop(32,padding=4) → horizontal flip → tensor → normalize의 네 항목을 작성하세요.
+학습용 변환 네 항목을 작성하세요. 패딩 4인 32×32 무작위 자르기, 좌우 반전, 텐서 변환, 데이터셋 통계에 따른 정규화 순서입니다.
 
 ```python
 train_tfms = T.Compose([
@@ -138,7 +138,7 @@ train_tfms = T.Compose([
 
 ## 15. Vision — 테스트용 전처리 (4점)
 
-랜덤 증강 없이 두 항목을 순서대로 작성하세요.
+테스트용 변환 두 항목을 작성하세요. 학습과 같은 데이터셋 통계를 사용하고 무작위 증강은 제외하세요.
 
 ```python
 test_tfms = T.Compose([
@@ -148,7 +148,7 @@ test_tfms = T.Compose([
 
 ## 16. Vision — CIFAR용 ResNet stem (4점)
 
-RGB→64채널, 3×3, stride=1, padding=1, bias=False인 conv1과 maxpool 제거 두 줄을 쓰세요.
+작은 RGB 이미지용 첫 합성곱과 공간 축소를 제거한 풀링 레이어를 선언하세요. 출력 64채널, 커널 3×3, 보폭 1, 패딩 1, 편향 없음입니다.
 
 ```python
 model = models.resnet18(weights=None)
@@ -157,7 +157,7 @@ model = models.resnet18(weights=None)
 
 ## 17. Vision — ResNet 출력 분류기 (4점)
 
-기존 fc의 입력 차원을 유지하고 출력만 num_classes로 바꾸세요.
+기존 분류기의 입력 차원은 유지하고 출력 차원을 num_classes로 변경하세요.
 
 ```python
 # build_resnet18_for_cifar10 내부
@@ -167,7 +167,7 @@ return model
 
 ## 18. Data — NCF 임베딩 선언 (4점)
 
-user와 movie의 임베딩을 각각 32차원으로 선언하세요. user를 먼저 작성하세요.
+사용자와 영화의 임베딩을 각각 32차원으로 선언하세요. 사용자를 먼저 작성하세요.
 
 ```python
 # Neural_Collaborative_Filtering.__init__
@@ -176,7 +176,7 @@ user와 movie의 임베딩을 각각 32차원으로 선언하세요. user를 먼
 
 ## 19. Data — NCF 예측 레이어 (4점)
 
-64→32 선형층, ReLU, 32→1 선형층을 fc1, relu, fc2에 선언하세요.
+예측 레이어를 선언하세요. 두 32차원 임베딩을 결합한 입력을 32차원으로 바꾸고, 음수 출력을 0으로 제한한 뒤 하나의 평점을 예측합니다.
 
 ```python
 # 두 32차원 임베딩을 concat하는 모델
@@ -185,7 +185,7 @@ user와 movie의 임베딩을 각각 32차원으로 선언하세요. user를 먼
 
 ## 20. Data — NCF 특징 결합 (4점)
 
-각 임베딩은 (B,32)입니다. 리스트와 torch.cat을 사용해 (B,64)를 만드세요.
+각각 (B,32)인 사용자·영화 특징을 결합해 (B,64)를 만드세요.
 
 ```python
 user_embedding = self.user_embedding(users)
@@ -195,7 +195,7 @@ movie_embedding = self.movie_embedding(movies)
 
 ## 21. On-device — 채널별 scale broadcast (4점)
 
-weight_scale을 flatten한 뒤 (1,OC,1,1)로 만들고 output을 float로 바꾸는 두 줄을 쓰세요.
+채널별 scale이 (B,OC,H,W)에 적용되도록 형태를 바꾸고 누적 출력을 실수형으로 변환하는 두 줄을 작성하세요.
 
 ```python
 # output shape: (B,OC,H,W)
@@ -204,7 +204,7 @@ weight_scale을 flatten한 뒤 (1,OC,1,1)로 만들고 output을 float로 바꾸
 
 ## 22. On-device — CNN 재양자화 (4점)
 
-수식은 output×(s_in×s_weight/s_out)+z_out입니다. scale 적용 후 zero point를 더하는 두 줄을 쓰세요.
+입력·가중치·출력 scale과 출력 zero point를 반영해 재양자화하는 두 줄을 작성하세요. 입력 zero point의 bias 보정은 완료됐습니다.
 
 ```python
 # output은 정수 Conv + shifted_bias를 float로 변환한 값
@@ -213,7 +213,7 @@ weight_scale을 flatten한 뒤 (1,OC,1,1)로 만들고 output을 float로 바꾸
 
 ## 23. On-device — CNN 반올림·범위 제한 (4점)
 
-round → get_quantized_range로 clamp → int8 변환 순서로 output을 갱신하세요.
+출력을 부호 있는 8비트 정수로 변환하세요. 가장 가까운 정수값을 사용하고 허용 범위를 벗어난 값은 경계값으로 제한하세요.
 
 ```python
 # 이 문제의 feature_bitwidth는 8
@@ -223,7 +223,7 @@ return output
 
 ## 24. On-device — LLM scale과 zero point (4점)
 
-max_int=2**n_bit-1, scale=clamp(max-min,min=1e-5)/max_int입니다. max_int, scales, zeros 세 줄을 강의 방식으로 쓰세요.
+주어진 비트폭과 최솟값·최댓값으로 정수 코드의 최댓값, scale, zero point를 계산하세요. 최소 scale 분자는 1e-5이며 코드 범위는 0부터 시작합니다.
 
 ```python
 # max_val/min_val은 keepdim=True로 이미 계산됨
@@ -232,7 +232,7 @@ max_int=2**n_bit-1, scale=clamp(max-min,min=1e-5)/max_int입니다. max_int, sca
 
 ## 25. On-device — LLM 양자화와 복원 (4점)
 
-w/scale 반올림 후 zero point를 더해 [0,max_int]로 clamp하고, 다음 줄에서 실수로 복원하세요.
+주어진 scale·zero point·정수 범위로 가중치를 양자화한 뒤 실수 가중치로 복원하는 두 줄을 작성하세요.
 
 ```python
 # scales와 zeros는 이미 계산됨
