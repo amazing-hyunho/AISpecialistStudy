@@ -96,8 +96,6 @@ class PreferenceDataset(Dataset):
             prompt_tokens = tokenizer.encode(prompt)
 
             # 프롬프트 + 답변 형태로 전체 문장을 인코딩
-            # TODO: 선호/비선호 응답 변수명을 채우세요.
-            # 힌트: 바로 위에서 만든 chosen_response와 rejected_response를 Response 뒤에 붙입니다.
             # 예시: chosen 쪽은 chosen_response, rejected 쪽은 rejected_response를 사용합니다.
             chosen_full_tokens = tokenizer.encode(f"{prompt}\n\n### Response:\n{chosen_response}")
             rejected_full_tokens = tokenizer.encode(f"{prompt}\n\n### Response:\n{rejected_response}")
@@ -175,21 +173,12 @@ def compute_logprobs(logits, labels, selection_mask=None):
     모델의 출력(logits)과 정답(labels)을 받아 해당 정답 토큰의 로그 확률을 계산합니다.
     """
     # Auto-regressive 모델 특성상, 입력 [A, B, C]에 대해 예측은 [B, C, D]가 되므로 시프트(Shift)합니다.
-    # TODO: 자동회귀 시프트 인덱스를 채우세요.
-    # 힌트: labels는 1칸 앞당기고 logits는 마지막 시점을 제외해 정렬합니다.
     labels = 【빈칸 1】.clone()
     logits = logits[:, :-1, :]
 
     log_probs = F.log_softmax(logits, dim=-1)
 
-    # 실제 정답 레이블에 해당하는 확률값만 추출 (gather 사용)
-    # TODO: gather의 input 텐서를 채우세요.
-    # 힌트: raw logits가 아닌 log_probs에서 정답 위치를 gather해야 합니다.
-    selected_log_probs = 【빈칸 2】(
-        input=log_probs,
-        dim=-1,
-        index=labels.unsqueeze(-1)
-    ).squeeze(-1)
+    selected_log_probs = 【빈칸 2】
 
     if selection_mask is not None:
         # 마스크도 시프트하여 적용 (패딩이나 프롬프트 영역 무시)
@@ -211,23 +200,15 @@ def compute_dpo_loss(model_chosen_logprobs, model_rejected_logprobs,
     beta: Reference 모델에서 얼마나 벗어날지 제어하는 하이퍼파라미터 (보통 0.1~0.5)
     """
     # 모델의 (Chosen - Rejected) 로그 확률 차이
-    # TODO: 정책 모델 chosen 로그확률 변수를 채우세요.
-    # 힌트: chosen - rejected 순서로 빼야 preference 방향이 맞습니다.
     model_logratios = model_chosen_logprobs - model_rejected_logprobs
     # 기준 모델의 (Chosen - Rejected) 로그 확률 차이
-    # TODO: 레퍼런스 모델 chosen 로그확률 변수를 채우세요.
-    # 힌트: reference도 chosen - rejected 순서를 동일하게 유지합니다.
     reference_logratios = reference_chosen_logprobs - reference_rejected_logprobs
 
     # 두 비율의 차이 (Policy가 Reference보다 얼마나 더 잘 구분했는가)
-    # TODO: DPO logits 차감 대상을 채우세요.
-    # 힌트: policy 비율에서 reference 비율을 빼는 형태입니다.
     logits = model_logratios - reference_logratios
 
     # Sigmoid 후 음수 로그 (Cross Entropy와 유사) -> 이 값을 최소화하면 선호도 차이가 극대화됨
-    # TODO: DPO 손실 함수명을 채우세요.
-    # 힌트: beta * logits에 logsigmoid를 적용해 손실을 계산합니다.
-    losses = -【빈칸 3】(beta * logits)
+    losses = 【빈칸 3】
 
     # 학습 추적용 보상(Reward) 계산 (실제 학습엔 안 쓰이고 로깅용)
     chosen_rewards = (model_chosen_logprobs - reference_chosen_logprobs).detach()
@@ -440,7 +421,7 @@ for tool in tools:
 
 출처: 4_RAG_framework_evaluation_with_MCP.ipynb · 셀 46
 
-- **9번 · Agent 생성**
+- **9번 · MCP Agent 실행**
 - **10번 · Agent 실행 문맥**
 
 ```python
@@ -458,7 +439,7 @@ class KGQueryEngineWithMCP:
         for tool in tools:
             if len(tool.metadata.description) > 1000:
                 tool.metadata.description = tool.metadata.description[:1000] + "..."
-        self.agent = 【빈칸 9】(
+        self.agent = FunctionAgent(
             name="Agent",
             description="An agent that can work with Our Knowledge Graph api.",
             tools=tools,
@@ -471,7 +452,7 @@ class KGQueryEngineWithMCP:
         if self.agent is None or self.agent_context is None:
             raise RuntimeError("Agent not initialized. Call `await init_agent()` first.")
 
-        handler = self.agent.run(question, ctx=self.agent_context)
+        handler = 【빈칸 9】
         async for event in handler.stream_events():
             if verbose and type(event) == ToolCall:
                 print(f"Calling tool {event.tool_name} with kwargs {event.tool_kwargs}")
@@ -525,7 +506,7 @@ class NGCFLayer(nn.Module):
         edge_messages_for_src = self.W1(dst_feat) + self.W2(dst_feat*src_feat)
         edge_messages_for_src *= norm.unsqueeze(1)
 
-        edge_messages_for_dst = self.W1(src_feat) + 【빈칸 11】(src_feat*dst_feat)
+        edge_messages_for_dst = 【빈칸 11】
         edge_messages_for_dst *= norm.unsqueeze(1)
 
         aggregated_messages = torch.zeros_like(node_features)
@@ -655,7 +636,7 @@ with torch.no_grad():
     target_rating_batch = target_rating.cpu().numpy().tolist()
     target_rating_list += target_rating_batch
 
-mse = 【빈칸 15】(target_rating_list, model_output_list)
+mse = 【빈칸 15】
 rms = np.sqrt(mse)
 print(f"rms: {rms}")
 ```
@@ -705,12 +686,11 @@ test_loader  = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_wo
 print('Total batch size (train: %d, test: %d)' % (len(train_loader), len(test_loader)))  # 배치 개수 확인
 ```
 
-## Vision — 빈칸 18, 19
+## Vision — 빈칸 18
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 8
 
 - **18번 · CIFAR Stem**
-- **19번 · MaxPool 제거**
 
 ```python
 def build_resnet18_for_cifar10(num_classes: int = 10):
@@ -721,7 +701,7 @@ def build_resnet18_for_cifar10(num_classes: int = 10):
     print(model)  # 구조 출력
 
     model.conv1 = 【빈칸 18】  # CIFAR용 stem
-    model.maxpool = 【빈칸 19】  # maxpool 제거
+    model.maxpool = nn.Identity()  # maxpool 제거
     model.fc = nn.Linear(model.fc.in_features, num_classes)  # 최종 분류기 출력=10
     return model
 
@@ -736,10 +716,11 @@ num_params = sum(p.numel() for p in model.parameters())  # 파라미터 개수
 print(f'params: {num_params:,}')  # 출력
 ```
 
-## Vision — 빈칸 20
+## Vision — 빈칸 19, 20
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 10
 
+- **19번 · Top-1 Accuracy**
 - **20번 · 예측 클래스 선택**
 
 ```python
@@ -758,7 +739,7 @@ cfg = TrainConfig()  # config 인스턴스 생성
 
 def accuracy_top1(logits, targets):
     preds = 【빈칸 20】  # 가장 큰 logit의 클래스 선택, logits = [B, C], preds = [B]
-    return (preds == targets).float().mean().item()  # top-1 accuracy, scalar
+    return 【빈칸 19】  # top-1 accuracy, scalar
 
 scaler = torch.amp.GradScaler(enabled=torch.cuda.is_available())  # AMP용 scaler, 학습 속도를 높이고 메모리 사용량을 줄임
 print(scaler)
@@ -849,7 +830,7 @@ def linear_quantize(fp_tensor, bitwidth, scale, zero_point, dtype=torch.int8) ->
     # Step 1: fp_tensor를 scale 하세요.
     scaled_tensor = fp_tensor/scale
     # Step 2: 부동 소수점 값을 정수 값으로 rounding 하세요.
-    rounded_tensor = 【빈칸 21】(scaled_tensor)
+    rounded_tensor = 【빈칸 21】
 
     rounded_tensor = rounded_tensor.to(dtype)
 
@@ -884,7 +865,7 @@ def get_quantization_scale_and_zero_point(fp_tensor, bitwidth):
 
     # hint: quantized_max - quantized_min = 2 ** bitwith - 1
     scale = (fp_max - fp_min) / (quantized_max - quantized_min)
-    zero_point = 【빈칸 22】(quantized_min - fp_min/scale)
+    zero_point = 【빈칸 22】
 
     # clip the zero_point to fall in [quantized_min, quantized_max]
     if zero_point < quantized_min:

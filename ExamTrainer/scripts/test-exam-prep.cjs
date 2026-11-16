@@ -75,6 +75,15 @@ for (const item of material) {
 }
 const sourceBank=load('app/question-bank.json');
 for (const id of Object.keys(prepQuestions)) {
+  if (id.startsWith('nov2-')) {
+    const record=load('app/exam-prep/november.json').questions.find(q=>q.id===id);
+    assert(record?.sourceQuestionId);
+    const base=examQuestions[record.sourceQuestionId];
+    const originalCode=base?.fullCode ?? load('app/october-recall/content.json').topics.find(t=>t.code.includes(record.answer))?.code;
+    assert(originalCode,`Missing November source: ${id}`);
+    assert.equal(record.fullCode,originalCode.replace(/^[ \t]*#[^\n]*(?:힌트|TODO|gather|logsigmoid|einsum)[^\n]*\n/gmi,''));
+    continue;
+  }
   if (id.startsWith('oct-')) {
     const october=load('app/october-recall/content.json');
     const original=october.questions.find(q=>q.id===id);
@@ -235,7 +244,7 @@ for (const exam of novemberExams) {
   for (const id of exam.questionIds) {
     const parts=cellParts(exam.questionIds,id,true);
     assert.equal(parts.map(p=>p.question?p.question.answer:p.text).join(''),examQuestions[id].fullCode);
-    assert(examQuestions[id].hint.length>15);
+    assert(!/^[\w.]+$/.test(examQuestions[id].answer),`November must not ask only a name: ${id}`);
   }
   slots.length=0;
   props={collection:exam,exam:true,initial:{...empty(),items:Object.fromEntries(exam.questionIds.map(id=>[id,{answer:examQuestions[id].answer}]))},onHome(){}};
@@ -305,3 +314,10 @@ for (const exam of [...monthlyExams,...predictedExams,...novemberExams]) {
   }
 }
 console.log('PASS: every monthly, predicted and November mock hides learning hints at every question');
+assert.equal(examQuestions['data-011'].answer,'self.W2','Existing exams must retain their original scope');
+assert.equal(examQuestions['nov2-data-011'].answer,'self.W1(src_feat) + self.W2(src_feat*dst_feat)');
+assert(examQuestions['nov2-llm-085'].answer.includes('index=labels.unsqueeze(-1)'));
+assert(examQuestions['nov2-vision-005'].answer.includes("'b h i d, b h j d -> b h i j'"));
+assert(examQuestions['nov2-llm-089'].answer.includes('queries = queries.view'));
+assert(novemberExams.every(e=>e.id.endsWith('-v2')));
+console.log('PASS: November operation-sized blanks, arguments/axes, QKV blocks and isolated versioned records');

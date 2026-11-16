@@ -1,11 +1,13 @@
 # 11월 대비 1회 — 먼저 준비할 후보 — 정답·해설
 
-빈칸당 4점, 과목당 20점, 총 100점. 미작성은 0점. 아래는 예시 답안이며 같은 shape와 동작의 동등한 구현도 정답으로 인정합니다. API 이름만 묻는 빈칸은 해당 위치에 들어갈 부분만 작성합니다. 다중 줄은 필요한 동작을 모두 충족하면 4점으로 채점하세요.
+빈칸당 4점, 과목당 20점, 총 100점. 미작성은 0점. 아래는 예시 답안이며 같은 shape와 동작의 동등한 구현도 정답으로 인정합니다. 호출식은 인수까지, 여러 줄 빈칸은 필요한 동작을 모두 작성하세요.
 
 ## 1번 · LLM — MHA keys 헤드 분리
 
 ```python
-keys.view(b, num_tokens, self.num_heads, self.head_dim)
+keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
+        values = values.view(b, num_tokens, self.num_heads, self.head_dim)
+        queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
 ```
 
 view는 원소 수를 유지하며 마지막 특징 축을 헤드 수와 헤드 차원으로 나눕니다. Q/K/V 세 텐서에 같은 형태 변환을 적용합니다.
@@ -15,7 +17,9 @@ view는 원소 수를 유지하며 마지막 특징 축을 헤드 수와 헤드 
 ## 2번 · LLM — MHA 헤드 축 이동
 
 ```python
-keys.transpose(1, 2)
+keys = keys.transpose(1, 2)
+        queries = queries.transpose(1, 2)
+        values = values.transpose(1, 2)
 ```
 
 시간 축 1과 헤드 축 2를 교환해야 헤드별 토큰 행렬 곱을 수행할 수 있습니다. view로 축의 의미를 바꾸는 것과 구분합니다.
@@ -136,7 +140,9 @@ source[:, -1, :].unsqueeze(1)
 ## 14번 · Data — 예측을 다음 입력으로
 
 ```python
-input = out
+out, h = self.decoder(input, h)
+      predictions.append(out.squeeze(1))
+      input = out
 ```
 
 정답을 넣는 teacher forcing 대신 이전 예측을 다시 입력하는 자기회귀 예측입니다.
@@ -166,7 +172,7 @@ nn.Linear(dim, inner_dim * 3, bias = False)
 ## 17번 · Vision — Scaled Dot-product
 
 ```python
-einsum
+einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
 ```
 
 einsum으로 각 head의 Q와 K 내적을 계산하고 sqrt 차원에 해당하는 scale을 곱해 softmax 포화를 완화합니다.
@@ -176,7 +182,7 @@ einsum으로 각 head의 Q와 K 내적을 계산하고 sqrt 차원에 해당하�
 ## 18번 · Vision — Attention Value 가중합
 
 ```python
-einsum
+einsum('b h i j, b h j d -> b h i d', attn, v)
 ```
 
 J축을 따라 attention 가중치와 Value를 합산해 (B,H,I,D)를 만듭니다.
@@ -226,7 +232,8 @@ kthvalue는 오름차순 k번째 값과 인덱스를 반환하므로 [0]으로 �
 ## 23번 · On-device — 입력 채널 수
 
 ```python
-weight.shape[1]
+num_channels = weight.shape[1]
+    num_pruned_channels = round(num_channels * sparsity)
 ```
 
 축 1이 입력 채널입니다. 여기서는 groups=1인 일반 convolution 형태를 전제로 합니다.

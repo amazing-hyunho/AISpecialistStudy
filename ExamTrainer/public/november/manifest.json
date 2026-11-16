@@ -4,180 +4,180 @@
     "slug": "mock-1",
     "focus": "MHA·GPT / 기본 RAG / Sliding window·Encoder–Decoder / Attention·Residual / Kernel·Channel pruning",
     "ids": [
-      "llm-089",
-      "llm-092",
-      "llm-051",
-      "llm-055",
-      "llm-006",
-      "rag-001",
-      "rag-029",
-      "rag-005",
-      "rag-024",
-      "rag-025",
-      "data-034",
-      "data-035",
-      "data-037",
-      "data-040",
-      "data-041",
-      "vision-004",
-      "vision-005",
-      "material-vit-value",
-      "vision-024",
-      "vision-035",
-      "ondevice-067",
-      "ondevice-068",
-      "ondevice-061",
-      "ondevice-063",
-      "ondevice-064"
+      "nov2-llm-089",
+      "nov2-llm-092",
+      "nov2-llm-051",
+      "nov2-llm-055",
+      "nov2-llm-006",
+      "nov2-rag-001",
+      "nov2-rag-029",
+      "nov2-rag-005",
+      "nov2-rag-024",
+      "nov2-rag-025",
+      "nov2-data-034",
+      "nov2-data-035",
+      "nov2-data-037",
+      "nov2-data-040",
+      "nov2-data-041",
+      "nov2-vision-004",
+      "nov2-vision-005",
+      "nov2-material-vit-value",
+      "nov2-vision-024",
+      "nov2-vision-035",
+      "nov2-ondevice-067",
+      "nov2-ondevice-068",
+      "nov2-ondevice-061",
+      "nov2-ondevice-063",
+      "nov2-ondevice-064"
     ],
     "questions": [
       {
         "number": 1,
-        "id": "llm-089",
+        "id": "nov2-llm-089",
         "subject": "LLM",
         "source": "Chapter_3_Attention_Mechanisms_KR.ipynb · 셀 136"
       },
       {
         "number": 2,
-        "id": "llm-092",
+        "id": "nov2-llm-092",
         "subject": "LLM",
         "source": "Chapter_3_Attention_Mechanisms_KR.ipynb · 셀 136"
       },
       {
         "number": 3,
-        "id": "llm-051",
+        "id": "nov2-llm-051",
         "subject": "LLM",
         "source": "llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb · 셀 3"
       },
       {
         "number": 4,
-        "id": "llm-055",
+        "id": "nov2-llm-055",
         "subject": "LLM",
         "source": "llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb · 셀 4"
       },
       {
         "number": 5,
-        "id": "llm-006",
+        "id": "nov2-llm-006",
         "subject": "LLM",
         "source": "llm_from_scratch/images/Chapter_4_Excercise_GPT.ipynb · 셀 4"
       },
       {
         "number": 6,
-        "id": "rag-001",
+        "id": "nov2-rag-001",
         "subject": "RAG",
         "source": "1. Llama_index.ipynb · 셀 15"
       },
       {
         "number": 7,
-        "id": "rag-029",
+        "id": "nov2-rag-029",
         "subject": "RAG",
         "source": "1. Llama_index.ipynb · 셀 32"
       },
       {
         "number": 8,
-        "id": "rag-005",
+        "id": "nov2-rag-005",
         "subject": "RAG",
         "source": "2. Task_1.ipynb · 셀 16"
       },
       {
         "number": 9,
-        "id": "rag-024",
+        "id": "nov2-rag-024",
         "subject": "RAG",
         "source": "2. Task_1.ipynb · 셀 23"
       },
       {
         "number": 10,
-        "id": "rag-025",
+        "id": "nov2-rag-025",
         "subject": "RAG",
         "source": "2. Task_1.ipynb · 셀 29"
       },
       {
         "number": 11,
-        "id": "data-034",
+        "id": "nov2-data-034",
         "subject": "Data",
         "source": "ts_solution.ipynb · 셀 41"
       },
       {
         "number": 12,
-        "id": "data-035",
+        "id": "nov2-data-035",
         "subject": "Data",
         "source": "ts_solution.ipynb · 셀 41"
       },
       {
         "number": 13,
-        "id": "data-037",
+        "id": "nov2-data-037",
         "subject": "Data",
         "source": "ts_solution.ipynb · 셀 43"
       },
       {
         "number": 14,
-        "id": "data-040",
+        "id": "nov2-data-040",
         "subject": "Data",
         "source": "ts_solution.ipynb · 셀 43"
       },
       {
         "number": 15,
-        "id": "data-041",
+        "id": "nov2-data-041",
         "subject": "Data",
         "source": "ts_solution.ipynb · 셀 43"
       },
       {
         "number": 16,
-        "id": "vision-004",
+        "id": "nov2-vision-004",
         "subject": "Vision",
         "source": "02_ViT_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 17,
-        "id": "vision-005",
+        "id": "nov2-vision-005",
         "subject": "Vision",
         "source": "02_ViT_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 18,
-        "id": "material-vit-value",
+        "id": "nov2-material-vit-value",
         "subject": "Vision",
         "source": "Vision/02_ViT_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 19,
-        "id": "vision-024",
+        "id": "nov2-vision-024",
         "subject": "Vision",
         "source": "02_ViT_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 20,
-        "id": "vision-035",
+        "id": "nov2-vision-035",
         "subject": "Vision",
         "source": "02_ViT_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 21,
-        "id": "ondevice-067",
+        "id": "nov2-ondevice-067",
         "subject": "On-device",
         "source": "1. Pruning for CNN_answer.ipynb · 셀 33"
       },
       {
         "number": 22,
-        "id": "ondevice-068",
+        "id": "nov2-ondevice-068",
         "subject": "On-device",
         "source": "1. Pruning for CNN_answer.ipynb · 셀 33"
       },
       {
         "number": 23,
-        "id": "ondevice-061",
+        "id": "nov2-ondevice-061",
         "subject": "On-device",
         "source": "1. Pruning for CNN_answer.ipynb · 셀 35"
       },
       {
         "number": 24,
-        "id": "ondevice-063",
+        "id": "nov2-ondevice-063",
         "subject": "On-device",
         "source": "1. Pruning for CNN_answer.ipynb · 셀 35"
       },
       {
         "number": 25,
-        "id": "ondevice-064",
+        "id": "nov2-ondevice-064",
         "subject": "On-device",
         "source": "1. Pruning for CNN_answer.ipynb · 셀 35"
       }
@@ -188,180 +188,180 @@
     "slug": "mock-2",
     "focus": "DPO·LoRA / MCP Client·Tool·Agent / NGCF·NCF / CIFAR 전처리·ResNet / CNN·LLM 양자화",
     "ids": [
-      "llm-083",
-      "llm-085",
-      "llm-016",
-      "llm-009",
-      "llm-010",
-      "rag-015",
-      "rag-026",
-      "rag-016",
-      "rag-017",
-      "rag-027",
-      "data-011",
-      "data-012",
-      "data-014",
-      "data-017",
-      "data-018",
-      "vision-001",
-      "vision-036",
-      "vision-002",
-      "vision-003",
-      "vision-032",
-      "ondevice-029",
-      "ondevice-006",
-      "oct-21",
-      "oct-23",
-      "oct-25"
+      "nov2-llm-083",
+      "nov2-llm-085",
+      "nov2-llm-016",
+      "nov2-llm-009",
+      "nov2-llm-010",
+      "nov2-rag-015",
+      "nov2-rag-026",
+      "nov2-rag-016",
+      "nov2-rag-028",
+      "nov2-rag-027",
+      "nov2-data-011",
+      "nov2-data-012",
+      "nov2-data-014",
+      "nov2-data-017",
+      "nov2-data-018",
+      "nov2-vision-001",
+      "nov2-vision-036",
+      "nov2-vision-002",
+      "nov2-vision-016",
+      "nov2-vision-032",
+      "nov2-ondevice-029",
+      "nov2-ondevice-006",
+      "nov2-oct-21",
+      "nov2-oct-23",
+      "nov2-oct-25"
     ],
     "questions": [
       {
         "number": 1,
-        "id": "llm-083",
+        "id": "nov2-llm-083",
         "subject": "LLM",
         "source": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb · 셀 0"
       },
       {
         "number": 2,
-        "id": "llm-085",
+        "id": "nov2-llm-085",
         "subject": "LLM",
         "source": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb · 셀 0"
       },
       {
         "number": 3,
-        "id": "llm-016",
+        "id": "nov2-llm-016",
         "subject": "LLM",
         "source": "LLM/Chapter_7_Exercise_Follow_Instructions_dpo.ipynb · 셀 0"
       },
       {
         "number": 4,
-        "id": "llm-009",
+        "id": "nov2-llm-009",
         "subject": "LLM",
         "source": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb · 셀 29"
       },
       {
         "number": 5,
-        "id": "llm-010",
+        "id": "nov2-llm-010",
         "subject": "LLM",
         "source": "llm_from_scratch/Chapter_6_Finetuning_for_Text_Classification_LoRA_KR.ipynb · 셀 29"
       },
       {
         "number": 6,
-        "id": "rag-015",
+        "id": "nov2-rag-015",
         "subject": "RAG",
         "source": "4_RAG_framework_evaluation_with_MCP.ipynb · 셀 42"
       },
       {
         "number": 7,
-        "id": "rag-026",
+        "id": "nov2-rag-026",
         "subject": "RAG",
         "source": "4_RAG_framework_evaluation_with_MCP.ipynb · 셀 42"
       },
       {
         "number": 8,
-        "id": "rag-016",
+        "id": "nov2-rag-016",
         "subject": "RAG",
         "source": "4_RAG_framework_evaluation_with_MCP.ipynb · 셀 42"
       },
       {
         "number": 9,
-        "id": "rag-017",
+        "id": "nov2-rag-028",
         "subject": "RAG",
         "source": "4_RAG_framework_evaluation_with_MCP.ipynb · 셀 46"
       },
       {
         "number": 10,
-        "id": "rag-027",
+        "id": "nov2-rag-027",
         "subject": "RAG",
         "source": "4_RAG_framework_evaluation_with_MCP.ipynb · 셀 46"
       },
       {
         "number": 11,
-        "id": "data-011",
+        "id": "nov2-data-011",
         "subject": "Data",
         "source": "RecSys_GCF_sol.ipynb · 셀 13"
       },
       {
         "number": 12,
-        "id": "data-012",
+        "id": "nov2-data-012",
         "subject": "Data",
         "source": "RecSys_GCF_sol.ipynb · 셀 13"
       },
       {
         "number": 13,
-        "id": "data-014",
+        "id": "nov2-data-014",
         "subject": "Data",
         "source": "RecSys_GCF_sol.ipynb · 셀 14"
       },
       {
         "number": 14,
-        "id": "data-017",
+        "id": "nov2-data-017",
         "subject": "Data",
         "source": "RecSys_NCF.ipynb · 셀 10"
       },
       {
         "number": 15,
-        "id": "data-018",
+        "id": "nov2-data-018",
         "subject": "Data",
         "source": "RecSys_NCF.ipynb · 셀 18"
       },
       {
         "number": 16,
-        "id": "vision-001",
+        "id": "nov2-vision-001",
         "subject": "Vision",
         "source": "01_ResNet18_CIFAR10.ipynb · 셀 5"
       },
       {
         "number": 17,
-        "id": "vision-036",
+        "id": "nov2-vision-036",
         "subject": "Vision",
         "source": "01_ResNet18_CIFAR10.ipynb · 셀 5"
       },
       {
         "number": 18,
-        "id": "vision-002",
+        "id": "nov2-vision-002",
         "subject": "Vision",
         "source": "01_ResNet18_CIFAR10.ipynb · 셀 8"
       },
       {
         "number": 19,
-        "id": "vision-003",
+        "id": "nov2-vision-016",
         "subject": "Vision",
-        "source": "01_ResNet18_CIFAR10.ipynb · 셀 8"
+        "source": "01_ResNet18_CIFAR10.ipynb · 셀 10"
       },
       {
         "number": 20,
-        "id": "vision-032",
+        "id": "nov2-vision-032",
         "subject": "Vision",
         "source": "01_ResNet18_CIFAR10.ipynb · 셀 10"
       },
       {
         "number": 21,
-        "id": "ondevice-029",
+        "id": "nov2-ondevice-029",
         "subject": "On-device",
         "source": "2. Quantization for CNN_answer.ipynb · 셀 24"
       },
       {
         "number": 22,
-        "id": "ondevice-006",
+        "id": "nov2-ondevice-006",
         "subject": "On-device",
         "source": "2. Quantization for CNN_answer.ipynb · 셀 33"
       },
       {
         "number": 23,
-        "id": "oct-21",
+        "id": "nov2-oct-21",
         "subject": "On-device",
         "source": "On-Device/실습/2. Quantization for CNN_answer.ipynb · 셀 64"
       },
       {
         "number": 24,
-        "id": "oct-23",
+        "id": "nov2-oct-23",
         "subject": "On-device",
         "source": "On-Device/실습/2. Quantization for CNN_answer.ipynb · 셀 64"
       },
       {
         "number": 25,
-        "id": "oct-25",
+        "id": "nov2-oct-25",
         "subject": "On-device",
         "source": "On-Device/실습/5. Quantization for LLM_answer.ipynb · 셀 18"
       }

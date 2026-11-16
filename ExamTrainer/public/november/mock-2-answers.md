@@ -1,6 +1,6 @@
 # 11월 대비 2회 — 다음 후보 — 정답·해설
 
-빈칸당 4점, 과목당 20점, 총 100점. 미작성은 0점. 아래는 예시 답안이며 같은 shape와 동작의 동등한 구현도 정답으로 인정합니다. API 이름만 묻는 빈칸은 해당 위치에 들어갈 부분만 작성합니다. 다중 줄은 필요한 동작을 모두 충족하면 4점으로 채점하세요.
+빈칸당 4점, 과목당 20점, 총 100점. 미작성은 0점. 아래는 예시 답안이며 같은 shape와 동작의 동등한 구현도 정답으로 인정합니다. 호출식은 인수까지, 여러 줄 빈칸은 필요한 동작을 모두 작성하세요.
 
 ## 1번 · LLM — 자동회귀 시프트
 
@@ -15,7 +15,11 @@ labels[:, 1:]
 ## 2번 · LLM — 정답 로그확률
 
 ```python
-torch.gather
+torch.gather(
+        input=log_probs,
+        dim=-1,
+        index=labels.unsqueeze(-1)
+    ).squeeze(-1)
 ```
 
 정답 레이블 위치의 log probability를 모으세요.
@@ -25,7 +29,7 @@ torch.gather
 ## 3번 · LLM — DPO Loss
 
 ```python
-F.logsigmoid
+-F.logsigmoid(beta * logits)
 ```
 
 선호·비선호 보상의 차이에 beta를 곱해 log-sigmoid를 취하고 음수로 바꾸면 최소화 가능한 DPO loss가 됩니다.
@@ -82,13 +86,13 @@ MCP 서버의 도구 목록 조회는 네트워크 작업이므로 비동기 메
 
 출처: 4_RAG_framework_evaluation_with_MCP.ipynb · 셀 42
 
-## 9번 · RAG — Agent 생성
+## 9번 · RAG — MCP Agent 실행
 
 ```python
-FunctionAgent
+self.agent.run(question, ctx=self.agent_context)
 ```
 
-FunctionAgent에 LLM과 MCP tools를 연결하면 모델이 질문에 따라 적절한 외부 함수를 선택해 호출할 수 있습니다.
+agent.run은 질문과 workflow context를 받아 실행 handler를 반환합니다. 강의에서는 handler.stream_events로 도구 호출 이벤트를 관찰하고 await handler로 최종 응답을 받습니다. run 호출 자체를 이미 완성된 답변 문자열로 취급하면 안 됩니다.
 
 출처: 4_RAG_framework_evaluation_with_MCP.ipynb · 셀 46
 
@@ -105,7 +109,7 @@ Context(self.agent)는 이 Agent workflow의 실행 상태를 관리할 context�
 ## 11번 · Data — Message Passing
 
 ```python
-self.W2
+self.W1(src_feat) + self.W2(src_feat*dst_feat)
 ```
 
 NGCF message는 source feature의 선형 변환과 source·destination 간 원소별 상호작용을 더해 협업 신호를 표현합니다.
@@ -145,7 +149,7 @@ torch.cat([user_embedding, movie_embedding], dim = 1)
 ## 15번 · Data — 평가 Metric
 
 ```python
-mean_squared_error
+mean_squared_error(target_rating_list, model_output_list)
 ```
 
 MSE는 실제 평점과 예측 평점 차이의 제곱 평균으로, 추천 모델의 수치 예측 오차를 측정합니다.
@@ -182,15 +186,15 @@ nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
 
 출처: 01_ResNet18_CIFAR10.ipynb · 셀 8
 
-## 19번 · Vision — MaxPool 제거
+## 19번 · Vision — Top-1 Accuracy
 
 ```python
-nn.Identity()
+(preds == targets).float().mean().item()
 ```
 
-ImageNet용 초기 maxpool을 Identity로 바꾸면 연산 흐름은 유지하면서 작은 입력의 공간 해상도 축소를 제거합니다.
+가장 큰 logit의 class index와 정답을 비교한 boolean tensor를 float로 바꿔 평균내면 batch의 Top-1 Accuracy가 됩니다.
 
-출처: 01_ResNet18_CIFAR10.ipynb · 셀 8
+출처: 01_ResNet18_CIFAR10.ipynb · 셀 10
 
 ## 20번 · Vision — 예측 클래스 선택
 
@@ -205,7 +209,7 @@ logits의 각 행은 이미지 하나의 클래스별 점수입니다. argmax(di
 ## 21번 · On-device — Linear Quantization
 
 ```python
-torch.round
+torch.round(scaled_tensor)
 ```
 
 scale된 부동소수 tensor를 정수값으로 rounding하세요.
@@ -215,7 +219,7 @@ scale된 부동소수 tensor를 정수값으로 rounding하세요.
 ## 22번 · On-device — Zero Point
 
 ```python
-round
+round(quantized_min - fp_min/scale)
 ```
 
 zero point는 실수 0이 정수 범위의 어느 값에 대응하는지 이동량을 정하며 정수로 반올림해야 합니다.

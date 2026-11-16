@@ -164,7 +164,7 @@ for (const q of Object.values(examQuestions)) {
   if (choices.length!==4) throw new Error(`Missing implementation choices: ${q.id}`);
   q.choices=choices;
 }
-// November-only quantization excerpts use the same mock session and grading.
+// November has independent, expanded spans so other exams/banks keep their scope.
 for (const q of november.questions) {
   prepQuestions[q.id] = q;
   examQuestions[q.id] = q;

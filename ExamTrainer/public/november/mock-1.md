@@ -65,16 +65,12 @@ class MultiHeadAttention(nn.Module):
 
         # 2. [헤드 분할] d_out 차원을 (num_heads, head_dim)으로 쪼갭니다.
         # Shape 변환: (b, num_tokens, d_out) -> (b, num_tokens, num_heads, head_dim)
-        keys = 【빈칸 1】
-        values = values.view(b, num_tokens, self.num_heads, self.head_dim)
-        queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
+        【빈칸 1】
 
         # 3. [차원 변경] 병렬 연산을 위해 '헤드' 차원을 '문장 길이' 앞으로 옮깁니다.
         # 이렇게 하면 (b, num_heads)를 마치 하나의 배치처럼 묶어서 행렬 곱셈을 한 번에 처리할 수 있습니다.
         #Shape 변환: (b, num_tokens, num_heads, head_dim) -> (b, num_heads, num_tokens, head_dim)
-        keys = 【빈칸 2】
-        queries = queries.transpose(1, 2)
-        values = values.transpose(1, 2)
+        【빈칸 2】
 
         # 4. [어텐션 스코어 계산] (Query @ Key_Transposed)
         # 행렬 곱셈: (b, h, T, head_dim) @ (b, h, head_dim, T) -> (b, h, T, T)
@@ -401,8 +397,6 @@ class RNNRNN(nn.Module):
     predictions = []
     input = 【빈칸 13】
     for t in range(target_len):
-      out, h = self.decoder(input, h)
-      predictions.append(out.squeeze(1))
       【빈칸 14】
     outputs = 【빈칸 15】
 
@@ -481,12 +475,12 @@ class Attention(nn.Module):  # 멀티헤드 Self-Attention(MHSA) 구현
         qkv = self.to_qkv(x).chunk(3, dim = -1)  # 선형변환 결과를 Q,K,V로 분할 -> (Q, K ,V)
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = h), qkv)  # multi-head 연산을 위해 각 head 기준 n x d 로 분리
 
-        dots = 【빈칸 17】('b h i d, b h j d -> b h i j', q, k) * self.scale  # 각 토큰 간 유사도(Q·Kᵀ) 계산 후 스케일 적용
+        dots = 【빈칸 17】  # 각 토큰 간 유사도(Q·Kᵀ) 계산 후 스케일 적용
 
         attn = self.attend(dots)  # 토큰 간 가중치(attention map) 생성
         self.last_attn = attn.detach()  # 그래프에서 분리(detach)해서 저장 (시각화 목적)
 
-        out = 【빈칸 18】('b h i j, b h j d -> b h i d', attn, v)  # attention 가중합으로 새로운 토큰 표현(out) 계산
+        out = 【빈칸 18】  # attention 가중합으로 새로운 토큰 표현(out) 계산
         out = rearrange(out, 'b h n d -> b n (h d)')  # 헤드 차원을 다시 합쳐 (batch, tokens, dim)로 복원
         return self.to_out(out)  # 최종 투영을 거쳐 Attention 블록 출력 반환
 
@@ -583,8 +577,7 @@ def prune_weight_channel_level(weight: torch.Tensor, sparsity: float) -> None:
         return torch.ones_like(weight)
 
     # 프루닝할 채널 수 계산
-    num_channels = 【빈칸 23】
-    num_pruned_channels = round(num_channels * sparsity)
+    【빈칸 23】
 
     # 각 채널의 중요도를 절댓값 합으로 계산
     # (출력 채널, 커널 높이, 커널 너비에 대해 합산)
